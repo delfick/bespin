@@ -47,7 +47,7 @@ class Builder(object):
         print(stack.params_json_obj)
 
     def find_missing_build_env(self, stack):
-        for artifact in self.artifacts.values():
+        for artifact in stack.artifacts.values():
             artifact.find_missing_env()
 
     def publish_artifacts(self, stack, credentials):
@@ -78,4 +78,4 @@ class Builder(object):
         # Iterate over each artifact we need to clean
         for key, artifact in stack.artifacts.items():
             # Clean it
-            print(artifact.history_length)
+            print(artifact.history_length + 1)
