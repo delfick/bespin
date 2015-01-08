@@ -54,11 +54,11 @@ class CliParser(object):
                 argv.pop(0)
 
             if argv and not argv[0].startswith("-"):
-                default_environment = argv[0]
+                default_stack = argv[0]
                 argv.pop(0)
 
             if argv and not argv[0].startswith("-"):
-                default_stack = argv[0]
+                default_environment = argv[0]
                 argv.pop(0)
 
         while argv:

@@ -30,17 +30,19 @@ deploy
 Simpler Usage
 -------------
 
-To save typing ``--task`` and ``--stack`` too much, the first positional argument
-is treated as ``task`` (unless it is prefixed with a ``-``) and the second
-positional argument (if also not prefixed with a ``-``) is taken as the ``stack``.
+To save typing ``--task``, ``--stack`` and ``--environment`` too much
+, the first positional argument is treated as ``task``
+(unless it is prefixed with a ``-``); the second positional argument
+(if also not prefixed with a ``-``) is taken as the ``stack`` and the third is
+treated as the ``environment``.
 
 So::
 
-    $ bespin --task deploy --stack app
+    $ bespin --task deploy --stack app --environment dev
 
 Is equivalent to::
 
-    $ bespin deploy app
+    $ bespin deploy app dev
 
 Logging colors
 --------------
