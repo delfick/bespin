@@ -1,3 +1,4 @@
+from bespin.helpers import a_temp_file
 from bespin.errors import BadOption
 
 from input_algorithms.spec_base import NotSpecified
@@ -27,6 +28,29 @@ class Artifact(dictobj):
 class ArtifactPath(dictobj):
     fields = ["host_path", "artifact_path"]
 
+    def add_to_tar(self, tar, environment):
+        """Add everything in this ArtifactPath to the tar"""
+        for full_path, tar_path in self:
+            tar.add(full_path, tar_path)
+
+    def __iter__(self):
+        """Iterate over the files in our host_path and yield (full_path, tar_path)"""
+        for root, dirs, files in os.walk(self.host_path):
+            for f in files:
+                file_full_path = os.path.abspath(os.path.join(root, f))
+                file_tar_path = file_full_path.replace(os.path.normpath(self.host_path), self.artifact_path)
+                yield file_full_path, file_tar_path
+
 class ArtifactFile(dictobj):
     fields = ["content", "path"]
+
+    def add_to_tar(self, tar, environment):
+        """Add this file to the tar"""
+        if environment is None:
+            environment = {}
+
+        with a_temp_file() as f:
+            f.write(self.content.format(**environment).encode('utf-8'))
+            f.close()
+            tar.add(f.name, self.path)
 

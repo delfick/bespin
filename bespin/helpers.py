@@ -31,34 +31,21 @@ def a_temp_directory():
         if directory and os.path.exists(directory):
             shutil.rmtree(directory)
 
-def generate_tar_file(location, dirs_to_tar, files_to_tar, environment=None, compression=None):
+def generate_tar_file(location, paths, environment=None, compression=None):
     """
     Generate a tar file at the specified location given the paths and files
     """
-    if environment is None:
-        environment = {}
-
     # Create a blank tar file
     write_type = "w"
     if compression:
         write_type = "w|{0}".format(compression)
     tar = tarfile.open(location.name, write_type)
 
-    # Walk each path, adding all files
-    for dir_to_tar in dirs_to_tar:
-        for root, dirs, files in os.walk(dir_to_tar.host_path):
-            for f in files:
-                file_full_path = os.path.abspath(os.path.join(root, f))
-                file_tar_path = file_full_path.replace(os.path.normpath(dir_to_tar.host_path), dir_to_tar.artifact_path)
-                tar.add(file_full_path, file_tar_path)
+    # Add all the things to the tar
+    for path_spec in paths:
+        path_spec.add_to_tar(tar, environment)
 
-    # Add all the individual files
-    for file_to_tar in files_to_tar:
-        with a_temp_file() as f:
-            f.write(file_to_tar.content.format(**environment).encode('utf-8'))
-            f.close()
-            tar.add(f.name, file_to_tar.path)
-
+    # Finish the tar
     tar.close()
 
     return tar
