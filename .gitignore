@@ -1,0 +1,8 @@
+.idea/
+*.pyc
+*~
+.ropeproject/
+*.egg-info/
+dist/
+.tox/
+docs/_build/
