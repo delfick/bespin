@@ -1,5 +1,3 @@
-from boto.s3.connection import S3Connection
-
 from six.moves.urllib.parse import urlparse
 from contextlib import contextmanager
 from collections import namedtuple
@@ -18,11 +16,11 @@ def s3_location(value):
     """Return us an s3 location record type"""
     info = urlparse(value)
     if info.scheme != "s3":
-        raise argparse.ValueError("S3 location must be a valid s3 url\tgot={0}".format(value))
+        raise ValueError("S3 location must be a valid s3 url\tgot={0}".format(value))
 
     bucket = info.netloc
     if not bucket:
-        raise argparse.ValueError("S3 location must be a valid s3 url\tgot={0}".format(value))
+        raise ValueError("S3 location must be a valid s3 url\tgot={0}".format(value))
 
     key = info.path
     return S3Location(bucket, key, value)
@@ -41,7 +39,7 @@ def a_multipart_upload(bucket, key):
         if mp:
             mp.complete_upload()
 
-def upload_file_to_s3(source_filename, destination_path):
+def upload_file_to_s3(credentials, source_filename, destination_path):
     source_file = open(source_filename, 'r')
     destination_file = s3_location(destination_path)
 
@@ -50,13 +48,7 @@ def upload_file_to_s3(source_filename, destination_path):
     log.info("Uploading from %s (%sb) to %s", source, source_size, destination_file.full)
 
     try:
-        conn = S3Connection()
-    except boto.exception.NoAuthHandlerFound:
-        log.error("Please inject credentials into your environment first!")
-        sys.exit(1)
-
-    try:
-        bucket = conn.get_bucket(destination_file.bucket)
+        bucket = credentials.s3.get_bucket(destination_file.bucket)
     except boto.exception.S3ResponseError as error:
         if error.status in (404, 403):
             log.error("Bucket %s either doesn't exist or isn't available to you", destination_file.bucket)

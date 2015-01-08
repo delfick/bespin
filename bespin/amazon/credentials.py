@@ -1,6 +1,9 @@
+from bespin.helpers import memoized_property
 from bespin.errors import BespinError
 
 from boto.iam.connection import IAMConnection
+from boto.s3.connection import S3Connection
+
 import logging
 import boto
 
@@ -11,7 +14,7 @@ class Credentials(object):
         """Make sure our current credentials are for this account and set self.connection"""
         log.info("Verifying amazon credentials")
         try:
-            connection = IAMConnection()
+            connection = self.iam
         except boto.exception.NoAuthHandlerFound:
             raise BespinError("Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY before running this script (your aws credentials)")
 
@@ -30,4 +33,12 @@ class Credentials(object):
         amazon_account_id = roles[0]['arn'].split(":")[4]
         if str(account_id) != str(amazon_account_id):
             raise BespinError("Please use credentials for the right account", expect=account_id, got=amazon_account_id)
+
+    @memoized_property
+    def s3(self):
+        return S3Connection()
+
+    @memoized_property
+    def iam(self):
+        return IAMConnection()
 

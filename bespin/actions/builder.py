@@ -69,7 +69,7 @@ class Builder(object):
                 log.info("Finished generating artifact: {0}".format(key))
 
                 # Upload the artifact
-                upload_file_to_s3(temp_tar_file.name, artifact.upload_to.format(**environment))
+                upload_file_to_s3(credentials, temp_tar_file.name, artifact.upload_to.format(**environment))
 
     def clean_old_artifacts(self, stack, credentials):
         # Find missing env before doing anything
