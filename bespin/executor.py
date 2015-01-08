@@ -7,6 +7,7 @@ from __future__ import print_function
 
 from bespin.overview import Overview
 from bespin.errors import BadOption
+from bespin import VERSION
 
 from rainbow_logging_handler import RainbowLoggingHandler
 from input_algorithms.spec_base import NotSpecified
@@ -174,10 +175,18 @@ class CliParser(object):
 
         return args, cli_args
 
+def set_boto_useragent():
+    """Make boto report bespin as the user agent"""
+    __import__("boto")
+    useragent = sys.modules["boto.connection"].UserAgent
+    if "bespin" not in useragent:
+        sys.modules["boto.connection"].UserAgent = "{0} bespin/{1}".format(useragent, VERSION)
+
 def main(argv=None):
     try:
         args, cli_args = CliParser().interpret_args(argv)
         handler = setup_logging(verbose=args.verbose, silent=args.silent, debug=args.debug)
+        set_boto_useragent()
         Overview(configuration_file=args.bespin_config.name, logging_handler=handler).start(cli_args)
     except DelfickError as error:
         print("")
