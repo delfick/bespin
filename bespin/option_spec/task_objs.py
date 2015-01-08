@@ -44,6 +44,12 @@ class Task(dictobj):
 
         stacks = None
         if task_func.needs_stacks:
+            environment = configuration["bespin"].environment
+            if not environment:
+                raise BadOption("Please specify an environment")
+            if configuration["environments"].get(environment) is None:
+                raise BadOption("No configuration found for specified environment", environment=environment)
+
             stacks = self.determine_stack(stack, overview, configuration, needs_stack=task_func.needs_stack)
             if stack:
                 stack = stacks[stack]

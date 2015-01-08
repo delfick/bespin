@@ -33,6 +33,8 @@ class Overview(object):
         """Do the bespin stuff"""
         if "stacks" not in self.configuration:
             raise BadConfiguration("Didn't find any stacks in the configuration")
+        if not self.configuration.get("environments"):
+            raise BadConfiguration("Didn't find any environments configuration")
 
         bespin = cli_args.pop("bespin")
         self.configuration.update(
