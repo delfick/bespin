@@ -74,4 +74,4 @@ class Builder(object):
             artifact.find_missing_env()
 
             # Clean it
-            print artifact.history_length
+            print(artifact.history_length)
