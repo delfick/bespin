@@ -44,7 +44,7 @@ class ArtifactPath(dictobj):
 class ArtifactFile(dictobj):
     fields = ["content", "path"]
 
-    def add_to_tar(self, tar, environment):
+    def add_to_tar(self, tar, environment=None):
         """Add this file to the tar"""
         if environment is None:
             environment = {}
