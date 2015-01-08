@@ -46,12 +46,16 @@ class Builder(object):
         print("Building - {0}".format(stack.stack_name))
         print(stack.params_json_obj)
 
-    def publish_artifacts(self, stack):
-        # Iterate over each artifact we need to build
-        for key, artifact in stack.artifacts.items():
-            # Check we are not missing any env vars
+    def find_missing_build_env(self, stack):
+        for artifact in self.artifacts.values():
             artifact.find_missing_env()
 
+    def publish_artifacts(self, stack):
+        # Find missing env before doing anything
+        self.find_missing_build_env(stack)
+
+        # Iterate over each artifact we need to build
+        for key, artifact in stack.artifacts.items():
             # Gather our environment variables
             environment = dict(env.pair for env in artifact.build_env)
 
@@ -68,10 +72,10 @@ class Builder(object):
                 aws.upload_file_to_s3(temp_tar_file.name, artifact.upload_to.format(**environment))
 
     def clean_old_artifacts(self, stack):
+        # Find missing env before doing anything
+        self.find_missing_build_env(stack)
+
         # Iterate over each artifact we need to clean
         for key, artifact in stack.artifacts.items():
-            # Check we are not missing any env vars
-            artifact.find_missing_env()
-
             # Clean it
             print(artifact.history_length)
