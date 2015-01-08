@@ -31,6 +31,9 @@ class filename_spec(orig_filename_spec):
 class Bespin(dictobj):
     fields = ["flat", "config", "chosen_stack", "chosen_task", "extra", "interactive", "region", "environment"]
 
+class Environment(dictobj):
+    fields = ["account_id", "vars"]
+
 class other_options(dictobj):
     fields = ["run", "create", "build"]
 
@@ -54,6 +57,17 @@ class BespinSpec(object):
                 , options = dictionary_spec()
                 , overrides = dictionary_spec()
                 , description = string_spec()
+                )
+            )
+
+    @memoized_property
+    def environments_spec(self):
+        """Spec for each environment options"""
+        return dictof(
+              string_spec()
+            , create_spec(Environment
+                , account_id = required(valid_string_spec(validators.regexed("\d+")))
+                , vars = dictionary_spec()
                 )
             )
 

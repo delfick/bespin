@@ -31,6 +31,7 @@ def setup_logging(verbose=False, silent=False, debug=False):
     if silent:
         log.setLevel(logging.ERROR)
 
+    logging.getLogger("boto").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
     logging.getLogger("requests").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
     return handler
 

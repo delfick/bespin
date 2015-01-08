@@ -5,6 +5,7 @@ Tasks contain a reference to the functionality it provides (in ``bespin.tasks``)
 as well as options that are used to override those in the stack it's attached to.
 """
 
+from bespin.amazon.credentials import Credentials
 from bespin.errors import BadOption
 
 from input_algorithms.dictobj import dictobj
@@ -57,7 +58,12 @@ class Task(dictobj):
         if stack:
             stack.find_missing_env()
 
-        return task_func(overview, configuration, stacks=stacks, stack=stack)
+        credentials = None
+        if task_func.needs_credentials:
+            credentials = Credentials()
+            credentials.verify_creds(configuration["environments"][environment].account_id)
+
+        return task_func(overview, configuration, stacks=stacks, stack=stack, credentials=credentials)
 
     def determine_stack(self, stack, overview, configuration, needs_stack=True):
         """Complain if we don't have an stack"""

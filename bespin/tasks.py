@@ -15,14 +15,16 @@ log = logging.getLogger("bespin.tasks")
 available_tasks = {}
 class a_task(object):
     """Records a task in the ``available_tasks`` dictionary"""
-    def __init__(self, needs_stack=False, needs_stacks=False):
+    def __init__(self, needs_stack=False, needs_stacks=False, needs_credentials=False):
         self.needs_stack = needs_stack
         self.needs_stacks = needs_stack or needs_stacks
+        self.needs_credentials = needs_credentials
 
     def __call__(self, func):
         available_tasks[func.__name__] = func
         func.needs_stack = self.needs_stack
         func.needs_stacks = self.needs_stacks
+        func.needs_credentials = self.needs_credentials
         return func
 
 @a_task()
@@ -58,17 +60,17 @@ def show(overview, configuration, stacks, **kwargs):
                 print("    {0}".format(stack.display_line()))
             print("")
 
-@a_task(needs_stack=True)
-def deploy(overview, configuration, stacks, stack, **kwargs):
+@a_task(needs_stack=True, needs_credentials=True)
+def deploy(overview, configuration, stacks, stack, credentials, **kwargs):
     """Deploy a particular stack"""
-    Builder().deploy_stack(stack, stacks)
+    Builder().deploy_stack(stack, stacks, credentials)
 
-@a_task(needs_stack=True)
-def publish_artifacts(overview, configuration, stacks, stack, **kwargs):
+@a_task(needs_stack=True, needs_credentials=True)
+def publish_artifacts(overview, configuration, stacks, stack, credentials, **kwargs):
     """Deploy a particular stack"""
-    Builder().publish_artifacts(stack)
+    Builder().publish_artifacts(stack, credentials)
 
-@a_task(needs_stack=True)
-def clean_old_artifacts(overview, configuration, stacks, stack, **kwargs):
+@a_task(needs_stack=True, needs_credentials=True)
+def clean_old_artifacts(overview, configuration, stacks, stack, credentials, **kwargs):
     """Deploy a particular stack"""
-    Builder().clean_old_artifacts(stack)
+    Builder().clean_old_artifacts(stack, credentials)

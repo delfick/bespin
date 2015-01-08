@@ -14,7 +14,6 @@ from input_algorithms.dictobj import dictobj
 from option_merge import MergedOptions
 from input_algorithms.meta import Meta
 from option_merge import Converter
-from itertools import chain
 import logging
 import yaml
 import os
@@ -158,6 +157,15 @@ class Overview(object):
 
         bespin_converter = Converter(convert=convert_bespin, convert_path=["bespin"])
         configuration.add_converter(bespin_converter)
+
+        def convert_environments(path, val):
+            log.info("Converting %s", path)
+            meta = Meta(path.configuration, [("environments", "")])
+            configuration.converters.started(path)
+            return bespin_spec.environments_spec.normalise(meta, val)
+
+        environments_converter = Converter(convert=convert_environments, convert_path=["environments"])
+        configuration.add_converter(environments_converter)
 
         if errors:
             raise BadConfiguration("Some of the configuration was broken", _errors=errors)

@@ -8,7 +8,7 @@ import logging
 log = logging.getLogger("bespin.actions.builder")
 
 class Builder(object):
-    def deploy_stack(self, stack, stacks, made=None, ignore_deps=False):
+    def deploy_stack(self, stack, stacks, credentials, made=None, ignore_deps=False):
         """Make us an stack"""
         made = made or {}
 
@@ -50,7 +50,7 @@ class Builder(object):
         for artifact in self.artifacts.values():
             artifact.find_missing_env()
 
-    def publish_artifacts(self, stack):
+    def publish_artifacts(self, stack, credentials):
         # Find missing env before doing anything
         self.find_missing_build_env(stack)
 
@@ -71,7 +71,7 @@ class Builder(object):
                 # Upload the artifact
                 upload_file_to_s3(temp_tar_file.name, artifact.upload_to.format(**environment))
 
-    def clean_old_artifacts(self, stack):
+    def clean_old_artifacts(self, stack, credentials):
         # Find missing env before doing anything
         self.find_missing_build_env(stack)
 
