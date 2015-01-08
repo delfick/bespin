@@ -1,7 +1,7 @@
+from bespin.amazon.s3 import upload_file_to_s3
 from bespin.errors import NoSuchStack
 from bespin.layers import Layers
 from bespin import helpers as hp
-from bespin import aws_helpers as aws
 
 import logging
 
@@ -69,7 +69,7 @@ class Builder(object):
                 log.info("Finished generating artifact: {0}".format(key))
 
                 # Upload the artifact
-                aws.upload_file_to_s3(temp_tar_file.name, artifact.upload_to.format(**environment))
+                upload_file_to_s3(temp_tar_file.name, artifact.upload_to.format(**environment))
 
     def clean_old_artifacts(self, stack):
         # Find missing env before doing anything
