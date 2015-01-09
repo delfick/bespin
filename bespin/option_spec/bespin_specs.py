@@ -6,7 +6,7 @@ The specifications are responsible for sanitation, validation and normalisation.
 """
 
 from input_algorithms.spec_base import (
-      formatted, defaulted, dictionary_spec, dictof, listof, required
+      formatted, defaulted, any_spec, dictionary_spec, dictof, listof, required
     , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec
     , valid_string_spec, create_spec, string_choice_spec, filename_spec as orig_filename_spec
     )
@@ -29,7 +29,7 @@ class filename_spec(orig_filename_spec):
         return super(filename_spec, self).normalise_filled(meta, val)
 
 class Bespin(dictobj):
-    fields = ["flat", "config", "chosen_stack", "chosen_task", "extra", "interactive", "region", "environment"]
+    fields = ["dry_run", "flat", "config", "chosen_stack", "chosen_task", "extra", "interactive", "region", "environment"]
 
 class Environment(dictobj):
     fields = ["account_id", "vars"]
@@ -75,6 +75,8 @@ class BespinSpec(object):
     def stack_spec(self):
         """Spec for each stack"""
         return create_spec(stack_objs.Stack
+            , bespin = any_spec()
+
             , name = formatted(defaulted(string_spec(), "{_key_name_1}"), formatter=MergedOptionStringFormatter)
             , key_name = formatted(overridden("{_key_name_1}"), formatter=MergedOptionStringFormatter)
             , stack_name = formatted(defaulted(string_spec(), "{_key_name_1}"), formatter=MergedOptionStringFormatter)
@@ -113,6 +115,7 @@ class BespinSpec(object):
         return create_spec(Bespin
             , config = file_spec()
 
+            , dry_run = defaulted(boolean(), False)
             , flat = defaulted(boolean(), False)
             , environment = optional_spec(string_spec())
 

@@ -1,3 +1,5 @@
+from bespin.errors import BadS3Bucket
+
 from six.moves.urllib.parse import urlparse
 from contextlib import contextmanager
 from collections import namedtuple
@@ -39,6 +41,27 @@ def a_multipart_upload(bucket, key):
         if mp:
             mp.complete_upload()
 
+def get_bucket(credentials, bucket_name):
+    try:
+        return credentials.s3.get_bucket(bucket_name)
+    except boto.exception.S3ResponseError as error:
+        if error.status in (404, 403):
+            raise BadS3Bucket("Bucket either doesn't exist or isn't available to you", name=bucket_name)
+        else:
+            raise
+
+def list_keys_from_s3_path(credentials, query_path):
+    query = s3_location(query_path)
+    bucket = get_bucket(credentials, query.bucket)
+    return bucket.list(prefix="rca-contract")
+
+def delete_key_from_s3(credentials, key, dry_run):
+    if dry_run:
+        print("Would delete {0}".format(key.name))
+    else:
+        print("Deleted {0}".format(key.name))
+        key.delete()
+
 def upload_file_to_s3(credentials, source_filename, destination_path):
     source_file = open(source_filename, 'r')
     destination_file = s3_location(destination_path)
@@ -47,14 +70,7 @@ def upload_file_to_s3(credentials, source_filename, destination_path):
     source_size = os.stat(source).st_size
     log.info("Uploading from %s (%sb) to %s", source, source_size, destination_file.full)
 
-    try:
-        bucket = credentials.s3.get_bucket(destination_file.bucket)
-    except boto.exception.S3ResponseError as error:
-        if error.status in (404, 403):
-            log.error("Bucket %s either doesn't exist or isn't available to you", destination_file.bucket)
-            sys.exit(1)
-        else:
-            raise
+    bucket = get_bucket(credentials, destination_file.bucket)
 
     chunk = 5242880
     chunk_count = int(math.ceil(source_size / chunk))

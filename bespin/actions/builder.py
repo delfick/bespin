@@ -1,9 +1,10 @@
-from bespin.amazon.s3 import upload_file_to_s3
+from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3
 from bespin.errors import NoSuchStack
 from bespin.layers import Layers
 from bespin import helpers as hp
 
 import logging
+import os
 
 log = logging.getLogger("bespin.actions.builder")
 
@@ -77,5 +78,19 @@ class Builder(object):
 
         # Iterate over each artifact we need to clean
         for key, artifact in stack.artifacts.items():
-            # Clean it
-            print(artifact.history_length + 1)
+            environment = dict(env.pair for env in artifact.build_env)
+
+            # Get contents of bucket
+            artifact_path = os.path.dirname(artifact.upload_to.format(**environment))
+            artifact_keys = list_keys_from_s3_path(credentials, artifact_path)
+
+            # Get all the time stamps and determine the files to delete
+            timestamps = list(map(lambda x: x.last_modified, artifact_keys))
+            timestamps.sort()
+            keys_to_del = timestamps[:-artifact.history_length]
+
+            # Iterate through all the artifacts deleting any ones flagged for deletion
+            for artifact_key in artifact_keys:
+                if artifact_key.last_modified in keys_to_del:
+                    log.info("Deleting artifact %s ", artifact_key.name)
+                    delete_key_from_s3(credentials, artifact_key, stack.bespin.dry_run)

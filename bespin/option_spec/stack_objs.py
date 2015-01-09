@@ -7,7 +7,7 @@ import os
 
 class Stack(dictobj):
     fields = [
-          "name", "key_name", "environment", "stack_json", "params_json"
+          "bespin", "name", "key_name", "environment", "stack_json", "params_json"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts"
         ]
 

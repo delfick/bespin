@@ -133,6 +133,12 @@ class CliParser(object):
             , action = "store_true"
             )
 
+        parser.add_argument("--dry-run"
+            , help = "Should Bespin take any real action or print out what is intends to do"
+            , dest = "bespin_dry_run"
+            , action = "store_true"
+            )
+
         extra = {"default": "list_tasks"}
         if default_task is not NotSpecified:
             extra["default"] = default_task
