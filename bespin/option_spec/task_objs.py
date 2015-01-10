@@ -56,9 +56,6 @@ class Task(dictobj):
             if stack:
                 stack = stacks[stack]
 
-        if stack:
-            stack.find_missing_env()
-
         credentials = None
         if task_func.needs_credentials:
             credentials = Credentials(configuration["bespin"].region)

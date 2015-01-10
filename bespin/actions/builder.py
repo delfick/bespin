@@ -10,8 +10,27 @@ import os
 log = logging.getLogger("bespin.actions.builder")
 
 class Builder(object):
+    def check_env(self, stack, stacks, ignore_deps=False, checked=None):
+        """Check for missing environment variables in all the stacks"""
+        if checked is None:
+            checked = []
+
+        if stack.stack_name in checked:
+            return
+
+        stack.find_missing_env()
+        if not ignore_deps and not stack.ignore_deps:
+            for dependency in stack.dependencies(stacks):
+                self.check_env(stacks[dependency], stacks, ignore_deps, checked + [stack.stack_name])
+
+        if any(stack.build_after):
+            for dependency in stack.build_after:
+                self.check_env(stacks[dependency], stacks, ignore_deps, checked + [stack.stack_name])
+
     def deploy_stack(self, stack, stacks, credentials, made=None, ignore_deps=False):
         """Make us an stack"""
+        self.check_env(stack, stacks, ignore_deps=ignore_deps)
+
         made = made or {}
 
         if stack.name in made:
