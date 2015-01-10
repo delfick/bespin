@@ -66,6 +66,10 @@ class Builder(object):
     def build_stack(self, stack):
         print("Building - {0}".format(stack.stack_name))
         print(json.dumps(stack.params_json_obj, indent=4))
+        if stack.skip_update_if_equivalent and all(check.resolve() for check in stack.skip_update_if_equivalent):
+            log.info("Stack is determined to be the same, not updating")
+        else:
+            stack.create_or_update()
 
     def find_missing_build_env(self, stack):
         for artifact in stack.artifacts.values():

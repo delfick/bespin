@@ -5,7 +5,7 @@ The idea is that these understand the conditions around representation of the
 options.
 """
 
-from bespin.option_spec.stack_objs import StaticVariable, DynamicVariable, Environment
+from bespin.option_spec.stack_objs import StaticVariable, DynamicVariable, Environment, Skipper
 from bespin.option_spec.specs import many_item_formatted_spec
 from bespin.option_spec.artifact_objs import ArtifactPath
 from bespin.formatter import MergedOptionStringFormatter
@@ -54,4 +54,12 @@ class env_spec(many_item_formatted_spec):
         elif dividers[0] == '=':
             args.extend([None, other_val])
         return Environment(*args)
+
+class skipper_spec(many_item_formatted_spec):
+    value_name = "Skip specification"
+    spec = lambda: sb.delayed(var_spec())
+    specs = [spec(), spec()]
+
+    def create_result(self, var1, var2, meta, val, dividers):
+        return Skipper(var1, var2)
 

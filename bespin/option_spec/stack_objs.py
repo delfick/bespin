@@ -1,14 +1,19 @@
 from bespin.errors import MissingOutput, BadOption
+from bespin.errors import StackDoesntExist
 
 from input_algorithms.dictobj import dictobj
+import logging
 import json
 import six
 import os
+
+log = logging.getLogger("bespin.option_spec.stack_objs")
 
 class Stack(dictobj):
     fields = [
           "bespin", "name", "key_name", "environment", "stack_json", "params_json"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts"
+        , "skip_update_if_equivalent"
         ]
 
     def dependencies(self, stacks):
@@ -42,16 +47,10 @@ class Stack(dictobj):
         if missing:
             raise BadOption("Some environment variables aren't in the current environment", missing=missing)
 
-    def resolve_output(self, output_name):
-        outputs = self.cloudformation.outputs
-        if output_name not in outputs:
-            raise MissingOutput(wanted=output_name, available=outputs.keys())
-        return outputs[output_name]
-
     @property
     def cloudformation(self):
         if not hasattr(self, "_cloudformation"):
-            self._cloudformation = self.bespin.credentials.cloudformation(self, self.bespin.region)
+            self._cloudformation = self.bespin.credentials.cloudformation(self.stack_name, self.bespin.region)
         return self._cloudformation
 
     @property
@@ -76,6 +75,9 @@ class Stack(dictobj):
                 value = value.format(**dict(env.pair for env in self.env))
                 yield var, value
 
+    def create_or_update(self):
+        log.info("Creating or updating the stack (%s)", self.stack_name)
+
 class StaticVariable(dictobj):
     fields = ["value"]
 
@@ -83,10 +85,18 @@ class StaticVariable(dictobj):
         return self.value
 
 class DynamicVariable(dictobj):
-    fields = ["stack", "output"]
+    fields = ["stack", "output", ("credentials", None), ("region", None)]
 
     def resolve(self):
-        return self.stack.resolve_output(self.output)
+        if isinstance(self.stack, six.string_types):
+            outputs = self.credentials.cloudformation(self.stack, self.region).outputs
+        else:
+            outputs = self.stack.cloudformation.outputs
+
+        if self.output not in outputs:
+            raise MissingOutput(wanted=self.output, available=outputs.keys())
+
+        return outputs[self.output]
 
 class Environment(dictobj):
     """A single environment variable, and it's default or set value"""
@@ -101,4 +111,20 @@ class Environment(dictobj):
             return self.env_name, os.environ.get(self.env_name, self.default_val)
         else:
             return self.env_name, os.environ[self.env_name]
+
+class Skipper(dictobj):
+    fields = ["var1", "var2"]
+
+    def resolve(self):
+        try:
+            v1 = self.var1().resolve()
+        except StackDoesntExist:
+            return False
+
+        try:
+            v2 = self.var2().resolve()
+        except StackDoesntExist:
+            return False
+
+        return v1 and v2 and v1 == v2
 

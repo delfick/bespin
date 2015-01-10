@@ -46,6 +46,6 @@ class Credentials(object):
     def iam(self):
         return boto.iam.connect_to_region(self.region)
 
-    def cloudformation(self, stack, region):
-        return Cloudformation(stack, region)
+    def cloudformation(self, stack_name, region):
+        return Cloudformation(stack_name, region)
 

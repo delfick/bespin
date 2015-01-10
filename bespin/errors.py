@@ -44,6 +44,9 @@ class BadResult(BespinError):
 class BadAmazon(BespinError):
     desc = "Amazon says no"
 
+class StackDoesntExist(BadAmazon):
+    desc = "Missing stack"
+
 class UserQuit(BespinError):
     desc = "User quit the program"
 

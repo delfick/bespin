@@ -1,13 +1,13 @@
+from bespin.errors import BadAmazon, StackDoesntExist
 from bespin.helpers import memoized_property
 from bespin.amazon.mixin import AmazonMixin
-from bespin.errors import BadAmazon
 
 import boto.cloudformation
 
 class Cloudformation(object, AmazonMixin):
-    def __init__(self, stack, region):
-        self.stack = stack
+    def __init__(self, stack_name, region):
         self.region = region
+        self.stack_name = stack_name
 
     @memoized_property
     def conn(self):
@@ -16,11 +16,8 @@ class Cloudformation(object, AmazonMixin):
     def description(self, force=False):
         """Get the descriptions for the stack"""
         if not getattr(self, "_description", None) or force:
-            try:
-                with self.catch_boto_400("Couldn't find stack"):
-                    self._description = self.conn.describe_stacks(self.stack.stack_name)[0]
-            except BadAmazon:
-                self._description = None
+            with self.catch_boto_400(StackDoesntExist, "Couldn't find stack"):
+                self._description = self.conn.describe_stacks(self.stack_name)[0]
         return self._description
 
     @property

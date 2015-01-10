@@ -92,6 +92,8 @@ class BespinSpec(object):
 
             , vars = dictof(string_spec(), stack_specs.var_spec())
 
+            , skip_update_if_equivalent = listof(stack_specs.skipper_spec())
+
             , artifacts = dictof(string_spec(), create_spec(artifact_objs.Artifact
                 , compression_type = string_choice_spec(["gz", "xz"])
                 , history_length = integer_spec()
