@@ -6,7 +6,7 @@ import boto
 
 log = logging.getLogger("bespin.amazon.mixin")
 
-class AmazonMixin:
+class AmazonMixin(object):
     @contextmanager
     def catch_boto_400(self, errorkls, message, **info):
         """Turn a BotoServerError 400 into a BadAmazon"""

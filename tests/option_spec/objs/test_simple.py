@@ -19,16 +19,14 @@ describe BespinCase, "Static Variable":
 describe BespinCase, "Dynamic Variable":
     describe "resolve":
         it "asks the stack to resolve the output":
+            output = mock.Mock(name="output")
             resolved = mock.Mock(name="resolved")
 
             stack = mock.Mock(name="stack")
-            stack.resolve_output.return_value = resolved
+            stack.cloudformation = mock.Mock(name="cloudformation", outputs={output: resolved})
 
-            output = mock.Mock(name="output")
             var = objs.DynamicVariable(stack, output)
-
             self.assertIs(var.resolve(), resolved)
-            stack.resolve_output.assert_called_once_with(output)
 
 describe BespinCase, "Environment":
     before_each:

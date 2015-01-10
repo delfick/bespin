@@ -4,7 +4,7 @@ from bespin.amazon.mixin import AmazonMixin
 
 import boto.cloudformation
 
-class Cloudformation(object, AmazonMixin):
+class Cloudformation(AmazonMixin):
     def __init__(self, stack_name, region):
         self.region = region
         self.stack_name = stack_name
