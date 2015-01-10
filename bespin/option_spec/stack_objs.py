@@ -1,5 +1,6 @@
 from bespin.errors import MissingOutput, BadOption
 from bespin.errors import StackDoesntExist
+from bespin import helpers as hp
 
 from input_algorithms.dictobj import dictobj
 import logging
@@ -77,6 +78,23 @@ class Stack(dictobj):
 
     def create_or_update(self):
         log.info("Creating or updating the stack (%s)", self.stack_name)
+        status = self.cloudformation.status
+        if status.failed:
+            raise BadStack("Stack is in a failed state, it must be deleted first", name=self.stack_name, status=status)
+
+        for _ in hp.until(timeout=500, step=2):
+            if status.exists and not status.complete:
+                log.info("Waiting for %s - %s", self.stack_name, status.name)
+                status = self.cloudformation.status
+            else:
+                break
+
+        if not status.exists:
+            log.info("No existing stack, making one now")
+        elif status.complete:
+            log.info("Found existing stack, doing an update")
+        else:
+            raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
 
 class StaticVariable(dictobj):
     fields = ["value"]
