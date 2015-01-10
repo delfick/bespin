@@ -41,6 +41,9 @@ class BadYaml(BespinError):
 class BadResult(BespinError):
     desc = "A bad result"
 
+class BadAmazon(BespinError):
+    desc = "Amazon says no"
+
 class UserQuit(BespinError):
     desc = "User quit the program"
 

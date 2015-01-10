@@ -4,6 +4,7 @@ from bespin.layers import Layers
 from bespin import helpers as hp
 
 import logging
+import json
 import os
 
 log = logging.getLogger("bespin.actions.builder")
@@ -21,7 +22,7 @@ class Builder(object):
 
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
-                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True)
+                self.deploy_stack(stacks[dependency], stacks, credentials, made=made, ignore_deps=True)
 
         # Should have all our dependencies now
         log.info("Making stack for '%s' (%s)", stack.name, stack.stack_name)
@@ -30,7 +31,7 @@ class Builder(object):
 
         if any(stack.build_after):
             for dependency in stack.build_after:
-                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True)
+                self.deploy_stack(stacks[dependency], stacks, credentials, made=made, ignore_deps=True)
 
     def layered(self, stacks, only_pushable=False):
         """Yield layers of stacks"""
@@ -45,7 +46,7 @@ class Builder(object):
 
     def build_stack(self, stack):
         print("Building - {0}".format(stack.stack_name))
-        print(stack.params_json_obj)
+        print(json.dumps(stack.params_json_obj, indent=4))
 
     def find_missing_build_env(self, stack):
         for artifact in stack.artifacts.values():

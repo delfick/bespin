@@ -43,16 +43,16 @@ class Stack(dictobj):
             raise BadOption("Some environment variables aren't in the current environment", missing=missing)
 
     def resolve_output(self, output_name):
-        outputs = self.outputs
-        if output_name not in self.outputs:
+        outputs = self.cloudformation.outputs
+        if output_name not in outputs:
             raise MissingOutput(wanted=output_name, available=outputs.keys())
-        return self.outputs[output_name]
+        return outputs[output_name]
 
     @property
-    def outputs(self):
-        if not hasattr(self, "_outputs"):
-            self._outputs = {}
-        return self._outputs
+    def cloudformation(self):
+        if not hasattr(self, "_cloudformation"):
+            self._cloudformation = self.bespin.credentials.cloudformation(self, self.bespin.region)
+        return self._cloudformation
 
     @property
     def params_json_obj(self):

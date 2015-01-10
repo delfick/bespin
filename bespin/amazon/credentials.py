@@ -1,8 +1,9 @@
+from bespin.amazon.cloudformation import Cloudformation
 from bespin.helpers import memoized_property
 from bespin.errors import BespinError
 
-from boto.iam.connection import IAMConnection
-from boto.s3.connection import S3Connection
+import boto.iam
+import boto.s3
 
 import logging
 import boto
@@ -10,6 +11,9 @@ import boto
 log = logging.getLogger("iam_syncr.amazon")
 
 class Credentials(object):
+    def __init__(self, region):
+        self.region = region
+
     def verify_creds(self, account_id):
         """Make sure our current credentials are for this account and set self.connection"""
         log.info("Verifying amazon credentials")
@@ -36,9 +40,12 @@ class Credentials(object):
 
     @memoized_property
     def s3(self):
-        return S3Connection()
+        return boto.s3.connect_to_region(self.region)
 
     @memoized_property
     def iam(self):
-        return IAMConnection()
+        return boto.iam.connect_to_region(self.region)
+
+    def cloudformation(self, stack, region):
+        return Cloudformation(stack, region)
 
