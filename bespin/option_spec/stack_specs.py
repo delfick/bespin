@@ -63,3 +63,10 @@ class skipper_spec(many_item_formatted_spec):
     def create_result(self, var1, var2, meta, val, dividers):
         return Skipper(var1, var2)
 
+params_json_spec = lambda: sb.listof(sb.set_options(ParameterKey=sb.any_spec(), ParameterValue=sb.any_spec()))
+stack_json_spec = lambda: sb.set_options(
+      Resources = sb.required(sb.dictof(sb.string_spec(), sb.set_options(Type=sb.required(sb.string_spec()), Properties=sb.optional_spec(sb.dictionary_spec()))))
+    , Parameters = sb.optional_spec(sb.dictof(sb.string_spec(), sb.dictionary_spec()))
+    , Outputs = sb.optional_spec(sb.dictof(sb.string_spec(), sb.dictionary_spec()))
+    )
+

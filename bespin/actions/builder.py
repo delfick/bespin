@@ -1,8 +1,10 @@
 from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3
+from bespin.option_spec import stack_specs
 from bespin.errors import NoSuchStack
 from bespin.layers import Layers
 from bespin import helpers as hp
 
+from input_algorithms.meta import Meta
 import logging
 import json
 import os
@@ -10,7 +12,7 @@ import os
 log = logging.getLogger("bespin.actions.builder")
 
 class Builder(object):
-    def check_env(self, stack, stacks, ignore_deps=False, checked=None):
+    def sanity_check(self, stack, stacks, ignore_deps=False, checked=None):
         """Check for missing environment variables in all the stacks"""
         if checked is None:
             checked = []
@@ -19,17 +21,21 @@ class Builder(object):
             return
 
         stack.find_missing_env()
+        stack_specs.stack_json_spec().normalise(Meta({}, []), stack.stack_json_obj)
+        if stack.params_json_obj:
+            stack_specs.params_json_spec().normalise(Meta({}, []), stack.params_json_obj)
+
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
-                self.check_env(stacks[dependency], stacks, ignore_deps, checked + [stack.stack_name])
+                self.sanity_check(stacks[dependency], stacks, ignore_deps, checked + [stack.stack_name])
 
         if any(stack.build_after):
             for dependency in stack.build_after:
-                self.check_env(stacks[dependency], stacks, ignore_deps, checked + [stack.stack_name])
+                self.sanity_check(stacks[dependency], stacks, ignore_deps, checked + [stack.stack_name])
 
     def deploy_stack(self, stack, stacks, credentials, made=None, ignore_deps=False):
         """Make us an stack"""
-        self.check_env(stack, stacks, ignore_deps=ignore_deps)
+        self.sanity_check(stack, stacks, ignore_deps=ignore_deps)
 
         made = made or {}
 
