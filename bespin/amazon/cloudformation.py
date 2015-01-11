@@ -21,13 +21,13 @@ class StatusMeta(object):
 
 class Status(object):
     exists = True
+    statuses = {}
 
     @classmethod
     def find(kls, name):
-        for cls in Status.__subclasses__():
-            if cls.name == name:
-                return cls
-        return type(name.encode('utf-8'), (Status, ), {})
+        if name in kls.statuses:
+            return kls.statuses[name]
+        return six.add_metaclass(StatusMeta)(type(name, (Status, ), {}))
 
 class NONEXISTANT(Status):
     exists = False
@@ -53,7 +53,9 @@ class UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS(Status): pass
 class UPDATE_ROLLBACK_COMPLETE(Status): pass
 
 for kls in [Status] + Status.__subclasses__():
-    locals()[kls.__name__] = six.add_metaclass(StatusMeta)(kls)
+    with_meta = six.add_metaclass(StatusMeta)(kls)
+    locals()[kls.__name__] = with_meta
+    Status.statuses[kls.__name__] = with_meta
 
 class Cloudformation(AmazonMixin):
     def __init__(self, stack_name, region):
