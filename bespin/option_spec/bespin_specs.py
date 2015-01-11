@@ -7,7 +7,7 @@ The specifications are responsible for sanitation, validation and normalisation.
 
 from input_algorithms.spec_base import (
       formatted, defaulted, any_spec, dictionary_spec, dictof, listof, required
-    , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec
+    , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec, or_spec
     , valid_string_spec, create_spec, string_choice_spec, filename_spec as orig_filename_spec
     )
 
@@ -66,7 +66,7 @@ class BespinSpec(object):
         return dictof(
               string_spec()
             , create_spec(Environment
-                , account_id = required(valid_string_spec(validators.regexed("\d+")))
+                , account_id = required(or_spec(integer_spec(), valid_string_spec(validators.regexed("\d+"))))
                 , vars = dictionary_spec()
                 )
             )
