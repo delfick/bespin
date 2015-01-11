@@ -134,6 +134,9 @@ class Overview(object):
                 errors.append(error)
                 continue
 
+            if not result:
+                continue
+
             result["mtime"] = make_mtime_func(source)
 
             if "stacks" in result:
