@@ -15,7 +15,7 @@ class Stack(dictobj):
     fields = [
           "bespin", "name", "key_name", "environment", "stack_json", "params_json"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts"
-        , "skip_update_if_equivalent"
+        , "skip_update_if_equivalent", "tags"
         ]
 
     def dependencies(self, stacks):
@@ -96,7 +96,7 @@ class Stack(dictobj):
 
         if not status.exists:
             log.info("No existing stack, making one now")
-            self.cloudformation.create(self.stack_json_obj, self.params_json_obj, list(self.bespin.tags.items()) or None)
+            self.cloudformation.create(self.stack_json_obj, self.params_json_obj, self.tags.as_dict() or None)
         elif status.complete:
             log.info("Found existing stack, doing an update")
             self.cloudformation.update(self.stack_json_obj, self.params_json_obj)
