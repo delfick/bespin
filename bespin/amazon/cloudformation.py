@@ -1,9 +1,13 @@
-from bespin.helpers import memoized_property
+from bespin.errors import StackDoesntExist, BadStack
 from bespin.amazon.mixin import AmazonMixin
-from bespin.errors import StackDoesntExist
+from bespin import helpers as hp
 
 import boto.cloudformation
+import logging
+import json
 import six
+
+log = logging.getLogger("bespin.amazon.cloudformation")
 
 class StatusMeta(object):
     def __new__(cls, name, bases, attrs):
@@ -62,7 +66,7 @@ class Cloudformation(AmazonMixin):
         self.region = region
         self.stack_name = stack_name
 
-    @memoized_property
+    @hp.memoized_property
     def conn(self):
         return boto.cloudformation.connect_to_region(self.region)
 
@@ -84,8 +88,39 @@ class Cloudformation(AmazonMixin):
     @property
     def status(self):
         try:
-            description = self.description()
+            description = self.description(force=True)
             return Status.find(description.stack_status)
         except StackDoesntExist:
             return NONEXISTANT
+
+    def create(self, stack, params, tags):
+        log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
+        params = json.dumps(params) if params else None
+        self.conn.create_stack(self.stack_name, template_body=json.dumps(stack), parameters=params, tags=tags, capabilities=['CAPABILITY_IAM'])
+
+    def update(self, stack, params):
+        log.info("Updating stack (%s)", self.stack_name)
+        params = json.dumps(params) if params else None
+        with self.catch_boto_400(BadStack, "Couldn't update the stack", stack_name=self.stack_name):
+            try:
+                self.conn.update_stack(self.stack_name, template_body=json.dumps(stack), parameters=params, capabilities=['CAPABILITY_IAM'])
+            except boto.exception.BotoServerError as error:
+                if error.message == "No updates are to be performed.":
+                    log.info("No updates were necessary!")
+                else:
+                    raise
+
+    def wait(self, timeout=500):
+        status = self.status
+        if status.failed:
+            raise BadStack("Stack is in a failed state, it must be deleted first", name=self.stack_name, status=status)
+
+        for _ in hp.until(timeout=500, step=2):
+            log.info("Waiting for %s - %s", self.stack_name, status.name)
+            if status.exists and not status.complete:
+                status = self.status
+            else:
+                break
+
+        return status
 

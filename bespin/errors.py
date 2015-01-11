@@ -32,6 +32,9 @@ class BadStack(BespinError):
 class BadS3Bucket(BespinError):
     desc = "Bad S3 Bucket"
 
+class BadJson(BespinError):
+    desc = "Bad json"
+
 class FailedStack(BespinError):
     desc = "Something about an stack failed"
 

@@ -43,14 +43,23 @@ class Builder(object):
             for dependency in stack.dependencies(stacks):
                 self.deploy_stack(stacks[dependency], stacks, credentials, made=made, ignore_deps=True)
 
+            for dependency in stack.dependencies(stacks):
+                stacks[dependency].cloudformation.wait()
+
         # Should have all our dependencies now
         log.info("Making stack for '%s' (%s)", stack.name, stack.stack_name)
         self.build_stack(stack)
         made[stack.name] = True
 
         if any(stack.build_after):
+            stack.cloudformation.wait()
             for dependency in stack.build_after:
                 self.deploy_stack(stacks[dependency], stacks, credentials, made=made, ignore_deps=True)
+
+            for dependency in stack.build_after:
+                stacks[dependency].cloudformation.wait()
+
+        stack.cloudformation.wait()
 
     def layered(self, stacks, only_pushable=False):
         """Yield layers of stacks"""

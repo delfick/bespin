@@ -29,7 +29,7 @@ class filename_spec(orig_filename_spec):
         return super(filename_spec, self).normalise_filled(meta, val)
 
 class Bespin(dictobj):
-    fields = ["dry_run", "flat", "config", "chosen_stack", "chosen_task", "extra", "interactive", "region", "environment"]
+    fields = ["dry_run", "flat", "config", "chosen_stack", "chosen_task", "extra", "interactive", "region", "environment", "tags"]
 
 class Environment(dictobj):
     fields = ["account_id", "vars"]
@@ -116,6 +116,8 @@ class BespinSpec(object):
 
         return create_spec(Bespin
             , config = file_spec()
+
+            , tags = dictionary_spec()
 
             , dry_run = defaulted(boolean(), False)
             , flat = defaulted(boolean(), False)

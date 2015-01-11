@@ -1,4 +1,4 @@
-from bespin.errors import MissingOutput, BadOption, BadStack
+from bespin.errors import MissingOutput, BadOption, BadStack, BadJson
 from bespin.errors import StackDoesntExist
 from bespin import helpers as hp
 
@@ -58,7 +58,7 @@ class Stack(dictobj):
     @property
     def params_json_obj(self):
         if self.params_json is NotSpecified:
-            return {}
+            return None
 
         with open(self.params_json) as fle:
             params = fle.read()
@@ -71,7 +71,17 @@ class Stack(dictobj):
                         value = value.resolve()
                     params = params.replace(key, value)
 
-        return json.loads(params)
+        try:
+            return json.loads(params)
+        except ValueError as error:
+            raise BadJson("Couldn't parse the parameters", filename=self.params_json, stack=self.key_name, error=error)
+
+    @hp.memoized_property
+    def stack_json_obj(self):
+        try:
+            return json.load(open(self.stack_json))
+        except ValueError as error:
+            raise BadJson("Couldn't parse the stack", filename=self.stack_json, stack=self.key_name, error=error)
 
     @property
     def artifact_vars(self):
@@ -82,21 +92,14 @@ class Stack(dictobj):
 
     def create_or_update(self):
         log.info("Creating or updating the stack (%s)", self.stack_name)
-        status = self.cloudformation.status
-        if status.failed:
-            raise BadStack("Stack is in a failed state, it must be deleted first", name=self.stack_name, status=status)
-
-        for _ in hp.until(timeout=500, step=2):
-            if status.exists and not status.complete:
-                log.info("Waiting for %s - %s", self.stack_name, status.name)
-                status = self.cloudformation.status
-            else:
-                break
+        status = self.cloudformation.wait()
 
         if not status.exists:
             log.info("No existing stack, making one now")
+            self.cloudformation.create(self.stack_json_obj, self.params_json_obj, list(self.bespin.tags.items()) or None)
         elif status.complete:
             log.info("Found existing stack, doing an update")
+            self.cloudformation.update(self.stack_json_obj, self.params_json_obj)
         else:
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
 
