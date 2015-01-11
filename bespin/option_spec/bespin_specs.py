@@ -85,7 +85,7 @@ class BespinSpec(object):
             , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
 
             , stack_json = filename_spec(formatted(defaulted(string_spec(), "{config_root}/{_key_name_1}.json"), formatter=MergedOptionStringFormatter))
-            , params_json = filename_spec(formatted(defaulted(string_spec(), "{config_root}/{environment}/{_key_name_1}-params.json"), formatter=MergedOptionStringFormatter))
+            , params_json = optional_spec(filename_spec(formatted(defaulted(string_spec(), "{config_root}/{environment}/{_key_name_1}-params.json"), formatter=MergedOptionStringFormatter)))
 
             , build_after = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , ignore_deps = defaulted(boolean(), False)

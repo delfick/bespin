@@ -2,6 +2,7 @@ from bespin.errors import MissingOutput, BadOption
 from bespin.errors import StackDoesntExist
 from bespin import helpers as hp
 
+from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
 import logging
 import json
@@ -56,6 +57,9 @@ class Stack(dictobj):
 
     @property
     def params_json_obj(self):
+        if self.params_json is NotSpecified:
+            return {}
+
         with open(self.params_json) as fle:
             params = fle.read()
 
