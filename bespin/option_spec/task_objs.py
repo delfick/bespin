@@ -57,8 +57,7 @@ class Task(dictobj):
 
         credentials = None
         if task_func.needs_credentials:
-            credentials = Credentials(configuration["bespin"].region)
-            credentials.verify_creds(configuration["environments"][environment].account_id)
+            credentials = Credentials(configuration["bespin"].region, configuration["environments"][environment].account_id)
             configuration["bespin"].credentials = credentials
 
         return task_func(overview, configuration, stacks=stacks, stack=stack, credentials=credentials)
