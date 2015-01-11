@@ -10,7 +10,6 @@ from bespin.errors import BadOption
 
 from input_algorithms.dictobj import dictobj
 from option_merge import MergedOptions
-import os
 
 class Task(dictobj):
     """

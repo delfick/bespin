@@ -2,8 +2,6 @@
 We define a custom spec type here for interpreting list specifications.
 """
 
-from input_algorithms import spec_base as sb
-
 from input_algorithms.spec_base import NotSpecified, Spec, formatted
 from input_algorithms.errors import BadSpecValue
 import six

@@ -1,4 +1,4 @@
-from bespin.errors import MissingOutput, BadOption
+from bespin.errors import MissingOutput, BadOption, BadStack
 from bespin.errors import StackDoesntExist
 from bespin import helpers as hp
 

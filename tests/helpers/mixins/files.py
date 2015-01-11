@@ -3,7 +3,6 @@ import tempfile
 import tarfile
 import shutil
 import uuid
-import sys
 import six
 import os
 

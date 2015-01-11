@@ -1,5 +1,3 @@
-from bespin.errors import BadAmazon
-
 from contextlib import contextmanager
 import logging
 import boto

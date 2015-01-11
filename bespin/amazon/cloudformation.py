@@ -1,6 +1,6 @@
-from bespin.errors import BadAmazon, StackDoesntExist
 from bespin.helpers import memoized_property
 from bespin.amazon.mixin import AmazonMixin
+from bespin.errors import StackDoesntExist
 
 import boto.cloudformation
 
@@ -99,5 +99,5 @@ class Cloudformation(AmazonMixin):
             description = self.description()
             return Status.find(description.stack_status)
         except StackDoesntExist:
-            return NonExistant
+            return NONEXISTANT
 
