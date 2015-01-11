@@ -3,6 +3,7 @@ from bespin.amazon.mixin import AmazonMixin
 from bespin.errors import StackDoesntExist
 
 import boto.cloudformation
+import six
 
 class StatusMeta(object):
     def __new__(cls, name, bases, attrs):
@@ -20,7 +21,6 @@ class StatusMeta(object):
 
 class Status(object):
     exists = True
-    __metaclass__ = StatusMeta
 
     @classmethod
     def find(kls, name):
@@ -31,43 +31,29 @@ class Status(object):
 
 class NONEXISTANT(Status):
     exists = False
-    __metaclass__ = StatusMeta
 
-class CREATE_IN_PROGRESS(Status):
-    __metaclass__ = StatusMeta
-class CREATE_FAILED(Status):
-    __metaclass__ = StatusMeta
-class CREATE_COMPLETE(Status):
-    __metaclass__ = StatusMeta
+class CREATE_IN_PROGRESS(Status): pass
+class CREATE_FAILED(Status): pass
+class CREATE_COMPLETE(Status): pass
 
-class ROLLBACK_IN_PROGRESS(Status):
-    __metaclass__ = StatusMeta
-class ROLLBACK_FAILED(Status):
-    __metaclass__ = StatusMeta
-class ROLLBACK_COMPLETE(Status):
-    __metaclass__ = StatusMeta
+class ROLLBACK_IN_PROGRESS(Status): pass
+class ROLLBACK_FAILED(Status): pass
+class ROLLBACK_COMPLETE(Status): pass
 
-class DELETE_IN_PROGRESS(Status):
-    __metaclass__ = StatusMeta
-class DELETE_FAILED(Status):
-    __metaclass__ = StatusMeta
-class DELETE_COMPLETE(Status):
-    __metaclass__ = StatusMeta
+class DELETE_IN_PROGRESS(Status): pass
+class DELETE_FAILED(Status): pass
+class DELETE_COMPLETE(Status): pass
 
-class UPDATE_IN_PROGRESS(Status):
-    __metaclass__ = StatusMeta
-class UPDATE_COMPLETE_CLEANUP_IN_PROGRESS(Status):
-    __metaclass__ = StatusMeta
-class UPDATE_COMPLETE(Status):
-    __metaclass__ = StatusMeta
-class UPDATE_ROLLBACK_IN_PROGRESS(Status):
-    __metaclass__ = StatusMeta
-class UPDATE_ROLLBACK_FAILED(Status):
-    __metaclass__ = StatusMeta
-class UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS(Status):
-    __metaclass__ = StatusMeta
-class UPDATE_ROLLBACK_COMPLETE(Status):
-    __metaclass__ = StatusMeta
+class UPDATE_IN_PROGRESS(Status): pass
+class UPDATE_COMPLETE_CLEANUP_IN_PROGRESS(Status): pass
+class UPDATE_COMPLETE(Status): pass
+class UPDATE_ROLLBACK_IN_PROGRESS(Status): pass
+class UPDATE_ROLLBACK_FAILED(Status): pass
+class UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS(Status): pass
+class UPDATE_ROLLBACK_COMPLETE(Status): pass
+
+for kls in [Status] + Status.__subclasses__():
+    locals()[kls.__name__] = six.add_metaclass(StatusMeta)(kls)
 
 class Cloudformation(AmazonMixin):
     def __init__(self, stack_name, region):
