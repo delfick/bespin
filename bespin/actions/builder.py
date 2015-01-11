@@ -20,6 +20,7 @@ class Builder(object):
         if stack.stack_name in checked:
             return
 
+        log.info("Sanity checking %s", stack.key_name)
         stack.find_missing_env()
         stack_specs.stack_json_spec().normalise(Meta({}, []), stack.stack_json_obj)
         if stack.params_json_obj:

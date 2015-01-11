@@ -67,10 +67,17 @@ def deploy(overview, configuration, stacks, stack, credentials, **kwargs):
 
 @a_task(needs_stack=True, needs_credentials=True)
 def publish_artifacts(overview, configuration, stacks, stack, credentials, **kwargs):
-    """Deploy a particular stack"""
+    """Build and publish an artifact"""
     Builder().publish_artifacts(stack, credentials)
 
 @a_task(needs_stack=True, needs_credentials=True)
 def clean_old_artifacts(overview, configuration, stacks, stack, credentials, **kwargs):
-    """Deploy a particular stack"""
+    """Cleanup old artifacts"""
     Builder().clean_old_artifacts(stack, credentials)
+
+@a_task(needs_stack=True)
+def sanity_check(overview, configuration, stacks, stack, **kwargs):
+    """Sanity check a stack and it's dependencies"""
+    Builder().sanity_check(stack, stacks)
+    log.info("All the stacks are sane!")
+
