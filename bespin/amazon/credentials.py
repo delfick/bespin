@@ -54,6 +54,10 @@ class Credentials(object):
     def assume(self):
         log.info("Assuming role as aws:arn:iam::%s:%s", self.account_id, self.assume_role)
 
+        for name in ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SECURITY_TOKEN', 'AWS_SESSION_TOKEN']:
+            if name in os.environ and not os.environ[name]:
+                del os.environ[name]
+
         try:
             conn = boto.sts.connect_to_region(self.region)
         except boto.exception.NoAuthHandlerFound:
