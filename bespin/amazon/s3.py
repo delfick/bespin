@@ -4,13 +4,14 @@ from six.moves.urllib.parse import urlparse
 from contextlib import contextmanager
 from collections import namedtuple
 from six import StringIO
+from filechunkio import FileChunkIO
 import logging
 import boto
 import math
 import sys
 import os
 
-log = logging.getLogger("bespin.helpers")
+log = logging.getLogger("bespin.amazon.s3")
 
 S3Location = namedtuple("S3Location", ["bucket", "key", "full"])
 
@@ -79,9 +80,22 @@ def upload_file_to_s3(credentials, source_filename, destination_path):
     try:
         with a_multipart_upload(bucket, destination_file.key) as mp:
             for i in range(chunk_count + 1):
-                nxt = source_file.read(chunk)
-                log.info("Uploading chunk %s", i + 1)
-                mp.upload_part_from_file(StringIO(nxt), part_num=i + 1)
+                offset = chunk * i
+                next_offset = chunk * (i + 1)
+
+                bytes = chunk
+
+                # Check if the next offset will be less than a chunk, if so include that with this run
+                if source_size - next_offset < chunk:
+                    bytes = chunk + (source_size - next_offset)
+
+                # Check if we have a valid chunk size, if not we have finished
+                if bytes < chunk:
+                    break
+
+                with FileChunkIO(source, 'r', offset=offset, bytes=bytes) as fp:
+                    log.info("Uploading chunk %s which is %s in size", i, bytes)
+                    mp.upload_part_from_file(fp, part_num=i + 1)
     except boto.exception.S3ResponseError as error:
         if error.status is 403:
             log.error("Seems you are unable to edit this location :(")

@@ -17,6 +17,7 @@ setup(
       , "boto==2.34.0"
       , "pyYaml==3.10"
       , "rainbow_logging_handler==2.2.2"
+      , "FileChunkIO==1.6"
       ]
 
     , extras_require =

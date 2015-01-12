@@ -4,6 +4,8 @@ from bespin.errors import BadOption
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
 
+from tarfile import TarInfo
+import codecs
 import os
 
 class Artifact(dictobj):
@@ -31,7 +33,8 @@ class ArtifactPath(dictobj):
     def add_to_tar(self, tar, environment):
         """Add everything in this ArtifactPath to the tar"""
         for full_path, tar_path in self:
-            tar.add(full_path, tar_path)
+            print(full_path)
+            tar.addfile(TarInfo(tar_path), fileobj=codecs.open(full_path.encode('utf-8'), encoding='utf-8'))
 
     def __iter__(self):
         """Iterate over the files in our host_path and yield (full_path, tar_path)"""
@@ -52,5 +55,5 @@ class ArtifactFile(dictobj):
         with a_temp_file() as f:
             f.write(self.content.format(**environment).encode('utf-8'))
             f.close()
-            tar.add(f.name, self.path)
+            tar.add(f.name.encode('utf-8'), self.path)
 
