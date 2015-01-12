@@ -32,7 +32,7 @@ class Credentials(object):
             connection = boto.iam.connect_to_region(self.region)
         except boto.exception.NoAuthHandlerFound:
             raise BespinError("Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY before running this script (your aws credentials)")
-        
+
         try:
             result = connection.list_roles()
         except boto.exception.BotoServerError as error:

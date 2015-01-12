@@ -63,7 +63,7 @@ def delete_key_from_s3(credentials, key, dry_run):
         key.delete()
 
 def upload_file_to_s3(credentials, source_filename, destination_path):
-    source_file = open(source_filename, 'r')
+    source_file = open(source_filename, 'r', encoding='utf-16')
     destination_file = s3_location(destination_path)
 
     source = os.path.abspath(source_file.name)
