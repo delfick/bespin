@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from collections import namedtuple
 from six import StringIO
 from filechunkio import FileChunkIO
+import humanize
 import logging
 import boto
 import math
@@ -69,32 +70,31 @@ def upload_file_to_s3(credentials, source_filename, destination_path):
 
     source = os.path.abspath(source_file.name)
     source_size = os.stat(source).st_size
-    log.info("Uploading from %s (%sb) to %s", source, source_size, destination_file.full)
+    log.info("Uploading from %s (%s) to %s", source, humanize.naturalsize(source_size), destination_file.full)
 
     bucket = get_bucket(credentials, destination_file.bucket)
 
-    chunk = 5242880
-    chunk_count = int(math.ceil(source_size / chunk))
-    log.info("Uploading %s chunks", chunk_count + 1)
+    chunk = 5242881
+    chunk_count = 0
+
+    offset = 0
+    offsets = []
+    while offset < source_size:
+        offsets.append(offset)
+        if source_size - offset < chunk:
+            break
+        offset += chunk
+    offsets.append(source_size+1)
+    log.info("Uploading %s chunks", len(offsets) - 1)
 
     try:
         with a_multipart_upload(bucket, destination_file.key) as mp:
-            for i in range(chunk_count + 1):
-                offset = chunk * i
-                next_offset = chunk * (i + 1)
+            for i in range(0, len(offsets)-1):
+                first, last = offsets[i], offsets[i+1]-1
+                bytes_size = last - first
 
-                bytes = chunk
-
-                # Check if the next offset will be less than a chunk, if so include that with this run
-                if source_size - next_offset < chunk:
-                    bytes = chunk + (source_size - next_offset)
-
-                # Check if we have a valid chunk size, if not we have finished
-                if bytes < chunk:
-                    break
-
-                with FileChunkIO(source, 'r', offset=offset, bytes=bytes) as fp:
-                    log.info("Uploading chunk %s which is %s in size", i, bytes)
+                with FileChunkIO(source, 'r', offset=first, bytes=bytes_size) as fp:
+                    log.info("Uploading chunk %s (%s)", i+1, humanize.naturalsize(bytes_size))
                     mp.upload_part_from_file(fp, part_num=i + 1)
     except boto.exception.S3ResponseError as error:
         if error.status is 403:

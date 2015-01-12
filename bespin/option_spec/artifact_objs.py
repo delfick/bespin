@@ -34,7 +34,7 @@ class ArtifactPath(dictobj):
         """Add everything in this ArtifactPath to the tar"""
         for full_path, tar_path in self:
             print(tar_path)
-            tar.addfile(TarInfo(tar_path), fileobj=codecs.open(full_path.encode('utf-8'), encoding='utf-8'))
+            tar.add(full_path, tar_path)
 
     def __iter__(self):
         """Iterate over the files in our host_path and yield (full_path, tar_path)"""
@@ -56,5 +56,5 @@ class ArtifactFile(dictobj):
             f.write(self.content.format(**environment).encode('utf-8'))
             f.close()
             print(self.path)
-            tar.add(f.name.encode('utf-8'), self.path)
+            tar.add(f.name, self.path)
 
