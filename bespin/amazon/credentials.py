@@ -54,7 +54,11 @@ class Credentials(object):
     def assume(self):
         log.info("Assuming role as aws:arn:iam::%s:%s", self.account_id, self.assume_role)
 
-        conn = boto.sts.connect_to_region(self.region)
+        try:
+            conn = boto.sts.connect_to_region(self.region)
+        except boto.exception.NoAuthHandlerFound:
+            raise BespinError("Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY before running this script (your aws credentials)")
+
         creds = conn.assume_role("arn:aws:iam::{0}:{1}".format(self.account_id, self.assume_role), "bespin")
         creds_dict = creds.credentials.to_dict()
 
