@@ -5,6 +5,8 @@ from bespin.errors import BespinError
 import boto.sts
 import boto.iam
 import boto.s3
+import boto.ec2
+import boto.ec2.autoscale
 
 from input_algorithms.spec_base import NotSpecified
 import logging
@@ -75,6 +77,16 @@ class Credentials(object):
     def s3(self):
         self.verify_creds()
         return boto.s3.connect_to_region(self.region)
+
+    @memoized_property
+    def ec2(self):
+        self.verify_creds()
+        return boto.ec2.connect_to_region(self.region)
+
+    @memoized_property
+    def autoscale(self):
+        self.verify_creds()
+        return boto.ec2.autoscale.connect_to_region(self.region)
 
     @memoized_property
     def iam(self):

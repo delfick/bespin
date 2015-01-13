@@ -3,14 +3,15 @@ from bespin.errors import BadS3Bucket
 from six.moves.urllib.parse import urlparse
 from contextlib import contextmanager
 from collections import namedtuple
-from six import StringIO
 from filechunkio import FileChunkIO
+
 import humanize
 import logging
 import boto
-import math
 import sys
 import os
+
+from boto.s3.key import Key
 
 log = logging.getLogger("bespin.amazon.s3")
 
@@ -104,3 +105,16 @@ def upload_file_to_s3(credentials, source_filename, destination_path):
             raise
 
     log.info("Finished uploading")
+
+
+def upload_file_to_s3_as_single(credentials, source_filename, destination_path):
+    destination_file = s3_location(destination_path)
+
+    source = os.path.abspath(source_filename)
+    source_size = os.stat(source).st_size
+    log.info("Uploading from %s (%s) to %s", source, humanize.naturalsize(source_size), destination_file.full)
+
+    bucket = get_bucket(credentials, destination_file.bucket)
+    key = Key(bucket)
+    key.name = destination_file.key
+    key.set_contents_from_filename(source_filename)

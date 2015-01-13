@@ -101,6 +101,7 @@ class BespinSpec(object):
                 , compression_type = string_choice_spec(["gz", "xz"])
                 , history_length = integer_spec()
                 , location_var_name = string_spec()
+                , version_message = formatted(string_spec(), formatter=MergedOptionStringFormatter)
                 , upload_to = formatted(string_spec(), formatter=MergedOptionStringFormatter)
                 , paths = listof(stack_specs.artifact_path_spec(), expect=artifact_objs.ArtifactPath)
                 , files = listof(create_spec(artifact_objs.ArtifactFile

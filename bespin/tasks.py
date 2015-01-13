@@ -75,6 +75,11 @@ def clean_old_artifacts(overview, configuration, stacks, stack, credentials, **k
     """Cleanup old artifacts"""
     Builder().clean_old_artifacts(stack, credentials)
 
+@a_task(needs_stack=True, needs_credentials=True)
+def confirm_deployment(overview, configuration, stacks, stack, credentials, **kwargs):
+    """Confirm deployment via SNS notification for each instance"""
+    Builder().confirm_deployment(stack, credentials)
+
 @a_task(needs_stack=True)
 def sanity_check(overview, configuration, stacks, stack, **kwargs):
     """Sanity check a stack and it's dependencies"""

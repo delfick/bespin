@@ -93,6 +93,10 @@ class Cloudformation(AmazonMixin):
         except StackDoesntExist:
             return NONEXISTANT
 
+    def map_logical_to_physical_resource_id(self, logical_id):
+        resource = self.conn.describe_stack_resource(stack_name_or_id=self.stack_name, logical_resource_id=logical_id)
+        return resource['DescribeStackResourceResponse']['DescribeStackResourceResult']['StackResourceDetail']["PhysicalResourceId"]
+
     def create(self, stack, params, tags):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
         params = json.dumps(params) if params else None

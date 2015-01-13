@@ -233,6 +233,7 @@ class Overview(object):
             , t("deploy", "Deploy a particular stack")
             , t("list_tasks", "List the available tasks")
             , t("clean_old_artifacts", "Cleans old artifacts from S3")
+            , t("confirm_deployment", "Checks all instances were correctly deployed to")
             , t("sanity_check", "Sanity check a stack and it's dependencies")
             , t("publish_artifacts", "Makes and uploads the artifacts for a stack to S3")
             ])

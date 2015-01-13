@@ -1,4 +1,5 @@
-from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3
+from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3, upload_file_to_s3_as_single
+from bespin.amazon.ec2 import get_instances_in_asg_by_lifecycle_state
 from bespin.option_spec import stack_specs
 from bespin.errors import NoSuchStack
 from bespin.layers import Layers
@@ -110,7 +111,23 @@ class Builder(object):
                 log.info("Finished generating artifact: {0}".format(key))
 
                 # Upload the artifact
-                upload_file_to_s3(credentials, temp_tar_file.name, artifact.upload_to.format(**environment))
+                upload_file_to_s3_as_single(credentials, temp_tar_file.name, artifact.upload_to.format(**environment))
+
+    def confirm_deployment(self, stack, credentials):
+        # Find missing env before doing anything
+        self.find_missing_build_env(stack)
+
+        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id("AppServerAutoScalingGroup")
+        instances = get_instances_in_asg_by_lifecycle_state(credentials, asg_physical_id, lifecycle_state="InService")
+
+        for instance in instances:
+            print(instance)
+
+        # Iterate over each artifact we need to clean
+        for key, artifact in stack.artifacts.items():
+            environment = dict(env.pair for env in artifact.build_env)
+            version_message = artifact.version_message.format(**environment)
+            log.info("All stacks have been confirmed to be deployed with version_message [%s]!", version_message)
 
     def clean_old_artifacts(self, stack, credentials):
         # Find missing env before doing anything

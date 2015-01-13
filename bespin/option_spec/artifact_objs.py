@@ -9,12 +9,14 @@ import codecs
 import os
 
 class Artifact(dictobj):
-    fields = ["compression_type", "history_length", "location_var_name", "upload_to", "paths", "files", "build_env"]
+    fields = ["compression_type", "history_length", "location_var_name", "upload_to", "paths", "files",
+              "version_message", "build_env"]
 
     @property
     def vars(self):
-        if self.upload_to is not NotSpecified and self.location_var_name is not NotSpecified:
-            yield (self.location_var_name, self.upload_to)
+        if self.upload_to is not NotSpecified and self.location_var_name is not NotSpecified \
+                and self.version_message is not NotSpecified:
+            yield (self.location_var_name, self.upload_to, self.version_message)
 
     def find_missing_env(self):
         """Find any missing environment variables"""
