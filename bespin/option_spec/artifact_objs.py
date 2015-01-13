@@ -13,9 +13,8 @@ class Artifact(dictobj):
 
     @property
     def vars(self):
-        if self.upload_to is not NotSpecified and self.location_var_name is not NotSpecified \
-                and self.version_message is not NotSpecified:
-            yield (self.location_var_name, self.upload_to, self.version_message)
+        if self.upload_to is not NotSpecified and self.location_var_name is not NotSpecified:
+            yield (self.location_var_name, self.upload_to)
 
     def find_missing_env(self):
         """Find any missing environment variables"""
