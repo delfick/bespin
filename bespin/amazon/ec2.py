@@ -2,7 +2,6 @@ import logging
 
 log = logging.getLogger("bespin.amazon.ec2")
 
-
 def get_instances_in_asg_by_lifecycle_state(credentials, asg_physical_id, lifecycle_state=None):
     instances = []
 

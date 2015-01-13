@@ -29,8 +29,13 @@ class filename_spec(orig_filename_spec):
         return super(filename_spec, self).normalise_filled(meta, val)
 
 class Bespin(dictobj):
-    fields = ["dry_run", "assume_role", "flat", "config", "chosen_stack", "chosen_task", "extra", "interactive",
-              "region", "environment"]
+    fields = [
+          "dry_run", "assume_role", "flat", "config", "chosen_stack"
+        , "region", "environment", "chosen_task", "extra", "interactive"
+        ]
+
+class SNSConfirmation(dictobj):
+    fields = ["version_message", "env", "straight_after", "autoscaling_group_id"]
 
 class Environment(dictobj):
     fields = ["account_id", "vars"]
@@ -97,11 +102,17 @@ class BespinSpec(object):
 
             , skip_update_if_equivalent = listof(stack_specs.skipper_spec())
 
+            , sns_confirmation = optional_spec(create_spec(SNSConfirmation
+                , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
+                , version_message = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , autoscaling_group_id = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , straight_after = defaulted(formatted(boolean(), MergedOptionStringFormatter, expected_type=bool), True)
+                ))
+
             , artifacts = dictof(string_spec(), create_spec(artifact_objs.Artifact
                 , compression_type = string_choice_spec(["gz", "xz"])
                 , history_length = integer_spec()
                 , location_var_name = string_spec()
-                , version_message = formatted(string_spec(), formatter=MergedOptionStringFormatter)
                 , upload_to = formatted(string_spec(), formatter=MergedOptionStringFormatter)
                 , paths = listof(stack_specs.artifact_path_spec(), expect=artifact_objs.ArtifactPath)
                 , files = listof(create_spec(artifact_objs.ArtifactFile

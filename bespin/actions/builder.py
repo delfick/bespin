@@ -59,6 +59,10 @@ class Builder(object):
         self.build_stack(stack)
         made[stack.name] = True
 
+        if stack.sns_confirmation is not NotSpecified and stack.sns_confirmation.straight_after:
+            stack.cloudformation.wait()
+            self.confirm_deployment(stack, credentials)
+
         if any(stack.build_after):
             stack.cloudformation.wait()
             for dependency in stack.build_after:
@@ -68,6 +72,8 @@ class Builder(object):
                 stacks[dependency].cloudformation.wait()
 
         stack.cloudformation.wait()
+        if stack.sns_confirmation is not NotSpecified and not stack.sns_confirmation.straight_after:
+            self.confirm_deployment(stack, credentials)
 
     def layered(self, stacks, only_pushable=False):
         """Yield layers of stacks"""
@@ -114,20 +120,17 @@ class Builder(object):
                 upload_file_to_s3_as_single(credentials, temp_tar_file.name, artifact.upload_to.format(**environment))
 
     def confirm_deployment(self, stack, credentials):
-        # Find missing env before doing anything
-        self.find_missing_build_env(stack)
-
-        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id("AppServerAutoScalingGroup")
+        autoscaling_group = stack.sns_confirmation.autoscaling_group_id
+        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
         instances = get_instances_in_asg_by_lifecycle_state(credentials, asg_physical_id, lifecycle_state="InService")
 
         for instance in instances:
             print(instance)
 
         # Iterate over each artifact we need to clean
-        for key, artifact in stack.artifacts.items():
-            environment = dict(env.pair for env in artifact.build_env)
-            version_message = artifact.version_message.format(**environment)
-            log.info("All stacks have been confirmed to be deployed with version_message [%s]!", version_message)
+        environment = dict(env.pair for env in stack.sns_confirmation.env)
+        version_message = stack.sns_confirmation.version_message.format(**environment)
+        log.info("All instances have been confirmed to be deployed with version_message [%s]!", version_message)
 
     def clean_old_artifacts(self, stack, credentials):
         # Find missing env before doing anything

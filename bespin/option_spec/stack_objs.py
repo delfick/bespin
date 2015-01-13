@@ -15,7 +15,7 @@ class Stack(dictobj):
     fields = [
           "bespin", "name", "key_name", "environment", "stack_json", "params_json"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts"
-        , "skip_update_if_equivalent", "tags"
+        , "skip_update_if_equivalent", "tags", "sns_confirmation"
         ]
 
     def dependencies(self, stacks):

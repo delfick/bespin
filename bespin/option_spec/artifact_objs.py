@@ -9,8 +9,7 @@ import codecs
 import os
 
 class Artifact(dictobj):
-    fields = ["compression_type", "history_length", "location_var_name", "upload_to", "paths", "files",
-              "version_message", "build_env"]
+    fields = ["compression_type", "history_length", "location_var_name", "upload_to", "paths", "files", "build_env"]
 
     @property
     def vars(self):
