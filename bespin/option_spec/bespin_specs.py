@@ -115,6 +115,7 @@ class BespinSpec(object):
                 , history_length = integer_spec()
                 , location_var_name = string_spec()
                 , upload_to = formatted(string_spec(), formatter=MergedOptionStringFormatter)
+                , commands = listof(stack_specs.artifact_command_spec(), expect=artifact_objs.ArtifactCommand)
                 , paths = listof(stack_specs.artifact_path_spec(), expect=artifact_objs.ArtifactPath)
                 , files = listof(create_spec(artifact_objs.ArtifactFile
                     , content = formatted(string_spec(), formatter=MergedOptionStringFormatter)

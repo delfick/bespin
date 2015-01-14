@@ -65,6 +65,12 @@ class StackDepCycle(BespinError):
 class MissingOutput(BespinError):
     desc = "Couldn't find an output"
 
+class MissingFile(BespinError):
+    desc = "Couldn't find a file"
+
+class CouldntKill(BespinError):
+    desc = "Failed to kill a process"
+
 class BadDirectory(BadSpecValue):
     desc = "Expected a path to a directory"
 

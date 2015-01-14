@@ -19,6 +19,7 @@ artifact_spec = sb.create_spec(Artifact
     , upload_to = optional_any()
     , paths = optional_any()
     , files = optional_any()
+    , commands = optional_any()
     , build_env = sb.listof(stack_specs.env_spec(), expect=stack_objs.Environment)
     )
 
@@ -79,7 +80,7 @@ describe BespinCase, "Artifact":
 
 describe BespinCase, "ArtifactPath":
     describe "add_to_tar":
-        it "adds everything from iterating itself to the tar":
+        it "adds everything from it's files method":
             called = []
             tar = mock.Mock(name="tar")
             tar.add.side_effect = lambda f, t: called.append((f, t))
@@ -90,12 +91,12 @@ describe BespinCase, "ArtifactPath":
             t2 = mock.Mock(name="t2")
 
             path = ArtifactPath(mock.Mock(name="host_path", spec=[]), mock.Mock(name="artifact_path", spec=[]))
-            with mock.patch.object(ArtifactPath, "__iter__", lambda s: iter([(f1, t1), (f2, t2)])):
+            with mock.patch.object(ArtifactPath, "files", lambda s, env: iter([(f1, t1), (f2, t2)])):
                 path.add_to_tar(tar, mock.Mock(name="environment", spec=[]))
 
             self.assertEqual(called, [(f1, t1), (f2, t2)])
 
-    describe "Yielding full path and tar path for all files under host_path in __iter__":
+    describe "Yielding full path and tar path for all files under host_path in files":
         before_each:
             self.root, self.folders = self.setup_directory(
                 { "one": {"two": {"three": {"four": "4", "four_sibling": "4s", ".gitignore": "ignored"}, "five": "5"}, "six": "6"}
@@ -105,7 +106,7 @@ describe BespinCase, "ArtifactPath":
 
         it "works with a folder containing only files":
             path = ArtifactPath(self.folders["one"]["two"]["three"]["/folder/"], "/stuff")
-            yielded = list(path)
+            yielded = list(path.files({}))
             self.assertEqual(sorted(yielded), sorted(
                 [ (self.folders["one"]["two"]["three"]["four"]["/file/"], "/stuff/four")
                 , (self.folders["one"]["two"]["three"]["four_sibling"]["/file/"], "/stuff/four_sibling")
@@ -115,7 +116,7 @@ describe BespinCase, "ArtifactPath":
 
         it "works with a folder containing nested folders":
             path = ArtifactPath(self.folders["one"]["/folder/"], "/stuff/blah")
-            yielded = list(path)
+            yielded = list(path.files({}))
             self.assertEqual(sorted(yielded), sorted(
                 [ (self.folders["one"]["two"]["three"]["four"]["/file/"], "/stuff/blah/two/three/four")
                 , (self.folders["one"]["two"]["three"]["four_sibling"]["/file/"], "/stuff/blah/two/three/four_sibling")

@@ -7,6 +7,7 @@ options.
 
 from bespin.option_spec.stack_objs import StaticVariable, DynamicVariable, Environment, Skipper
 from bespin.option_spec.specs import many_item_formatted_spec
+from bespin.option_spec.artifact_objs import ArtifactCommand
 from bespin.option_spec.artifact_objs import ArtifactPath
 from bespin.formatter import MergedOptionStringFormatter
 
@@ -62,6 +63,15 @@ class skipper_spec(many_item_formatted_spec):
 
     def create_result(self, var1, var2, meta, val, dividers):
         return Skipper(var1, var2)
+
+formatted_string = sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)
+
+artifact_command_spec = lambda : sb.create_spec(ArtifactCommand
+    , copy = sb.listof(artifact_path_spec())
+    , modify = sb.dictof(sb.string_spec(), sb.set_options(append=sb.listof(formatted_string)))
+    , command = formatted_string
+    , add_into_tar = sb.listof(artifact_path_spec())
+    )
 
 params_json_spec = lambda: sb.listof(sb.set_options(ParameterKey=sb.any_spec(), ParameterValue=sb.any_spec()))
 stack_json_spec = lambda: sb.set_options(
