@@ -124,7 +124,7 @@ class MergedOptionStringFormatter(string.Formatter):
 
     def get_field(self, value, args, kwargs, format_spec=None):
         """Also take the spec into account"""
-        if format_spec in ("env", ):
+        if format_spec in ("env", "underscored"):
             return value, ()
 
         if value in self.chain:
@@ -136,6 +136,9 @@ class MergedOptionStringFormatter(string.Formatter):
         """Know about any special formats"""
         if format_spec == "env":
             return "${{{0}}}".format(obj)
+        elif format_spec == "underscored":
+            return obj.replace("-", "_")
+
         if isinstance(obj, dict):
             return obj
         else:
