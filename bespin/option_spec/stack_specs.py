@@ -19,6 +19,7 @@ class var_spec(many_item_formatted_spec):
     specs = [sb.string_or_int_as_string_spec()]
     optional_specs = [sb.string_or_int_as_string_spec()]
     formatter = MergedOptionStringFormatter
+    seperators = "|"
 
     def create_result(self, variable, variable_value, meta, val, dividers):
         if variable_value is NotSpecified:
