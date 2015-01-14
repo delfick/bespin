@@ -73,7 +73,11 @@ artifact_command_spec = lambda : sb.create_spec(ArtifactCommand
     , add_into_tar = sb.listof(artifact_path_spec())
     )
 
-params_json_spec = lambda: sb.listof(sb.set_options(ParameterKey=sb.any_spec(), ParameterValue=sb.any_spec()))
+params_json_spec = lambda: sb.listof(sb.set_options(
+      ParameterKey = sb.required(sb.any_spec())
+    , ParameterValue = sb.required(sb.any_spec())
+    ))
+
 stack_json_spec = lambda: sb.set_options(
       Resources = sb.required(sb.dictof(sb.string_spec(), sb.set_options(Type=sb.required(sb.string_spec()), Properties=sb.optional_spec(sb.dictionary_spec()))))
     , Parameters = sb.optional_spec(sb.dictof(sb.string_spec(), sb.dictionary_spec()))
