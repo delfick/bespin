@@ -7,7 +7,7 @@ from tests.helpers import BespinCase
 describe BespinCase, "Status classes":
     it "have name equal to the class name":
         self.assertEqual(NONEXISTANT.name, "NONEXISTANT")
-        self.assertEqual(UPDATE_COMPLETE, "UPDATE_COMPLETE")
+        self.assertEqual(UPDATE_COMPLETE.name, "UPDATE_COMPLETE")
 
     it "have helpful properties":
         self.assertEqual(NONEXISTANT.exists, False)

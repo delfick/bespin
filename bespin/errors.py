@@ -56,6 +56,9 @@ class UserQuit(BespinError):
 class BadDockerConnection(BespinError):
     desc = "Failed to connect to docker"
 
+class BadSQSMessage(BespinError):
+    desc= "Failed to decode message"
+
 class StackDepCycle(BespinError):
     desc = "Stack dependency cycle"
 
@@ -67,6 +70,9 @@ class BadDirectory(BadSpecValue):
 
 class BadFilename(BadSpecValue):
     desc = "Expected a path to a filename"
+
+class BadDeployment(BespinError):
+    desc = "Failed to get all the correct deployment messages"
 
 class DeprecatedFeature(BadSpecValue):
     desc = "Feature is deprecated"
