@@ -237,6 +237,8 @@ class Overview(object):
             , t("sanity_check", "Sanity check a stack and it's dependencies")
             , t("print_artifact_location", "Shows where the artifact will be for this environment")
             , t("publish_artifacts", "Makes and uploads the artifacts for a stack to S3")
+            , t("resume_cloudformation_actions", "Suspends all schedule actions on a cloudformation stack")
+            , t("suspend_cloudformation_actions", "Resumes all schedule actions on a cloudformation stack")
             ])
 
     def find_tasks(self, configuration=None):

@@ -11,3 +11,9 @@ def get_instances_in_asg_by_lifecycle_state(credentials, asg_physical_id, lifecy
             instances.append(instance.instance_id)
 
     return instances
+
+def resume_processes(credentials, asg_physical_id):
+    credentials.autoscale.suspend_processes(asg_physical_id)
+
+def suspend_processes(credentials, asg_physical_id):
+    credentials.autoscale.suspend_processes(asg_physical_id)

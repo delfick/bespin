@@ -87,6 +87,16 @@ def print_artifact_location(overview, configuration, stacks, stack, credentials,
     """Shows where the artifact will be for this environment"""
     Builder().print_artifact_location(stack, artifact)
 
+@a_task(needs_stack=True, needs_credentials=True)
+def suspend_cloudformation_actions(overview, configuration, stacks, stack, credentials, artifact, **kwargs):
+    """Suspends all schedule actions on a cloudformation stack"""
+    Builder().suspend_cloudformation_actions(stack, credentials)
+
+@a_task(needs_stack=True, needs_credentials=True)
+def resume_cloudformation_actions(overview, configuration, stacks, stack, credentials, artifact, **kwargs):
+    """Resumes all schedule actions on a cloudformation stack"""
+    Builder().resume_cloudformation_actions(stack, credentials)
+
 @a_task(needs_stack=True)
 def sanity_check(overview, configuration, stacks, stack, artifact, **kwargs):
     """Sanity check a stack and it's dependencies"""

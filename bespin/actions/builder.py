@@ -1,5 +1,5 @@
 from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3_as_single
-from bespin.amazon.ec2 import get_instances_in_asg_by_lifecycle_state
+from bespin.amazon.ec2 import get_instances_in_asg_by_lifecycle_state, resume_processes, suspend_processes
 from bespin.amazon.sqs import get_all_deployment_messages
 from bespin.option_spec import stack_specs
 from bespin.errors import NoSuchStack, BadDeployment
@@ -187,6 +187,22 @@ class Builder(object):
                 if artifact_key.last_modified in keys_to_del:
                     log.info("Deleting artifact %s ", artifact_key.name)
                     delete_key_from_s3(credentials, artifact_key, stack.bespin.dry_run)
+
+    def suspend_cloudformation_actions(self, stack, credentials):
+        autoscaling_group_id = stack.sns_confirmation.autoscaling_group_id
+        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
+
+        suspend_processes(credentials, asg_physical_id)
+
+        log.info("Suspended Processes on AutoScaling Group %s", asg_physical_id)
+
+    def resume_cloudformation_actions(self, stack, credentials):
+        autoscaling_group_id = stack.sns_confirmation.autoscaling_group_id
+        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
+
+        resume_processes(credentials, asg_physical_id)
+
+        log.info("Resumed Processes on AutoScaling Group %s", asg_physical_id)
 
     def print_artifact_location(self, stack, artifact):
         # Find missing env before doing anything
