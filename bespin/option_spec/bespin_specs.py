@@ -153,7 +153,7 @@ class BespinSpec(object):
 
             , extra = defaulted(formatted_string, "")
             , region = defaulted(string_spec(), "ap-southeast-2")
-            , no_assume_role = formatted_boolean
+            , no_assume_role = defaulted(formatted_boolean, False)
 
             , chosen_task = defaulted(formatted_string, "list_tasks")
             , chosen_stack = defaulted(formatted_string, "")
