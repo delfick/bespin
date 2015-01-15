@@ -6,6 +6,7 @@ from bespin.option_spec import stack_specs
 from bespin.layers import Layers
 from bespin import helpers as hp
 
+from input_algorithms.spec_base import NotSpecified
 from input_algorithms.meta import Meta
 import logging
 import json

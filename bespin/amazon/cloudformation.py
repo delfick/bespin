@@ -104,7 +104,7 @@ class Cloudformation(AmazonMixin):
 
     def update(self, stack, params):
         log.info("Updating stack (%s)", self.stack_name)
-        params = json.dumps(params) if params else None
+        params = [(param["ParameterKey"], param["ParameterValue"]) for param in params] if params else None
         with self.catch_boto_400(BadStack, "Couldn't update the stack", stack_name=self.stack_name):
             try:
                 self.conn.update_stack(self.stack_name, template_body=json.dumps(stack), parameters=params, capabilities=['CAPABILITY_IAM'])
@@ -114,12 +114,12 @@ class Cloudformation(AmazonMixin):
                 else:
                     raise
 
-    def wait(self, timeout=500):
+    def wait(self, timeout=1200):
         status = self.status
         if status.failed:
             raise BadStack("Stack is in a failed state, it must be deleted first", name=self.stack_name, status=status)
 
-        for _ in hp.until(timeout=500, step=2):
+        for _ in hp.until(timeout, step=15):
             log.info("Waiting for %s - %s", self.stack_name, status.name)
             if status.exists and not status.complete:
                 status = self.status
