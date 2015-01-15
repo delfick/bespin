@@ -6,6 +6,7 @@ necessary to provide the task with the object containing all the stacks and/or
 one specific stack object.
 """
 
+from bespin.amazon.ec2 import display_instances
 from bespin.actions.builder import Builder
 import itertools
 import logging
@@ -102,4 +103,18 @@ def sanity_check(overview, configuration, stacks, stack, artifact, **kwargs):
     """Sanity check a stack and it's dependencies"""
     Builder().sanity_check(stack, stacks)
     log.info("All the stacks are sane!")
+
+@a_task(needs_stack=True, needs_credentials=True)
+def instances(overview, configuration, stacks, stack, artifact, **kwargs):
+    """Find and ssh into instances"""
+    if artifact is None:
+        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(stack.ssh.autoscaling_group_name)
+        display_instances(stack.bespin.credentials, asg_physical_id)
+    else:
+        stack.ssh.ssh_into(artifact, configuration["$@"])
+
+@a_task(needs_stack=True)
+def bastion(overview, configuration, stacks, stack, **kwargs):
+    """SSH into the bastion"""
+    stack.ssh.ssh_into_bastion(configuration["$@"])
 

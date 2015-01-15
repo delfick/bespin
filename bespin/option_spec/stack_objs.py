@@ -1,11 +1,13 @@
-from bespin.errors import MissingOutput, BadOption, BadStack, BadJson
+from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError
 from bespin.errors import StackDoesntExist
 from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
 import logging
+import shlex
 import json
+import stat
 import six
 import os
 
@@ -15,7 +17,7 @@ class Stack(dictobj):
     fields = [
           "bespin", "name", "key_name", "environment", "stack_json", "params_json"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts"
-        , "skip_update_if_equivalent", "tags", "sns_confirmation"
+        , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh"
         ]
 
     def dependencies(self, stacks):
@@ -152,4 +154,57 @@ class Skipper(dictobj):
             return False
 
         return v1 and v2 and v1 == v2
+
+class SSH(dictobj):
+    fields = [
+          "user", "bastion", "bastion_key_location"
+        , "instance_key_location", "autoscaling_group_name"
+        , "instance_key_path", "bastion_key_path"
+        ]
+
+    def ssh_into_bastion(self, extra_args):
+        if not os.path.exists(self.bastion_key_path):
+            log.error("Didn't find a bastion key, please download the key")
+            print("Bastion key can be found at {0}".format(self.bastion_key_location))
+            print("Download it to {0}".format(self.bastion_key_path))
+            raise BespinError("Couldn't find an ssh key for the bastion")
+
+        os.chmod(self.bastion_key_path, 0)
+        os.chmod(self.bastion_key_path, stat.S_IRUSR)
+
+        command = "ssh {0}@{1} -i {2} -o IdentitiesOnly=true".format(self.user, self.bastion, self.bastion_key_path)
+        parts = shlex.split(command)
+        os.execvp(parts[0], parts)
+
+    def ssh_into(self, ip_address, extra_args):
+        proxy = ""
+        error = False
+        if self.bastion is not NotSpecified:
+            log.info("Logging into %s via %s", ip_address, self.bastion)
+            if not os.path.exists(self.bastion_key_path):
+                log.error("Didn't find a bastion key, please download the key")
+                print("Bastion key can be found at {0}".format(self.bastion_key_location))
+                print("Download it to {0}".format(self.bastion_key_path))
+                error = True
+            proxy = '-o ProxyCommand="ssh {0}@{1} -W %h:%p -i {2} -o IdentitiesOnly=true"'.format(self.user, self.bastion, self.bastion_key_path)
+        else:
+            log.info("Logging into %s", ip_address)
+
+        if not os.path.exists(self.instance_key_path):
+            log.error("Didn't find a instance key, please download the key")
+            print("Instance key can be found at {0}".format(self.instance_key_location))
+            print("Download it to {0}".format(self.instance_key_path))
+            error = True
+
+        if error:
+            raise BespinError("Couldn't find ssh keys")
+
+        os.chmod(self.instance_key_path, 0)
+        os.chmod(self.instance_key_path, stat.S_IRUSR)
+        os.chmod(self.bastion_key_path, 0)
+        os.chmod(self.bastion_key_path, stat.S_IRUSR)
+
+        command = "ssh -o ForwardAgent=false -o IdentitiesOnly=true {0} -i {1} {2}@{3} {4}".format(proxy, self.instance_key_path, self.user, ip_address, extra_args)
+        parts = shlex.split(command)
+        os.execvp(parts[0], parts)
 

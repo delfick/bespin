@@ -17,3 +17,12 @@ def resume_processes(credentials, asg_physical_id):
 
 def suspend_processes(credentials, asg_physical_id):
     credentials.autoscale.suspend_processes(asg_physical_id, ["ScheduledActions"])
+
+def display_instances(credentials, asg_physical_id):
+    log.info("Finding instances")
+    asg = credentials.autoscale.get_all_groups(names=[asg_physical_id])
+    instance_ids = [inst.instance_id for inst in asg[0].instances]
+    print("Found {0} instances".format(len(instance_ids)))
+    print("=" * 20)
+    for instance in credentials.ec2.get_only_instances(instance_ids=instance_ids):
+        print("{0}\t{1}\t{2}".format(instance.id, instance.private_ip_address, instance.state))

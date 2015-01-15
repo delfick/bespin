@@ -8,6 +8,7 @@ as well as options that are used to override those in the stack it's attached to
 from bespin.amazon.credentials import Credentials
 from bespin.errors import BadOption
 
+from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
 from option_merge import MergedOptions
 
@@ -57,15 +58,16 @@ class Task(dictobj):
 
         credentials = None
         if task_func.needs_credentials:
-            credentials = Credentials(configuration["bespin"].region, configuration["environments"][environment].account_id,
-                                      configuration["bespin"].assume_role)
+            assume_role = NotSpecified if configuration["bespin"].no_assume_role else configuration["bespin"].assume_role
+            credentials = Credentials(
+                  configuration["bespin"].region
+                , configuration["environments"][environment].account_id
+                , assume_role
+                )
             configuration["bespin"].credentials = credentials
 
-        artifact = None
-        if task_func.needs_artifact:
-            artifact = configuration["bespin"].chosen_artifact
-
-            if not artifact:
+        artifact = configuration["bespin"].chosen_artifact or None
+        if task_func.needs_artifact and not artifact:
                 raise BadOption("Please specify an artifact")
 
         return task_func(overview, configuration, stacks=stacks, stack=stack, credentials=credentials, artifact=artifact)

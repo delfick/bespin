@@ -231,6 +231,8 @@ class Overview(object):
         return dict([
               t("show", "Show the available stacks")
             , t("deploy", "Deploy a particular stack")
+            , t("bastion", "SSH into the bastion")
+            , t("instances", "Find and ssh into the instances")
             , t("list_tasks", "List the available tasks")
             , t("clean_old_artifacts", "Cleans old artifacts from S3")
             , t("confirm_deployment", "Checks all instances were correctly deployed to")

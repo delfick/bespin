@@ -182,6 +182,15 @@ class CliParser(object):
             , **extra
             )
 
+        extra = {"default": False}
+        if os.environ.get("NO_ASSUME_ROLE"):
+            extra["default"] = True
+        parser.add_argument("--no-assume-role"
+            , help = "Don't assume role"
+            , dest = "bespin_no_assume_role"
+            , **extra
+            )
+
         return parser
 
     def interpret_args(self, argv):

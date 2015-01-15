@@ -30,7 +30,7 @@ class filename_spec(orig_filename_spec):
 
 class Bespin(dictobj):
     fields = [
-          "dry_run", "assume_role", "flat", "config", "chosen_stack"
+          "dry_run", "assume_role", "flat", "config", "chosen_stack", "no_assume_role"
         , "region", "environment", "chosen_artifact", "chosen_task", "extra", "interactive"
         ]
 
@@ -123,6 +123,17 @@ class BespinSpec(object):
                     ))
                 , build_env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
                 ))
+
+            , ssh = optional_spec(create_spec(stack_objs.SSH
+                , user = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , bastion = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , bastion_key_location = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , instance_key_location = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , autoscaling_group_name = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+
+                , bastion_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/bastion_ssh_key.pem"), formatter=MergedOptionStringFormatter)
+                , instance_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/ssh_key.pem"), formatter=MergedOptionStringFormatter)
+                ))
             )
 
     @memoized_property
@@ -142,6 +153,8 @@ class BespinSpec(object):
 
             , extra = defaulted(formatted_string, "")
             , region = defaulted(string_spec(), "ap-southeast-2")
+            , no_assume_role = formatted_boolean
+
             , chosen_task = defaulted(formatted_string, "list_tasks")
             , chosen_stack = defaulted(formatted_string, "")
             , chosen_artifact = defaulted(formatted_string, "")
