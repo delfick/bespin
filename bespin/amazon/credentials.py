@@ -36,7 +36,7 @@ class Credentials(object):
             raise BespinError("Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY before running this script (your aws credentials)")
 
         try:
-            result = connection.list_roles()
+            result = connection.list_roles(max_items=1)
         except boto.exception.BotoServerError as error:
             if error.status == 403:
                 raise BespinError("Your credentials aren't allowed to look at iam :(")
