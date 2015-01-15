@@ -59,9 +59,6 @@ class Stack(dictobj):
 
     @property
     def params_json_obj(self):
-        if self.params_json is NotSpecified:
-            return None
-
         with open(self.params_json) as fle:
             params = fle.read()
 
