@@ -48,6 +48,7 @@ class CliParser(object):
         default_task = NotSpecified
         default_stack = NotSpecified
         default_environment = NotSpecified
+        default_artifact = NotSpecified
 
         if argv:
             if not argv[0].startswith("-"):
@@ -60,6 +61,10 @@ class CliParser(object):
 
             if argv and not argv[0].startswith("-"):
                 default_environment = argv[0]
+                argv.pop(0)
+
+            if argv and not argv[0].startswith("-"):
+                default_artifact = argv[0]
                 argv.pop(0)
 
         while argv:
@@ -75,7 +80,7 @@ class CliParser(object):
         if extras:
             other_args = " ".join(extras)
 
-        parser = self.make_parser(default_task=default_task, default_stack=default_stack, default_environment=default_environment)
+        parser = self.make_parser(default_task=default_task, default_stack=default_stack, default_environment=default_environment, default_artifact=default_artifact)
         args = parser.parse_args(args)
         if default_task is not NotSpecified and args.bespin_chosen_task != default_task:
             raise BadOption("Please don't specify task as a positional argument and as a --task option", positional=default_task, kwarg=args.bespin_chosen_task)
@@ -83,10 +88,12 @@ class CliParser(object):
             raise BadOption("Please don't specify environment as a positional argument and as a --environment option", positional=default_environment, kwarg=args.bespin_environment)
         if default_stack is not NotSpecified and args.bespin_chosen_stack != default_stack:
             raise BadOption("Please don't specify stack as a positional argument and as a --stack option", positional=default_stack, kwargs=args.bespin_chosen_stack)
+        if default_artifact is not NotSpecified and args.bespin_chosen_artifact != default_artifact:
+            raise BadOption("Please don't specify artifact as a positional argument and as an --artifact option", positional=default_artifact, kwargs=args.bespin_chosen_artifact)
 
         return args, other_args
 
-    def make_parser(self, default_task=NotSpecified, default_stack=NotSpecified, default_environment=NotSpecified):
+    def make_parser(self, default_task=NotSpecified, default_stack=NotSpecified, default_environment=NotSpecified, default_artifact=NotSpecified):
         parser = argparse.ArgumentParser(description="Opinionated layer around boto")
 
         logging = parser.add_mutually_exclusive_group()
@@ -163,6 +170,15 @@ class CliParser(object):
         parser.add_argument("--stack"
             , help = "Specify a particular stack"
             , dest = "bespin_chosen_stack"
+            , **extra
+            )
+
+        extra = {"default": ""}
+        if default_artifact is not NotSpecified:
+            extra["default"] = default_artifact
+        parser.add_argument("--artifact"
+            , help = "Specify a particular artifact"
+            , dest = "bespin_chosen_artifact"
             , **extra
             )
 

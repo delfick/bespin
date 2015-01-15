@@ -31,7 +31,7 @@ class filename_spec(orig_filename_spec):
 class Bespin(dictobj):
     fields = [
           "dry_run", "assume_role", "flat", "config", "chosen_stack"
-        , "region", "environment", "chosen_task", "extra", "interactive"
+        , "region", "environment", "chosen_artifact", "chosen_task", "extra", "interactive"
         ]
 
 class SNSConfirmation(dictobj):
@@ -144,6 +144,7 @@ class BespinSpec(object):
             , region = defaulted(string_spec(), "ap-southeast-2")
             , chosen_task = defaulted(formatted_string, "list_tasks")
             , chosen_stack = defaulted(formatted_string, "")
+            , chosen_artifact = defaulted(formatted_string, "")
 
             , interactive = defaulted(formatted_boolean, True)
             )

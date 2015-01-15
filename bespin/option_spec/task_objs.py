@@ -61,7 +61,14 @@ class Task(dictobj):
                                       configuration["bespin"].assume_role)
             configuration["bespin"].credentials = credentials
 
-        return task_func(overview, configuration, stacks=stacks, stack=stack, credentials=credentials)
+        artifact = None
+        if task_func.needs_artifact:
+            artifact = configuration["bespin"].chosen_artifact
+
+            if not artifact:
+                raise BadOption("Please specify an artifact")
+
+        return task_func(overview, configuration, stacks=stacks, stack=stack, credentials=credentials, artifact=artifact)
 
     def determine_stack(self, stack, overview, configuration, needs_stack=True):
         """Complain if we don't have an stack"""

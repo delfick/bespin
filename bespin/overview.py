@@ -235,6 +235,7 @@ class Overview(object):
             , t("clean_old_artifacts", "Cleans old artifacts from S3")
             , t("confirm_deployment", "Checks all instances were correctly deployed to")
             , t("sanity_check", "Sanity check a stack and it's dependencies")
+            , t("print_artifact_location", "Shows where the artifact will be for this environment")
             , t("publish_artifacts", "Makes and uploads the artifacts for a stack to S3")
             ])
 

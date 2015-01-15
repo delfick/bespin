@@ -1,4 +1,4 @@
-from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3, upload_file_to_s3_as_single
+from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3_as_single
 from bespin.amazon.ec2 import get_instances_in_asg_by_lifecycle_state
 from bespin.amazon.sqs import get_all_deployment_messages
 from bespin.option_spec import stack_specs
@@ -132,7 +132,7 @@ class Builder(object):
         success = []
         attempt = 0
 
-        for _ in hp.until(action="Printing instance list"):
+        for _ in hp.until(action="Checking for valid deployment actions"):
             messages = get_all_deployment_messages(credentials, stack.sns_confirmation.deployment_queue)
 
             # Look for success and failure in the messages
@@ -187,3 +187,13 @@ class Builder(object):
                 if artifact_key.last_modified in keys_to_del:
                     log.info("Deleting artifact %s ", artifact_key.name)
                     delete_key_from_s3(credentials, artifact_key, stack.bespin.dry_run)
+
+    def print_artifact_location(self, stack, artifact):
+        # Find missing env before doing anything
+        self.find_missing_build_env(stack)
+
+        # Iterate over each artifact we need to clean
+        for key, artifact_obj in stack.artifacts.items():
+            if key == artifact:
+                environment = dict(env.pair for env in artifact_obj.build_env)
+                print(artifact_obj.upload_to.format(**environment))
