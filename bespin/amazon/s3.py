@@ -118,3 +118,4 @@ def upload_file_to_s3_as_single(credentials, source_filename, destination_path):
     key = Key(bucket)
     key.name = destination_file.key
     key.set_contents_from_filename(source_filename)
+    key.close()
