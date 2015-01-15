@@ -1,8 +1,8 @@
-from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3_as_single
 from bespin.amazon.ec2 import get_instances_in_asg_by_lifecycle_state, resume_processes, suspend_processes
+from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3
 from bespin.amazon.sqs import get_all_deployment_messages
-from bespin.option_spec import stack_specs
 from bespin.errors import NoSuchStack, BadDeployment
+from bespin.option_spec import stack_specs
 from bespin.layers import Layers
 from bespin import helpers as hp
 
@@ -118,7 +118,7 @@ class Builder(object):
                 log.info("Finished generating artifact: {0}".format(key))
 
                 # Upload the artifact
-                upload_file_to_s3_as_single(credentials, temp_tar_file.name, artifact.upload_to.format(**environment))
+                upload_file_to_s3(credentials, temp_tar_file.name, artifact.upload_to.format(**environment))
 
     def confirm_deployment(self, stack, credentials):
         autoscaling_group_id = stack.sns_confirmation.autoscaling_group_id

@@ -66,37 +66,29 @@ def delete_key_from_s3(credentials, key, dry_run):
         key.delete()
 
 def upload_file_to_s3(credentials, source_filename, destination_path):
+    source_size = os.stat(source_filename).st_size
+    if source_size > 30000000:
+        upload_file_to_s3_in_parts(credentials, source_filename, destination_path)
+    else:
+        upload_file_to_s3_as_single(credentials, source_filename, destination_path)
+
+def upload_file_to_s3_in_parts(credentials, source_filename, destination_path):
     source_file = open(source_filename, 'rb')
     destination_file = s3_location(destination_path)
 
     source = os.path.abspath(source_file.name)
     source_size = os.stat(source).st_size
-    log.info("Uploading from %s (%s) to %s", source, humanize.naturalsize(source_size), destination_file.full)
+    log.info("Uploading from %s (%s) to %s in parts", source, humanize.naturalsize(source_size), destination_file.full)
 
     bucket = get_bucket(credentials, destination_file.bucket)
 
-    chunk = 5242881
-    chunk_count = 0
-
-    offset = 0
-    offsets = []
-    while offset < source_size:
-        offsets.append(offset)
-        if source_size - offset < chunk:
-            break
-        offset += chunk
-    offsets.append(source_size+1)
-    log.info("Uploading %s chunks", len(offsets) - 1)
-
     try:
         with a_multipart_upload(bucket, destination_file.key) as mp:
-            for i in range(0, len(offsets)-1):
-                first, last = offsets[i], offsets[i+1]-1
-                bytes_size = last - first
+            for chunk, offset, length in determine_chunks(source_size, min_chunk=5242881):
+                with FileChunkIO(source, 'r', offset=offset, bytes=length) as fp:
+                    log.info("Uploading chunk %s (%s)", chunk+1, humanize.naturalsize(length))
+                    mp.upload_part_from_file(fp, part_num=chunk+1)
 
-                with FileChunkIO(source, 'r', offset=first, bytes=bytes_size) as fp:
-                    log.info("Uploading chunk %s (%s)", i+1, humanize.naturalsize(bytes_size))
-                    mp.upload_part_from_file(fp, part_num=i + 1)
     except boto.exception.S3ResponseError as error:
         if error.status is 403:
             log.error("Seems you are unable to edit this location :(")
@@ -106,13 +98,27 @@ def upload_file_to_s3(credentials, source_filename, destination_path):
 
     log.info("Finished uploading")
 
+def determine_chunks(total_size, min_chunk=5242881):
+    offset = 0
+    offsets = []
+    while offset < total_size:
+        if total_size - offset < min_chunk:
+            break
+        offsets.append(offset)
+        offset += min_chunk
+    offsets.append(total_size)
+    log.info("Broken up into %s chunks", len(offsets) - 1)
+
+    for index, offset in enumerate(offsets[:-1]):
+        nxt = offsets[index+1]
+        yield index, offset, nxt - offset
 
 def upload_file_to_s3_as_single(credentials, source_filename, destination_path):
     destination_file = s3_location(destination_path)
 
     source = os.path.abspath(source_filename)
     source_size = os.stat(source).st_size
-    log.info("Uploading from %s (%s) to %s", source, humanize.naturalsize(source_size), destination_file.full)
+    log.info("Uploading from %s (%s) to %s in one go", source, humanize.naturalsize(source_size), destination_file.full)
 
     bucket = get_bucket(credentials, destination_file.bucket)
     key = Key(bucket)
