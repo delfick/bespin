@@ -28,6 +28,8 @@ class Credentials(object):
 
         if self.assume_role is not NotSpecified:
             self.assume()
+            self._verified = True
+            return
 
         log.info("Verifying amazon credentials")
         try:
