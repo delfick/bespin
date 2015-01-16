@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 log = logging.getLogger("bespin.amazon.ec2")
@@ -25,4 +26,6 @@ def display_instances(credentials, asg_physical_id):
     print("Found {0} instances".format(len(instance_ids)))
     print("=" * 20)
     for instance in credentials.ec2.get_only_instances(instance_ids=instance_ids):
-        print("{0}\t{1}\t{2}".format(instance.id, instance.private_ip_address, instance.state))
+        launch_time = datetime.datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
+        delta = (datetime.datetime.utcnow() - launch_time).seconds
+        print("{0}\t{1}\t{2}\tUp {3} seconds".format(instance.id, instance.private_ip_address, instance.state, delta))
