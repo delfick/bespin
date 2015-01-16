@@ -162,7 +162,7 @@ class DynamicVariable(dictobj):
 
     def resolve(self):
         if isinstance(self.stack, six.string_types):
-            cloudformation = self.bespin.credentials.cloudformation(self.stack, self.bespin.region)
+            cloudformation = self.bespin.credentials.cloudformation(self.stack)
             cloudformation.wait()
             outputs = cloudformation.outputs
         else:
