@@ -117,7 +117,7 @@ class Cloudformation(AmazonMixin):
                 else:
                     raise
 
-    def wait(self, timeout=1200):
+    def wait(self, timeout=1200, rollback_is_failure=False):
         status = self.status
         if status.failed:
             raise BadStack("Stack is in a failed state, it must be deleted first", name=self.stack_name, status=status)
@@ -128,6 +128,10 @@ class Cloudformation(AmazonMixin):
                 status = self.status
             else:
                 break
+
+        status = self.status
+        if status.failed or (rollback_is_failure and status.is_rollback):
+            raise BadStack("Stack failed to complete", final_status=status)
 
         return status
 

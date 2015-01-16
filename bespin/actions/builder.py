@@ -1,7 +1,7 @@
 from bespin.amazon.ec2 import get_instances_in_asg_by_lifecycle_state, resume_processes, suspend_processes
 from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3
+from bespin.errors import NoSuchStack, BadDeployment, BadStack
 from bespin.amazon.sqs import get_all_deployment_messages
-from bespin.errors import NoSuchStack, BadDeployment
 from bespin.option_spec import stack_specs
 from bespin.layers import Layers
 from bespin import helpers as hp
@@ -26,8 +26,10 @@ class Builder(object):
         log.info("Sanity checking %s", stack.key_name)
         stack.find_missing_env()
         stack_specs.stack_json_spec().normalise(Meta({}, []), stack.stack_json_obj)
-        if stack.params_json_obj:
-            stack_specs.params_json_spec().normalise(Meta({}, []), stack.params_json_obj)
+        if os.path.exists(stack.params_json):
+            stack_specs.params_json_spec().normalise(Meta({}, []), json.load(open(stack.params_json)))
+        if stack.cloudformation.status.failed:
+            raise BadStack("Stack is in a failed state, this means it probably has to be deleted first....", stack=stack.stack_name)
 
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
@@ -95,7 +97,7 @@ class Builder(object):
         else:
             stack.create_or_update()
 
-        stack.cloudformation.wait()
+        stack.cloudformation.wait(rollback_is_failure=True)
         stack.cloudformation.reset()
 
         if stack.suspend_actions:
