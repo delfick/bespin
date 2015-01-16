@@ -141,7 +141,7 @@ class Stack(dictobj):
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
 
     def sanity_check(self):
-        from bespin.option_specs import stack_specs
+        from bespin.option_spec import stack_specs
         self.find_missing_env()
         self.find_missing_artifact_env()
         stack_specs.stack_json_spec().normalise(Meta({}, []), self.stack_json_obj)

@@ -6,7 +6,6 @@ necessary to provide the task with the object containing all the stacks and/or
 one specific stack object.
 """
 
-from bespin.amazon.ec2 import display_instances
 from bespin.actions.deployer import Deployer
 from bespin.actions.builder import Builder
 import itertools
@@ -83,7 +82,7 @@ def clean_old_artifacts(overview, configuration, stacks, stack, **kwargs):
 
 @a_task(needs_stack=True, needs_credentials=True)
 def confirm_deployment(overview, configuration, stacks, stack, **kwargs):
-    """Confirm deployment via SNS notification for each instance"""
+    """Confirm deployment via SNS notification for each instance and/or url checks"""
     Deployer().confirm_deployment(stack)
 
 @a_task(needs_stack=True, needs_artifact=True)
@@ -112,7 +111,7 @@ def instances(overview, configuration, stacks, stack, artifact, **kwargs):
     """Find and ssh into instances"""
     if artifact is None:
         asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(stack.ssh.autoscaling_group_name)
-        display_instances(stack.bespin.credentials, asg_physical_id)
+        stack.ec2.display_instances(asg_physical_id)
     else:
         stack.ssh.ssh_into(artifact, configuration["$@"])
 
