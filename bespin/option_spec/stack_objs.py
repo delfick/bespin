@@ -18,6 +18,7 @@ class Stack(dictobj):
           "bespin", "name", "key_name", "environment", "stack_json", "params_json"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts"
         , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh"
+        , "artifact_retention_after_deployment"
         ]
 
     def dependencies(self, stacks):

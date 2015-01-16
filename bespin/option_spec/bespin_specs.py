@@ -102,6 +102,8 @@ class BespinSpec(object):
 
             , skip_update_if_equivalent = listof(stack_specs.skipper_spec())
 
+            , artifact_retention_after_deployment = defaulted(boolean(), False)
+
             , sns_confirmation = optional_spec(create_spec(SNSConfirmation
                 , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
                 , version_message = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))

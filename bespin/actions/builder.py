@@ -77,6 +77,9 @@ class Builder(object):
         if stack.sns_confirmation is not NotSpecified and not stack.sns_confirmation.straight_after:
             self.confirm_deployment(stack, credentials)
 
+        if stack.artifact_retention_after_deployment:
+            self.clean_old_artifacts(stack, credentials)
+
     def layered(self, stacks, only_pushable=False):
         """Yield layers of stacks"""
         if only_pushable:
