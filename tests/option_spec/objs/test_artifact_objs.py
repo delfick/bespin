@@ -21,6 +21,7 @@ artifact_spec = sb.create_spec(Artifact
     , files = optional_any()
     , commands = optional_any()
     , build_env = sb.listof(stack_specs.env_spec(), expect=stack_objs.Environment)
+    , env = sb.listof(stack_specs.env_spec(), expect=stack_objs.Environment)
     )
 
 describe BespinCase, "Artifact":

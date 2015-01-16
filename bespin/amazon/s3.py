@@ -109,7 +109,7 @@ class S3(object):
 
         log.info("Finished uploading")
 
-    def determine_chunk(self, total_size, min_chunk=5242881):
+    def determine_chunks(self, total_size, min_chunk=5242881):
         offset = 0
         offsets = []
         while offset < total_size:
