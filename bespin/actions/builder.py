@@ -1,13 +1,11 @@
 from bespin.amazon.ec2 import get_instances_in_asg_by_lifecycle_state, resume_processes, suspend_processes
 from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3
-from bespin.errors import NoSuchStack, BadDeployment, BadStack
 from bespin.amazon.sqs import get_all_deployment_messages
-from bespin.option_spec import stack_specs
+from bespin.errors import NoSuchStack, BadDeployment
 from bespin.layers import Layers
 from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
-from input_algorithms.meta import Meta
 import logging
 import json
 import os
@@ -16,7 +14,7 @@ log = logging.getLogger("bespin.actions.builder")
 
 class Builder(object):
     def sanity_check(self, stack, stacks, ignore_deps=False, checked=None):
-        """Check for missing environment variables in all the stacks"""
+        """Perform sanity check on this stack and all it's dependencies"""
         if checked is None:
             checked = []
 
@@ -24,14 +22,7 @@ class Builder(object):
             return
 
         log.info("Sanity checking %s", stack.key_name)
-        stack.find_missing_env()
-        stack.find_missing_artifact_env()
-        stack_specs.stack_json_spec().normalise(Meta({}, []), stack.stack_json_obj)
-        if os.path.exists(stack.params_json):
-            stack_specs.params_json_spec().normalise(Meta({}, []), json.load(open(stack.params_json)))
-        if stack.cloudformation.status.failed:
-            raise BadStack("Stack is in a failed state, this means it probably has to be deleted first....", stack=stack.stack_name)
-        stack.cloudformation.validate_template(stack.stack_json)
+        stack.sanity_check()
 
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
@@ -42,7 +33,7 @@ class Builder(object):
                 self.sanity_check(stacks[dependency], stacks, ignore_deps, checked + [stack.stack_name])
 
     def deploy_stack(self, stack, stacks, credentials, made=None, ignore_deps=False):
-        """Make us an stack"""
+        """Deploy a stack and all it's dependencies"""
         self.sanity_check(stack, stacks, ignore_deps=ignore_deps)
 
         made = made or {}

@@ -1,5 +1,6 @@
 from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError
 from bespin.errors import StackDoesntExist
+from input_algorithms.meta import Meta
 from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
@@ -112,6 +113,17 @@ class Stack(dictobj):
             self.cloudformation.update(self.stack_json_obj, self.params_json_obj)
         else:
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
+
+    def sanity_check(self):
+        from bespin.option_specs import stack_specs
+        self.find_missing_env()
+        self.find_missing_artifact_env()
+        stack_specs.stack_json_spec().normalise(Meta({}, []), self.stack_json_obj)
+        if os.path.exists(self.params_json):
+            stack_specs.params_json_spec().normalise(Meta({}, []), json.load(open(self.params_json)))
+        if self.cloudformation.status.failed:
+            raise BadStack("Stack is in a failed state, this means it probably has to be deleted first....", stack=self.stack_name)
+        self.cloudformation.validate_template(self.stack_json)
 
 class StaticVariable(dictobj):
     fields = ["value"]
