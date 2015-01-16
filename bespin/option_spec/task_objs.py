@@ -58,6 +58,10 @@ class Task(dictobj):
 
         credentials = None
         if task_func.needs_credentials:
+            environment = configuration["bespin"].environment
+            if not environment:
+                raise BadOption("Please specify an environment")
+
             assume_role = NotSpecified if configuration["bespin"].no_assume_role else configuration["bespin"].assume_role
             credentials = Credentials(
                   configuration["bespin"].region

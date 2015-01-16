@@ -10,6 +10,8 @@ from bespin.amazon.ec2 import display_instances
 from bespin.actions.builder import Builder
 import itertools
 import logging
+import shlex
+import os
 
 log = logging.getLogger("bespin.tasks")
 
@@ -117,4 +119,11 @@ def instances(overview, configuration, stacks, stack, artifact, **kwargs):
 def bastion(overview, configuration, stacks, stack, **kwargs):
     """SSH into the bastion"""
     stack.ssh.ssh_into_bastion(configuration["$@"])
+
+@a_task(needs_credentials=True)
+def execute(overview, configuration, **kwargs):
+    """Exec a command using assumed credentials"""
+    parts = shlex.split(configuration["$@"])
+    configuration["bespin"].credentials.verify_creds()
+    os.execvpe(parts[0], parts, os.environ)
 
