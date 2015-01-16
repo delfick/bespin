@@ -53,27 +53,18 @@ class Builder(object):
             for dependency in stack.dependencies(stacks):
                 self.deploy_stack(stacks[dependency], stacks, credentials, made=made, ignore_deps=True)
 
-            for dependency in stack.dependencies(stacks):
-                stacks[dependency].cloudformation.wait()
-
         # Should have all our dependencies now
         log.info("Making stack for '%s' (%s)", stack.name, stack.stack_name)
         self.build_stack(stack)
         made[stack.name] = True
 
         if stack.sns_confirmation is not NotSpecified and stack.sns_confirmation.straight_after:
-            stack.cloudformation.wait()
             self.confirm_deployment(stack, credentials)
 
         if any(stack.build_after):
-            stack.cloudformation.wait()
             for dependency in stack.build_after:
                 self.deploy_stack(stacks[dependency], stacks, credentials, made=made, ignore_deps=True)
 
-            for dependency in stack.build_after:
-                stacks[dependency].cloudformation.wait()
-
-        stack.cloudformation.wait()
         if stack.sns_confirmation is not NotSpecified and not stack.sns_confirmation.straight_after:
             self.confirm_deployment(stack, credentials)
 
@@ -101,6 +92,9 @@ class Builder(object):
             log.info("Stack is determined to be the same, not updating")
         else:
             stack.create_or_update()
+
+        stack.cloudformation.wait()
+        stack.cloudformation.reset()
 
         if stack.suspend_actions:
             self.resume_cloudformation_actions(stack, cloudformation)

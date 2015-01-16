@@ -70,6 +70,9 @@ class Cloudformation(AmazonMixin):
     def conn(self):
         return boto.cloudformation.connect_to_region(self.region)
 
+    def reset(self):
+        self._description = None
+
     def description(self, force=False):
         """Get the descriptions for the stack"""
         if not getattr(self, "_description", None) or force:
