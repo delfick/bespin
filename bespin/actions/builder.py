@@ -61,7 +61,6 @@ class Builder(object):
             self.clean_old_artifacts(stack, credentials)
 
         self.confirm_deployment(stack, credentials)
-        stack.check_url(dict(env.pair for env in stack.env))
 
     def layered(self, stacks, only_pushable=False):
         """Yield layers of stacks"""
@@ -112,49 +111,8 @@ class Builder(object):
                 upload_file_to_s3(credentials, temp_tar_file.name, artifact.upload_to.format(**environment))
 
     def confirm_deployment(self, stack, credentials):
-        autoscaling_group_id = stack.sns_confirmation.autoscaling_group_id
-        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
-        instances_to_check = get_instances_in_asg_by_lifecycle_state(credentials, asg_physical_id, lifecycle_state="InService")
-
-        environment = dict(env.pair for env in stack.sns_confirmation.env)
-        version_message = stack.sns_confirmation.version_message.format(**environment)
-
-        failed = []
-        success = []
-        attempt = 0
-
-        for _ in hp.until(action="Checking for valid deployment actions"):
-            messages = get_all_deployment_messages(credentials, stack.sns_confirmation.deployment_queue)
-
-            # Look for success and failure in the messages
-            for message in messages:
-                log.info("Message received %s", message['output'])
-
-                # Ignore the messages for instances outside this deployment
-                if message['instance_id'] in instances_to_check:
-                    if message['output'] == version_message:
-                        log.info("Deployed instance %s", message['instance_id'])
-                        success.append(message['instance_id'])
-                    else:
-                        log.info("Failed to deploy instance %s", message['instance_id'])
-                        log.info("Failure Message: ", "%s", message['output'])
-                        failed.append(message['instance_id'])
-
-            # Stop trying if we have all the instances
-            if set(failed + success) == set(instances_to_check):
-                break
-
-            # Record the iteration of checking for a valid deployment
-            attempt += 1
-            log.info("Completed attempt %s of checking for a valid deployment state", attempt)
-
-        if success:
-            log.info("Succeeded to deploy %s", success)
-        if failed:
-            log.info("Failed to deploy %s", failed)
-            raise BadDeployment("")
-
-        log.info("All instances have been confirmed to be deployed with version_message [%s]!", version_message)
+        stack.check_sns()
+        stack.check_url()
 
     def clean_old_artifacts(self, stack, credentials):
         # Find missing env before doing anything
@@ -178,21 +136,16 @@ class Builder(object):
                 if artifact_key.last_modified in keys_to_del:
                     log.info("Deleting artifact %s ", artifact_key.name)
                     delete_key_from_s3(credentials, artifact_key, stack.bespin.dry_run)
-
-    def suspend_cloudformation_actions(self, stack, credentials):
-        autoscaling_group_id = stack.sns_confirmation.autoscaling_group_id
-        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
-
-        suspend_processes(credentials, asg_physical_id)
-
+    def suspend_cloudformation_actions(self, stack):
+        autoscaling_group_id = self.sns_confirmation.autoscaling_group_id
+        asg_physical_id = stack.asg_physical_id_for(autoscaling_group_id)
+        stack.ec2.suspend_processes(asg_physical_id)
         log.info("Suspended Processes on AutoScaling Group %s", asg_physical_id)
 
     def resume_cloudformation_actions(self, stack, credentials):
         autoscaling_group_id = stack.sns_confirmation.autoscaling_group_id
-        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
-
-        resume_processes(credentials, asg_physical_id)
-
+        asg_physical_id = stack.asg_physical_id_for(autoscaling_group_id)
+        stack.ec2.resume_processes(asg_physical_id)
         log.info("Resumed Processes on AutoScaling Group %s", asg_physical_id)
 
     def print_artifact_location(self, stack, artifact):

@@ -34,9 +34,6 @@ class Bespin(dictobj):
         , "region", "environment", "chosen_artifact", "chosen_task", "extra", "interactive"
         ]
 
-class SNSConfirmation(dictobj):
-    fields = ["version_message", "env", "deployment_queue", "autoscaling_group_id"]
-
 class Environment(dictobj):
     fields = ["account_id", "vars"]
 
@@ -106,7 +103,7 @@ class BespinSpec(object):
 
             , artifact_retention_after_deployment = defaulted(boolean(), False)
 
-            , sns_confirmation = optional_spec(create_spec(SNSConfirmation
+            , sns_confirmation = optional_spec(create_spec(stack_objs.SNSConfirmation
                 , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
                 , version_message = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , autoscaling_group_id = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))

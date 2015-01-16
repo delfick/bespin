@@ -1,5 +1,6 @@
 from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError
-from bespin.errors import StackDoesntExist
+from bespin.errors import StackDoesntExist, BadDeployment
+from bespin.helpers import memoized_property
 from input_algorithms.meta import Meta
 from bespin import helpers as hp
 
@@ -27,9 +28,18 @@ class Stack(dictobj):
     def __repr__(self):
         return "<Stack({0})>".format(self.name)
 
-    def check_url(self, environment):
+    def asg_physical_id_for(self, autoscaling_group_id):
+        return self.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
+
+    def check_url(self):
+        environment = dict(env.pair for env in self.env)
         if self.url_checker is not NotSpecified:
             self.url_checker.wait(environment)
+
+    def check_sns(self):
+        environment = dict(env.pair for env in self.env)
+        if self.sns_confirmation is not NotSpecified:
+            self.sns_confirmation.wait(environment, self.ec2, self.sqs, self.cloudformation)
 
     def dependencies(self, stacks):
         for value in self.vars.values():
@@ -63,11 +73,21 @@ class Stack(dictobj):
     def find_missing_build_env(self):
         self.artifacts.find_missing_env("build_env")
 
-    @property
+    @memoized_property
     def cloudformation(self):
-        if not hasattr(self, "_cloudformation"):
-            self._cloudformation = self.bespin.credentials.cloudformation(self.stack_name, self.bespin.region)
-        return self._cloudformation
+        return self.bespin.credentials.cloudformation(self.stack_name)
+
+    @memoized_property
+    def ec2(self):
+        return self.bespin.credentials.ec2
+
+    @memoized_property
+    def sqs(self):
+        return self.bespin.credentials.sqs
+
+    @memoized_property
+    def s3(self):
+        return self.bespin.credentials.s3
 
     @property
     def params_json_obj(self):
@@ -251,4 +271,51 @@ class UrlChecker(dictobj):
                 return
 
         raise BadStack("Timedout waiting for the app to give back the correct version")
+
+class SNSConfirmation(dictobj):
+    fields = ["version_message", "env", "deployment_queue", "autoscaling_group_id"]
+
+    def wait(self, environment, ec2, sqs, cloudformation):
+        autoscaling_group_id = self.autoscaling_group_id
+        asg_physical_id = cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
+        instances_to_check = ec2.get_instances_in_asg_by_lifecycle_state(asg_physical_id, lifecycle_state="InService")
+
+        version_message = self.version_message.format(**environment)
+
+        failed = []
+        success = []
+        attempt = 0
+
+        for _ in hp.until(action="Checking for valid deployment actions"):
+            messages = sqs.get_all_deployment_messages(self.deployment_queue)
+
+            # Look for success and failure in the messages
+            for message in messages:
+                log.info("Message received %s", message['output'])
+
+                # Ignore the messages for instances outside this deployment
+                if message['instance_id'] in instances_to_check:
+                    if message['output'] == version_message:
+                        log.info("Deployed instance %s", message['instance_id'])
+                        success.append(message['instance_id'])
+                    else:
+                        log.info("Failed to deploy instance %s", message['instance_id'])
+                        log.info("Failure Message: ", "%s", message['output'])
+                        failed.append(message['instance_id'])
+
+            # Stop trying if we have all the instances
+            if set(failed + success) == set(instances_to_check):
+                break
+
+            # Record the iteration of checking for a valid deployment
+            attempt += 1
+            log.info("Completed attempt %s of checking for a valid deployment state", attempt)
+
+        if success:
+            log.info("Succeeded to deploy %s", success)
+        if failed:
+            log.info("Failed to deploy %s", failed)
+            raise BadDeployment(failed=failed)
+
+        log.info("All instances have been confirmed to be deployed with version_message [%s]!", version_message)
 

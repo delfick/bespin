@@ -1,31 +1,49 @@
+from bespin.helpers import memoized_property
+
+import boto.ec2
+import boto.ec2.autoscale
+
 import datetime
 import logging
 
 log = logging.getLogger("bespin.amazon.ec2")
 
-def get_instances_in_asg_by_lifecycle_state(credentials, asg_physical_id, lifecycle_state=None):
-    instances = []
+class EC2(object):
+    def __init__(self, region):
+        self.region = region
 
-    asg = credentials.autoscale.get_all_groups(names=[asg_physical_id])
-    for instance in asg[0].instances:
-        if lifecycle_state is None or lifecycle_state == instance.lifecycle_state:
-            instances.append(instance.instance_id)
+    @memoized_property
+    def conn(self):
+        return boto.ec2.connect_to_region(self.region)
 
-    return instances
+    @memoized_property
+    def autoscale(self):
+        return boto.ec2.autoscale.connect_to_region(self.region)
 
-def resume_processes(credentials, asg_physical_id):
-    credentials.autoscale.suspend_processes(asg_physical_id, ["ScheduledActions"])
+    def get_instances_in_asg_by_lifecycle_state(self, asg_physical_id, lifecycle_state=None):
+        instances = []
 
-def suspend_processes(credentials, asg_physical_id):
-    credentials.autoscale.suspend_processes(asg_physical_id, ["ScheduledActions"])
+        asg = self.autoscale.get_all_groups(names=[asg_physical_id])
+        for instance in asg[0].instances:
+            if lifecycle_state is None or lifecycle_state == instance.lifecycle_state:
+                instances.append(instance.instance_id)
 
-def display_instances(credentials, asg_physical_id):
-    log.info("Finding instances")
-    asg = credentials.autoscale.get_all_groups(names=[asg_physical_id])
-    instance_ids = [inst.instance_id for inst in asg[0].instances]
-    print("Found {0} instances".format(len(instance_ids)))
-    print("=" * 20)
-    for instance in credentials.ec2.get_only_instances(instance_ids=instance_ids):
-        launch_time = datetime.datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
-        delta = (datetime.datetime.utcnow() - launch_time).seconds
-        print("{0}\t{1}\t{2}\tUp {3} seconds".format(instance.id, instance.private_ip_address, instance.state, delta))
+        return instances
+
+    def resume_processes(self, asg_physical_id):
+        self.autoscale.suspend_processes(asg_physical_id, ["ScheduledActions"])
+
+    def suspend_processes(self, asg_physical_id):
+        self.autoscale.suspend_processes(asg_physical_id, ["ScheduledActions"])
+
+    def display_instances(self, asg_physical_id):
+        log.info("Finding instances")
+        asg = self.autoscale.get_all_groups(names=[asg_physical_id])
+        instance_ids = [inst.instance_id for inst in asg[0].instances]
+        print("Found {0} instances".format(len(instance_ids)))
+        print("=" * 20)
+        for instance in self.conn.get_only_instances(instance_ids=instance_ids):
+            launch_time = datetime.datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
+            delta = (datetime.datetime.utcnow() - launch_time).seconds
+            print("{0}\t{1}\t{2}\tUp {3} seconds".format(instance.id, instance.private_ip_address, instance.state, delta))
+

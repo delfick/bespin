@@ -1,12 +1,14 @@
 from bespin.amazon.cloudformation import Cloudformation
 from bespin.helpers import memoized_property
 from bespin.errors import BespinError
+from bespin.amazon.ec2 import EC2
+from bespin.amazon.sqs import SQS
+from bespin.amazon.s3 import S3
 
 import boto.sts
 import boto.iam
 import boto.s3
 import boto.sqs
-import boto.ec2.autoscale
 
 from input_algorithms.spec_base import NotSpecified
 import logging
@@ -85,29 +87,24 @@ class Credentials(object):
     @memoized_property
     def s3(self):
         self.verify_creds()
-        return boto.s3.connect_to_region(self.region)
+        return S3(self.region)
 
     @memoized_property
     def ec2(self):
         self.verify_creds()
-        return boto.ec2.connect_to_region(self.region)
-
-    @memoized_property
-    def autoscale(self):
-        self.verify_creds()
-        return boto.ec2.autoscale.connect_to_region(self.region)
+        return EC2(self.region)
 
     @memoized_property
     def sqs(self):
         self.verify_creds()
-        return boto.sqs.connect_to_region(self.region)
+        return SQS(self.region)
 
     @memoized_property
     def iam(self):
         self.verify_creds()
         return boto.iam.connect_to_region(self.region)
 
-    def cloudformation(self, stack_name, region):
+    def cloudformation(self, stack_name):
         self.verify_creds()
-        return Cloudformation(stack_name, region)
+        return Cloudformation(stack_name, self.region)
 
