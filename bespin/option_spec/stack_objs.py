@@ -109,11 +109,13 @@ class StaticVariable(dictobj):
         return self.value
 
 class DynamicVariable(dictobj):
-    fields = ["stack", "output", ("credentials", None), ("region", None)]
+    fields = ["stack", "output", ("bespin", None)]
 
     def resolve(self):
         if isinstance(self.stack, six.string_types):
-            outputs = self.credentials.cloudformation(self.stack, self.region).outputs
+            cloudformation = self.bespin.credentials.cloudformation(self.stack, self.bespin.region)
+            cloudformation.wait()
+            outputs = cloudformation.outputs
         else:
             outputs = self.stack.cloudformation.outputs
 

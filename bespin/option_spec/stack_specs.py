@@ -26,7 +26,7 @@ class var_spec(many_item_formatted_spec):
             return StaticVariable(variable)
         else:
             stack = variable
-            return DynamicVariable(stack, variable_value)
+            return DynamicVariable(stack, variable_value, meta.everything["bespin"])
 
 class artifact_path_spec(many_item_formatted_spec):
     value_name = "Artifact Path"
