@@ -31,6 +31,7 @@ class Builder(object):
             stack_specs.params_json_spec().normalise(Meta({}, []), json.load(open(stack.params_json)))
         if stack.cloudformation.status.failed:
             raise BadStack("Stack is in a failed state, this means it probably has to be deleted first....", stack=stack.stack_name)
+        stack.cloudformation.validate_template(stack.stack_json)
 
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):

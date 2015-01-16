@@ -119,6 +119,10 @@ class Cloudformation(AmazonMixin):
                 else:
                     raise
 
+    def validate_template(self, filename):
+        with self.catch_boto_400(BadStack, "Amazon says no", stack_name=self.stack_name, filename=filename):
+            self.conn.validate_template(open(filename).read())
+
     def wait(self, timeout=1200, rollback_is_failure=False):
         status = self.status
         last = datetime.datetime.utcnow()
