@@ -52,14 +52,15 @@ class Stack(dictobj):
 
     def find_missing_env(self):
         """Find any missing environment variables"""
-        missing = []
-        for e in self.env:
-            if e.default_val is None and e.set_val is None:
-                if e.env_name not in os.environ:
-                    missing.append(e.env_name)
-
+        missing = [e.env_name for e in self.env if e.missing]
         if missing:
             raise BadOption("Some environment variables aren't in the current environment", missing=missing)
+
+    def find_missing_artifact_env(self):
+        self.artifacts.find_missing_env("env")
+
+    def find_missing_build_env(self):
+        self.artifacts.find_missing_env("build_env")
 
     @property
     def cloudformation(self):
@@ -137,6 +138,10 @@ class DynamicVariable(dictobj):
 class Environment(dictobj):
     """A single environment variable, and it's default or set value"""
     fields = ["env_name", ("default_val", None), ("set_val", None)]
+
+    @property
+    def missing(self):
+        return self.default_val is None and self.set_val is None and self.env_name not in os.environ
 
     @property
     def pair(self):

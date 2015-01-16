@@ -10,10 +10,27 @@ import shutil
 import codecs
 import os
 
+class ArtifactCollection(dictobj):
+    fields = ['artifacts']
+
+    def find_missing_env(self, env_to_find):
+        missing = dict(
+            (name, [e.env_name for e in getattr(artifact, env_to_find) if e.missing])
+            for name, artifact in self.artifacts.items()
+        )
+        if any(missing.values()):
+            raise BadOption("Some artifacts require variables that aren't in the current environment", missing=missing)
+
+    def __iter__(self):
+        return iter(self.artifacts)
+
+    def items(self):
+        return self.artifacts.items()
+
 class Artifact(dictobj):
     fields = [
           "compression_type", "history_length", "location_var_name"
-        , "files", "build_env", "commands", "upload_to", "paths"
+        , "files", "build_env", "commands", "upload_to", "paths", "env"
         ]
 
     @property

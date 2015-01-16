@@ -25,6 +25,7 @@ class Builder(object):
 
         log.info("Sanity checking %s", stack.key_name)
         stack.find_missing_env()
+        stack.find_missing_artifact_env()
         stack_specs.stack_json_spec().normalise(Meta({}, []), stack.stack_json_obj)
         if os.path.exists(stack.params_json):
             stack_specs.params_json_spec().normalise(Meta({}, []), json.load(open(stack.params_json)))
@@ -103,13 +104,8 @@ class Builder(object):
         if stack.suspend_actions:
             self.resume_cloudformation_actions(stack, credentials)
 
-    def find_missing_build_env(self, stack):
-        for artifact in stack.artifacts.values():
-            artifact.find_missing_env()
-
     def publish_artifacts(self, stack, credentials):
-        # Find missing env before doing anything
-        self.find_missing_build_env(stack)
+        stack.find_missing_build_env()
 
         # Iterate over each artifact we need to build
         for key, artifact in stack.artifacts.items():
@@ -175,11 +171,11 @@ class Builder(object):
 
     def clean_old_artifacts(self, stack, credentials):
         # Find missing env before doing anything
-        self.find_missing_build_env(stack)
+        stack.find_missing_artifact_env()
 
         # Iterate over each artifact we need to clean
         for key, artifact in stack.artifacts.items():
-            environment = dict(env.pair for env in artifact.build_env)
+            environment = dict(env.pair for env in artifact.env)
 
             # Get contents of bucket
             artifact_path = os.path.dirname(artifact.upload_to.format(**environment))
@@ -214,10 +210,10 @@ class Builder(object):
 
     def print_artifact_location(self, stack, artifact):
         # Find missing env before doing anything
-        self.find_missing_build_env(stack)
+        stack.find_missing_artifact_env()
 
         # Iterate over each artifact we need to clean
         for key, artifact_obj in stack.artifacts.items():
             if key == artifact:
-                environment = dict(env.pair for env in artifact_obj.build_env)
+                environment = dict(env.pair for env in artifact_obj.env)
                 print(artifact_obj.upload_to.format(**environment))

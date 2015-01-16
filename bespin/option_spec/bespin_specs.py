@@ -7,7 +7,7 @@ The specifications are responsible for sanitation, validation and normalisation.
 
 from input_algorithms.spec_base import (
       formatted, defaulted, any_spec, dictionary_spec, dictof, listof, required, delayed
-    , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec, or_spec
+    , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec, or_spec, container_spec
     , valid_string_spec, create_spec, string_choice_spec, filename_spec as orig_filename_spec
     )
 
@@ -114,7 +114,7 @@ class BespinSpec(object):
                 , straight_after = defaulted(formatted(boolean(), MergedOptionStringFormatter, expected_type=bool), True)
                 ))
 
-            , artifacts = dictof(string_spec(), create_spec(artifact_objs.Artifact
+            , artifacts = container_spec(artifact_objs.ArtifactCollection, dictof(string_spec(), create_spec(artifact_objs.Artifact
                 , compression_type = string_choice_spec(["gz", "xz"])
                 , history_length = integer_spec()
                 , location_var_name = string_spec()
@@ -125,8 +125,9 @@ class BespinSpec(object):
                     , content = formatted(string_spec(), formatter=MergedOptionStringFormatter)
                     , path = formatted(string_spec(), formatter=MergedOptionStringFormatter)
                     ))
+                , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
                 , build_env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
-                ))
+                )))
 
             , ssh = optional_spec(create_spec(stack_objs.SSH
                 , user = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
