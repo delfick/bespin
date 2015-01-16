@@ -3,7 +3,9 @@ from bespin.amazon.mixin import AmazonMixin
 from bespin import helpers as hp
 
 import boto.cloudformation
+import datetime
 import logging
+import time
 import json
 import six
 
@@ -119,6 +121,7 @@ class Cloudformation(AmazonMixin):
 
     def wait(self, timeout=1200, rollback_is_failure=False):
         status = self.status
+        last = datetime.datetime.utcnow()
         if status.failed:
             raise BadStack("Stack is in a failed state, it must be deleted first", name=self.stack_name, status=status)
 
@@ -128,6 +131,13 @@ class Cloudformation(AmazonMixin):
                 status = self.status
             else:
                 break
+
+            description = self.description()
+            events = description.describe_events()
+            for event in events:
+                if event.timestamp > last:
+                    log.info("%s - %s %s (%s) %s", self.stack_name, event.resource_type, event.logical_resource_id, event.resource_status, event.resource_status_reason)
+            last = datetime.datetime.utcnow()
 
         status = self.status
         if status.failed or (rollback_is_failure and status.is_rollback):

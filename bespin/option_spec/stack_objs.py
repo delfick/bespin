@@ -233,3 +233,5 @@ class UrlChecker(dictobj):
                 log.info("Deployment successful!")
                 return
 
+        raise BadStack("Timedout waiting for the app to give back the correct version")
+

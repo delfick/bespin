@@ -230,6 +230,7 @@ class Overview(object):
             return (name, Task(action, description=description, options=options, label="Bespin"))
         return dict([
               t("execute", "Execute a command with assumed creds")
+            , t("tail", "Tail the deployment of a stack")
             , t("show", "Show the available stacks")
             , t("deploy", "Deploy a particular stack")
             , t("bastion", "SSH into the bastion")

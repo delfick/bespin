@@ -127,3 +127,8 @@ def execute(overview, configuration, **kwargs):
     configuration["bespin"].credentials.verify_creds()
     os.execvpe(parts[0], parts, os.environ)
 
+@a_task(needs_credentials=True, needs_stack=True)
+def tail(overview, configuration, stacks, stack, **kwargs):
+    """Tail the deployment of a stack"""
+    stack.cloudformation.wait()
+
