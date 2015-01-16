@@ -1,11 +1,9 @@
-from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3
 from bespin.errors import NoSuchStack
 from bespin.layers import Layers
 from bespin import helpers as hp
 
 import logging
 import json
-import os
 
 log = logging.getLogger("bespin.actions.builder")
 
@@ -29,7 +27,7 @@ class Builder(object):
             for dependency in stack.build_after:
                 self.sanity_check(stacks[dependency], stacks, ignore_deps, checked + [stack.stack_name])
 
-    def deploy_stack(self, stack, stacks, credentials, made=None, ignore_deps=False):
+    def deploy_stack(self, stack, stacks, made=None, ignore_deps=False):
         """Deploy a stack and all it's dependencies"""
         self.sanity_check(stack, stacks, ignore_deps=ignore_deps)
 
@@ -43,21 +41,21 @@ class Builder(object):
 
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
-                self.deploy_stack(stacks[dependency], stacks, credentials, made=made, ignore_deps=True)
+                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True)
 
         # Should have all our dependencies now
         log.info("Making stack for '%s' (%s)", stack.name, stack.stack_name)
-        self.build_stack(stack, credentials)
+        self.build_stack(stack)
         made[stack.name] = True
 
         if any(stack.build_after):
             for dependency in stack.build_after:
-                self.deploy_stack(stacks[dependency], stacks, credentials, made=made, ignore_deps=True)
+                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True)
 
         if stack.artifact_retention_after_deployment:
-            self.clean_old_artifacts(stack, credentials)
+            self.clean_old_artifacts(stack)
 
-        self.confirm_deployment(stack, credentials)
+        self.confirm_deployment(stack)
 
     def layered(self, stacks, only_pushable=False):
         """Yield layers of stacks"""
@@ -70,9 +68,9 @@ class Builder(object):
         layers.add_all_to_layers()
         return layers.layered
 
-    def build_stack(self, stack, credentials):
+    def build_stack(self, stack):
         if stack.suspend_actions:
-            self.suspend_cloudformation_actions(stack, credentials)
+            self.suspend_cloudformation_actions(stack)
 
         print("Building - {0}".format(stack.stack_name))
         print(json.dumps(stack.params_json_obj, indent=4))
@@ -85,9 +83,9 @@ class Builder(object):
         stack.cloudformation.reset()
 
         if stack.suspend_actions:
-            self.resume_cloudformation_actions(stack, credentials)
+            self.resume_cloudformation_actions(stack)
 
-    def publish_artifacts(self, stack, credentials):
+    def publish_artifacts(self, stack):
         stack.find_missing_build_env()
 
         # Iterate over each artifact we need to build
@@ -111,11 +109,11 @@ class Builder(object):
                 else:
                     stack.s3.upload_file_to_s3(temp_tar_file.name, s3_location)
 
-    def confirm_deployment(self, stack, credentials):
+    def confirm_deployment(self, stack):
         stack.check_sns()
         stack.check_url()
 
-    def clean_old_artifacts(self, stack, credentials):
+    def clean_old_artifacts(self, stack):
         # Find missing env before doing anything
         stack.find_missing_artifact_env()
         stack.artifacts.clean_old_artifacts(stack.s3, dry_run=stack.bespin.dry_run)
@@ -126,7 +124,7 @@ class Builder(object):
         stack.ec2.suspend_processes(asg_physical_id)
         log.info("Suspended Processes on AutoScaling Group %s", asg_physical_id)
 
-    def resume_cloudformation_actions(self, stack, credentials):
+    def resume_cloudformation_actions(self, stack):
         autoscaling_group_id = stack.sns_confirmation.autoscaling_group_id
         asg_physical_id = stack.asg_physical_id_for(autoscaling_group_id)
         stack.ec2.resume_processes(asg_physical_id)

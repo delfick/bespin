@@ -66,42 +66,42 @@ def show(overview, configuration, stacks, **kwargs):
             print("")
 
 @a_task(needs_stack=True, needs_credentials=True)
-def deploy(overview, configuration, stacks, stack, credentials, artifact, **kwargs):
+def deploy(overview, configuration, stacks, stack, **kwargs):
     """Deploy a particular stack"""
-    Builder().deploy_stack(stack, stacks, credentials)
+    Builder().deploy_stack(stack, stacks)
 
 @a_task(needs_stack=True, needs_credentials=True)
-def publish_artifacts(overview, configuration, stacks, stack, credentials, artifact, **kwargs):
+def publish_artifacts(overview, configuration, stacks, stack, **kwargs):
     """Build and publish an artifact"""
-    Builder().publish_artifacts(stack, credentials)
+    Builder().publish_artifacts(stack)
 
 @a_task(needs_stack=True, needs_credentials=True)
-def clean_old_artifacts(overview, configuration, stacks, stack, credentials, artifact, **kwargs):
+def clean_old_artifacts(overview, configuration, stacks, stack, **kwargs):
     """Cleanup old artifacts"""
-    Builder().clean_old_artifacts(stack, credentials)
+    Builder().clean_old_artifacts(stack)
 
 @a_task(needs_stack=True, needs_credentials=True)
-def confirm_deployment(overview, configuration, stacks, stack, credentials, artifact, **kwargs):
+def confirm_deployment(overview, configuration, stacks, stack, **kwargs):
     """Confirm deployment via SNS notification for each instance"""
-    Builder().confirm_deployment(stack, credentials)
+    Builder().confirm_deployment(stack)
 
 @a_task(needs_stack=True, needs_artifact=True)
-def print_artifact_location(overview, configuration, stacks, stack, credentials, artifact, **kwargs):
+def print_artifact_location(overview, configuration, stacks, stack, artifact, **kwargs):
     """Shows where the artifact will be for this environment"""
     Builder().print_artifact_location(stack, artifact)
 
 @a_task(needs_stack=True, needs_credentials=True)
-def suspend_cloudformation_actions(overview, configuration, stacks, stack, credentials, artifact, **kwargs):
+def suspend_cloudformation_actions(overview, configuration, stacks, stack, **kwargs):
     """Suspends all schedule actions on a cloudformation stack"""
-    Builder().suspend_cloudformation_actions(stack, credentials)
+    Builder().suspend_cloudformation_actions(stack)
 
 @a_task(needs_stack=True, needs_credentials=True)
-def resume_cloudformation_actions(overview, configuration, stacks, stack, credentials, artifact, **kwargs):
+def resume_cloudformation_actions(overview, configuration, stacks, stack, **kwargs):
     """Resumes all schedule actions on a cloudformation stack"""
-    Builder().resume_cloudformation_actions(stack, credentials)
+    Builder().resume_cloudformation_actions(stack)
 
 @a_task(needs_stack=True, needs_credentials=True)
-def sanity_check(overview, configuration, stacks, stack, artifact, **kwargs):
+def sanity_check(overview, configuration, stacks, stack, **kwargs):
     """Sanity check a stack and it's dependencies"""
     Builder().sanity_check(stack, stacks)
     log.info("All the stacks are sane!")
