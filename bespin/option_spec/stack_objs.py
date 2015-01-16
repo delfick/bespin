@@ -4,6 +4,8 @@ from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
+import requests
+import fnmatch
 import logging
 import shlex
 import json
@@ -18,8 +20,15 @@ class Stack(dictobj):
           "bespin", "name", "key_name", "environment", "stack_json", "params_json"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts"
         , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh"
-        , "artifact_retention_after_deployment", "suspend_actions"
+        , "artifact_retention_after_deployment", "suspend_actions", "url_checker"
         ]
+
+    def __repr__(self):
+        return "<Stack({0})>".format(self.name)
+
+    def check_url(self, environment):
+        if self.url_checker is not NotSpecified:
+            self.url_checker.wait(environment)
 
     def dependencies(self, stacks):
         for value in self.vars.values():
@@ -207,4 +216,20 @@ class SSH(dictobj):
         command = "ssh -o ForwardAgent=false -o IdentitiesOnly=true {0} -i {1} {2}@{3} {4}".format(proxy, self.instance_key_path, self.user, ip_address, extra_args)
         parts = shlex.split(command)
         os.execvp(parts[0], parts)
+
+class UrlChecker(dictobj):
+    fields = ["check_url", "endpoint", "expect", "timeout_after"]
+
+    def wait(self, environment):
+        url = self.endpoint().resolve() + self.check_url
+        expected = self.expect.format(**environment)
+
+        log.info("Asking server for version till we match %s", expected)
+        for _ in hp.until(self.timeout_after, step=15):
+            log.info("Asking %s", url)
+            result = requests.get(url).text
+            log.info("\tgot back %s", result)
+            if fnmatch.fnmatch(result, expected):
+                log.info("Deployment successful!")
+                return
 

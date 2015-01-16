@@ -71,6 +71,8 @@ class Builder(object):
         if stack.artifact_retention_after_deployment:
             self.clean_old_artifacts(stack, credentials)
 
+        stack.check_url(dict(env.pair for env in stack.env))
+
     def layered(self, stacks, only_pushable=False):
         """Yield layers of stacks"""
         if only_pushable:

@@ -6,7 +6,7 @@ The specifications are responsible for sanitation, validation and normalisation.
 """
 
 from input_algorithms.spec_base import (
-      formatted, defaulted, any_spec, dictionary_spec, dictof, listof, required
+      formatted, defaulted, any_spec, dictionary_spec, dictof, listof, required, delayed
     , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec, or_spec
     , valid_string_spec, create_spec, string_choice_spec, filename_spec as orig_filename_spec
     )
@@ -137,6 +137,13 @@ class BespinSpec(object):
 
                 , bastion_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/bastion_ssh_key.pem"), formatter=MergedOptionStringFormatter)
                 , instance_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/ssh_key.pem"), formatter=MergedOptionStringFormatter)
+                ))
+
+            , url_checker = optional_spec(create_spec(stack_objs.UrlChecker
+                , check_url = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , endpoint = required(delayed(stack_specs.var_spec()))
+                , expect = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , timeout_after = defaulted(integer_spec(), 600)
                 ))
             )
 

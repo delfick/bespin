@@ -15,6 +15,7 @@ setup(
 
       , "six"
       , "humanize"
+      , "requests"
 
       , "boto==2.34.0"
       , "pyYaml==3.10"
