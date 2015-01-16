@@ -99,7 +99,7 @@ class Cloudformation(AmazonMixin):
 
     def create(self, stack, params, tags):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
-        params = json.dumps(params) if params else None
+        params = [(param["ParameterKey"], param["ParameterValue"]) for param in params] if params else None
         self.conn.create_stack(self.stack_name, template_body=json.dumps(stack), parameters=params, tags=tags, capabilities=['CAPABILITY_IAM'])
 
     def update(self, stack, params):
