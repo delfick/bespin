@@ -57,7 +57,7 @@ class Builder(object):
 
         # Should have all our dependencies now
         log.info("Making stack for '%s' (%s)", stack.name, stack.stack_name)
-        self.build_stack(stack)
+        self.build_stack(stack, credentials)
         made[stack.name] = True
 
         if stack.sns_confirmation is not NotSpecified and stack.sns_confirmation.straight_after:
@@ -86,9 +86,9 @@ class Builder(object):
         layers.add_all_to_layers()
         return layers.layered
 
-    def build_stack(self, stack):
+    def build_stack(self, stack, credentials):
         if stack.suspend_actions:
-            self.suspend_cloudformation_actions(stack, cloudformation)
+            self.suspend_cloudformation_actions(stack, credentials)
 
         print("Building - {0}".format(stack.stack_name))
         print(json.dumps(stack.params_json_obj, indent=4))
@@ -101,7 +101,7 @@ class Builder(object):
         stack.cloudformation.reset()
 
         if stack.suspend_actions:
-            self.resume_cloudformation_actions(stack, cloudformation)
+            self.resume_cloudformation_actions(stack, credentials)
 
     def find_missing_build_env(self, stack):
         for artifact in stack.artifacts.values():
