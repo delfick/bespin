@@ -7,6 +7,7 @@ one specific stack object.
 """
 
 from bespin.amazon.ec2 import display_instances
+from bespin.actions.deployer import Deployer
 from bespin.actions.builder import Builder
 import itertools
 import logging
@@ -68,7 +69,7 @@ def show(overview, configuration, stacks, **kwargs):
 @a_task(needs_stack=True, needs_credentials=True)
 def deploy(overview, configuration, stacks, stack, **kwargs):
     """Deploy a particular stack"""
-    Builder().deploy_stack(stack, stacks)
+    Deployer().deploy_stack(stack, stacks)
 
 @a_task(needs_stack=True, needs_credentials=True)
 def publish_artifacts(overview, configuration, stacks, stack, **kwargs):
@@ -83,7 +84,7 @@ def clean_old_artifacts(overview, configuration, stacks, stack, **kwargs):
 @a_task(needs_stack=True, needs_credentials=True)
 def confirm_deployment(overview, configuration, stacks, stack, **kwargs):
     """Confirm deployment via SNS notification for each instance"""
-    Builder().confirm_deployment(stack)
+    Deployer().confirm_deployment(stack)
 
 @a_task(needs_stack=True, needs_artifact=True)
 def print_artifact_location(overview, configuration, stacks, stack, artifact, **kwargs):
@@ -93,12 +94,12 @@ def print_artifact_location(overview, configuration, stacks, stack, artifact, **
 @a_task(needs_stack=True, needs_credentials=True)
 def suspend_cloudformation_actions(overview, configuration, stacks, stack, **kwargs):
     """Suspends all schedule actions on a cloudformation stack"""
-    Builder().suspend_cloudformation_actions(stack)
+    Deployer().suspend_cloudformation_actions(stack)
 
 @a_task(needs_stack=True, needs_credentials=True)
 def resume_cloudformation_actions(overview, configuration, stacks, stack, **kwargs):
     """Resumes all schedule actions on a cloudformation stack"""
-    Builder().resume_cloudformation_actions(stack)
+    Deployer().resume_cloudformation_actions(stack)
 
 @a_task(needs_stack=True, needs_credentials=True)
 def sanity_check(overview, configuration, stacks, stack, **kwargs):
