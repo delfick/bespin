@@ -24,7 +24,9 @@ describe BespinCase, "Var spec":
     it "creates a Dynamic variable if only one item is given":
         stack = self.unique_val()
         output = self.unique_val()
-        self.assertEqual(specs.var_spec().normalise(self.meta, [stack, output]), objs.DynamicVariable(stack, output))
+        bespin = self.unique_val()
+        self.meta.everything = MergedOptions.using({"bespin": bespin})
+        self.assertEqual(specs.var_spec().normalise(self.meta, [stack, output]), objs.DynamicVariable(stack, output, bespin))
 
 describe BespinCase, "artifact_path_spec":
     before_each:
@@ -33,7 +35,7 @@ describe BespinCase, "artifact_path_spec":
     it "creates an artifact_path from the two items":
         host_path = self.unique_val()
         artifact_path = self.unique_val()
-        self.assertEqual(specs.var_spec().normalise(self.meta, [host_path, artifact_path]), objs.DynamicVariable(host_path, artifact_path))
+        self.assertEqual(specs.artifact_path_spec().normalise(self.meta, [host_path, artifact_path]), artifact_objs.ArtifactPath(host_path, artifact_path))
 
 describe BespinCase, "Env spec":
     before_each:
