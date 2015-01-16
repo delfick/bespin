@@ -1,11 +1,8 @@
-from bespin.amazon.ec2 import get_instances_in_asg_by_lifecycle_state, resume_processes, suspend_processes
 from bespin.amazon.s3 import delete_key_from_s3, list_keys_from_s3_path, upload_file_to_s3
-from bespin.amazon.sqs import get_all_deployment_messages
-from bespin.errors import NoSuchStack, BadDeployment
+from bespin.errors import NoSuchStack
 from bespin.layers import Layers
 from bespin import helpers as hp
 
-from input_algorithms.spec_base import NotSpecified
 import logging
 import json
 import os
@@ -117,25 +114,8 @@ class Builder(object):
     def clean_old_artifacts(self, stack, credentials):
         # Find missing env before doing anything
         stack.find_missing_artifact_env()
+        stack.artifacts.clean_old_artifacts(stack.s3, dry_run=stack.bespin.dry_run)
 
-        # Iterate over each artifact we need to clean
-        for key, artifact in stack.artifacts.items():
-            environment = dict(env.pair for env in artifact.env)
-
-            # Get contents of bucket
-            artifact_path = os.path.dirname(artifact.upload_to.format(**environment))
-            artifact_keys = list_keys_from_s3_path(credentials, artifact_path)
-
-            # Get all the time stamps and determine the files to delete
-            timestamps = list(map(lambda x: x.last_modified, artifact_keys))
-            timestamps.sort()
-            keys_to_del = timestamps[:-artifact.history_length]
-
-            # Iterate through all the artifacts deleting any ones flagged for deletion
-            for artifact_key in artifact_keys:
-                if artifact_key.last_modified in keys_to_del:
-                    log.info("Deleting artifact %s ", artifact_key.name)
-                    delete_key_from_s3(credentials, artifact_key, stack.bespin.dry_run)
     def suspend_cloudformation_actions(self, stack):
         autoscaling_group_id = self.sns_confirmation.autoscaling_group_id
         asg_physical_id = stack.asg_physical_id_for(autoscaling_group_id)
@@ -157,3 +137,4 @@ class Builder(object):
             if key == artifact:
                 environment = dict(env.pair for env in artifact_obj.env)
                 print(artifact_obj.upload_to.format(**environment))
+

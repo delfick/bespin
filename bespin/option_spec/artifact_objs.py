@@ -5,10 +5,11 @@ from bespin import helpers as hp
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
 
-from tarfile import TarInfo
+import logging
 import shutil
-import codecs
 import os
+
+log = logging.getLogger("bespin.option_spec.artifact_objs")
 
 class ArtifactCollection(dictobj):
     fields = ['artifacts']
@@ -26,6 +27,26 @@ class ArtifactCollection(dictobj):
 
     def items(self):
         return self.artifacts.items()
+
+    def clean_old_artifacts(self, s3, dry_run=True):
+        # Iterate over each artifact we need to clean
+        for key, artifact in self.artifacts.items():
+            environment = dict(env.pair for env in artifact.env)
+
+            # Get contents of bucket
+            artifact_path = os.path.dirname(artifact.upload_to.format(**environment))
+            artifact_keys = s3.list_keys_from_s3_path(artifact_path)
+
+            # Get all the time stamps and determine the files to delete
+            timestamps = list(map(lambda x: x.last_modified, artifact_keys))
+            timestamps.sort()
+            keys_to_del = timestamps[:-artifact.history_length]
+
+            # Iterate through all the artifacts deleting any ones flagged for deletion
+            for artifact_key in artifact_keys:
+                if artifact_key.last_modified in keys_to_del:
+                    log.info("Deleting artifact %s ", artifact_key.name)
+                    s3.delete_key_from_s3(artifact_key, dry_run)
 
 class Artifact(dictobj):
     fields = [
