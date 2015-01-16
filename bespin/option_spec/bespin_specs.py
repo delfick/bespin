@@ -35,7 +35,7 @@ class Bespin(dictobj):
         ]
 
 class SNSConfirmation(dictobj):
-    fields = ["version_message", "env", "straight_after", "deployment_queue", "autoscaling_group_id"]
+    fields = ["version_message", "env", "deployment_queue", "autoscaling_group_id"]
 
 class Environment(dictobj):
     fields = ["account_id", "vars"]
@@ -111,7 +111,6 @@ class BespinSpec(object):
                 , version_message = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , autoscaling_group_id = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , deployment_queue = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                , straight_after = defaulted(formatted(boolean(), MergedOptionStringFormatter, expected_type=bool), True)
                 ))
 
             , artifacts = container_spec(artifact_objs.ArtifactCollection, dictof(string_spec(), create_spec(artifact_objs.Artifact

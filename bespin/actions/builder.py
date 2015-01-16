@@ -53,19 +53,14 @@ class Builder(object):
         self.build_stack(stack, credentials)
         made[stack.name] = True
 
-        if stack.sns_confirmation is not NotSpecified and stack.sns_confirmation.straight_after:
-            self.confirm_deployment(stack, credentials)
-
         if any(stack.build_after):
             for dependency in stack.build_after:
                 self.deploy_stack(stacks[dependency], stacks, credentials, made=made, ignore_deps=True)
 
-        if stack.sns_confirmation is not NotSpecified and not stack.sns_confirmation.straight_after:
-            self.confirm_deployment(stack, credentials)
-
         if stack.artifact_retention_after_deployment:
             self.clean_old_artifacts(stack, credentials)
 
+        self.confirm_deployment(stack, credentials)
         stack.check_url(dict(env.pair for env in stack.env))
 
     def layered(self, stacks, only_pushable=False):
