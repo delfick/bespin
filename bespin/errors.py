@@ -83,3 +83,6 @@ class BadDeployment(BespinError):
 class DeprecatedFeature(BadSpecValue):
     desc = "Feature is deprecated"
 
+class InvalidArtifact(BespinError):
+    desc = "Chosen artifact is invalid"
+

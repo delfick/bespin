@@ -88,7 +88,7 @@ def confirm_deployment(overview, configuration, stacks, stack, **kwargs):
 @a_task(needs_stack=True, needs_artifact=True)
 def print_artifact_location(overview, configuration, stacks, stack, artifact, **kwargs):
     """Shows where the artifact will be for this environment"""
-    Builder().print_artifact_location(stack, artifact)
+    stack.artifacts.print_artifact_location(artifact)
 
 @a_task(needs_stack=True, needs_credentials=True)
 def suspend_cloudformation_actions(overview, configuration, stacks, stack, **kwargs):

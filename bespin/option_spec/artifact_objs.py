@@ -1,4 +1,4 @@
-from bespin.errors import BadOption, MissingFile
+from bespin.errors import BadOption, MissingFile, InvalidArtifact
 from bespin.processes import command_output
 from bespin import helpers as hp
 
@@ -14,10 +14,10 @@ log = logging.getLogger("bespin.option_spec.artifact_objs")
 class ArtifactCollection(dictobj):
     fields = ['artifacts']
 
-    def find_missing_env(self, env_to_find):
+    def find_missing_env(self, env_to_find, wanted_artifact=None):
         missing = dict(
             (name, [e.env_name for e in getattr(artifact, env_to_find) if e.missing])
-            for name, artifact in self.artifacts.items()
+            for name, artifact in self.artifacts.items() if wanted_artifact is None or name == wanted_artifact
         )
         if any(missing.values()):
             raise BadOption("Some artifacts require variables that aren't in the current environment", missing=missing)
@@ -47,6 +47,16 @@ class ArtifactCollection(dictobj):
                 if artifact_key.last_modified in keys_to_del:
                     log.info("Deleting artifact %s ", artifact_key.name)
                     s3.delete_key_from_s3(artifact_key, dry_run)
+
+    def print_artifact_location(self, artifact):
+        """Print out the artifact location for a particular artifact"""
+        if artifact not in self.artifacts:
+            raise InvalidArtifact(wanted=artifact, available=self.artifacts.keys())
+        artifact = self.artifacts[artifact]
+
+        self.find_missing_env("env", artifact)
+        environment = dict(env.pair for env in artifact.env)
+        print(artifact.upload_to.format(**environment))
 
 class Artifact(dictobj):
     fields = [

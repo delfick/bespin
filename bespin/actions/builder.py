@@ -130,13 +130,3 @@ class Builder(object):
         stack.ec2.resume_processes(asg_physical_id)
         log.info("Resumed Processes on AutoScaling Group %s", asg_physical_id)
 
-    def print_artifact_location(self, stack, artifact):
-        # Find missing env before doing anything
-        stack.find_missing_artifact_env()
-
-        # Iterate over each artifact we need to clean
-        for key, artifact_obj in stack.artifacts.items():
-            if key == artifact:
-                environment = dict(env.pair for env in artifact_obj.env)
-                print(artifact_obj.upload_to.format(**environment))
-
