@@ -127,10 +127,16 @@ class Stack(dictobj):
 
         if not status.exists:
             log.info("No existing stack, making one now")
-            self.cloudformation.create(self.stack_json_obj, self.params_json_obj, self.tags.as_dict() or None)
+            if self.bespin.dry_run:
+                log.info("DRYRUN: Would create stack")
+            else:
+                self.cloudformation.create(self.stack_json_obj, self.params_json_obj, self.tags.as_dict() or None)
         elif status.complete:
             log.info("Found existing stack, doing an update")
-            self.cloudformation.update(self.stack_json_obj, self.params_json_obj)
+            if self.bespin.dry_run:
+                log.info("DRYRUN: Would update stack")
+            else:
+                self.cloudformation.update(self.stack_json_obj, self.params_json_obj)
         else:
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
 

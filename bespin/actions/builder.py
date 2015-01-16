@@ -105,7 +105,11 @@ class Builder(object):
                 log.info("Finished generating artifact: {0}".format(key))
 
                 # Upload the artifact
-                upload_file_to_s3(credentials, temp_tar_file.name, artifact.upload_to.format(**environment))
+                s3_location = artifact.upload_to.format(**environment)
+                if stack.bespin.dry_run:
+                    log.info("DRYRUN: Would upload tar file to %s", s3_location)
+                else:
+                    stack.s3.upload_file_to_s3(temp_tar_file.name, s3_location)
 
     def confirm_deployment(self, stack, credentials):
         stack.check_sns()
