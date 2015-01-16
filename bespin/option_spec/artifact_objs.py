@@ -111,6 +111,7 @@ class ArtifactCommand(dictobj):
 
             if "append" in options:
                 with open(path, "a") as fle:
+                    fle.write("\n")
                     for append in options["append"]:
                         fle.write("{0}\n".format(append.format(**environment)))
 
