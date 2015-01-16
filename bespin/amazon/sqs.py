@@ -10,7 +10,7 @@ import time
 log = logging.getLogger("bespin.amazon.sqs")
 
 class SQS(object):
-    def __init__(self, region):
+    def __init__(self, region="ap-southeast-2"):
         self.region = region
 
     @memoized_property

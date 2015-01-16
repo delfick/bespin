@@ -9,7 +9,7 @@ import logging
 log = logging.getLogger("bespin.amazon.ec2")
 
 class EC2(object):
-    def __init__(self, region):
+    def __init__(self, region="ap-southeast-2"):
         self.region = region
 
     @memoized_property

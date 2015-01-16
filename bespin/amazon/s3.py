@@ -21,7 +21,7 @@ S3Location = namedtuple("S3Location", ["bucket", "key", "full"])
 
 class S3(object):
 
-    def __init__(self, region):
+    def __init__(self, region="ap-southeast-2"):
         self.region = region
 
     @memoized_property

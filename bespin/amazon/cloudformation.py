@@ -64,7 +64,7 @@ for kls in [Status] + Status.__subclasses__():
     Status.statuses[kls.__name__] = with_meta
 
 class Cloudformation(AmazonMixin):
-    def __init__(self, stack_name, region):
+    def __init__(self, stack_name, region="ap-southeast-2"):
         self.region = region
         self.stack_name = stack_name
 
