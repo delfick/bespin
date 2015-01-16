@@ -19,7 +19,7 @@ def get_all_deployment_messages(credentials, sqs_url, timeout=60, sleep=2):
             raw_message = raw_messages[0]
             encoded_message = json.loads(raw_message.get_body())['Message']
 
-            #q.delete_message(raw_message)
+            q.delete_message(raw_message)
 
             message = decode_message(encoded_message)
 
