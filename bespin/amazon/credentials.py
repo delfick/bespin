@@ -41,7 +41,7 @@ class Credentials(object):
             result = connection.list_roles(max_items=1)
         except boto.exception.BotoServerError as error:
             if error.status == 403:
-                raise BespinError("Your credentials aren't allowed to look at iam :(")
+                raise BespinError("Couldn't determine what account your credentials are from", error=error.message)
             else:
                 raise
 
@@ -67,7 +67,14 @@ class Credentials(object):
         except boto.exception.NoAuthHandlerFound:
             raise BespinError("Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY before running this script (your aws credentials)")
 
-        creds = conn.assume_role("arn:aws:iam::{0}:{1}".format(self.account_id, self.assume_role), "bespin")
+        try:
+            creds = conn.assume_role("arn:aws:iam::{0}:{1}".format(self.account_id, self.assume_role), "bespin")
+        except boto.exception.BotoServerError as error:
+            if error.status == 403:
+                raise BespinError("Not allowed to assume role", error=error.message)
+            else:
+                raise
+
         creds_dict = creds.credentials.to_dict()
 
         os.environ['AWS_ACCESS_KEY_ID'] = creds_dict["access_key"]
