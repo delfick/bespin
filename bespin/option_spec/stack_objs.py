@@ -264,7 +264,16 @@ class UrlChecker(dictobj):
     fields = ["check_url", "endpoint", "expect", "timeout_after"]
 
     def wait(self, environment):
-        url = self.endpoint().resolve() + self.check_url
+        endpoint = self.endpoint().resolve()
+        while endpoint.endswith("/"):
+            endpoint = endpoint[:-1]
+        while endpoint.endswith("."):
+            endpoint = endpoint[:-1]
+
+        while self.check_url.startswith("/"):
+            self.check_url = self.check_url[1:]
+
+        url = endpoint + '/' + self.check_url
         expected = self.expect.format(**environment)
 
         log.info("Asking server for version till we match %s", expected)
