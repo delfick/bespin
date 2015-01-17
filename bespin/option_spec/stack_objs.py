@@ -270,11 +270,15 @@ class UrlChecker(dictobj):
         log.info("Asking server for version till we match %s", expected)
         for _ in hp.until(self.timeout_after, step=15):
             log.info("Asking %s", url)
-            result = requests.get(url).text
-            log.info("\tgot back %s", result)
-            if fnmatch.fnmatch(result, expected):
-                log.info("Deployment successful!")
-                return
+            try:
+                result = requests.get(url).text
+            except requests.exceptions.ConnectionError as error:
+                log.warning("Failed to ask server\terror=%s", error)
+            else:
+                log.info("\tgot back %s", result)
+                if fnmatch.fnmatch(result, expected):
+                    log.info("Deployment successful!")
+                    return
 
         raise BadStack("Timedout waiting for the app to give back the correct version")
 
