@@ -74,15 +74,17 @@ def command_output(command, *command_extras, **kwargs):
             time.sleep(0.01)
 
         if process.poll() is None:
-            log.error("Command took another 5 seconds after terminate, so sigkilling it now")
+            log.error("Command took another %s seconds after terminate, so sigkilling it now", timeout)
             os.kill(process.pid, signal.SIGKILL)
             attempted_sigkill = True
 
     for nxt in read_non_blocking(process.stdout):
         output.append(nxt.decode("utf8").strip())
 
-    if process.poll() is not 0 and attempted_sigkill:
-        raise CouldntKill("Failed to sigkill hanging process", pid=process.pid, command=args, output="\n".join(output))
+    if attempted_sigkill:
+        time.sleep(0.01)
+        if process.poll() is None:
+            raise CouldntKill("Failed to sigkill hanging process", pid=process.pid, command=args, output="\n".join(output))
 
     if process.poll() != 0:
         log.error("Failed to run command\tcommand=%s", args)
