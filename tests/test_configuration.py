@@ -47,26 +47,16 @@ describe BespinCase, "Collecting configuration":
             overview.configuration.converters.activate()
         yield overview
 
-    it "puts in mtime and stacks":
-        config = self.make_config({"stacks": { "blah": {"resources": []}}})
-        mtime = os.path.getmtime(config)
-        with self.make_overview(config) as overview:
-            self.assertIs(type(overview.configuration), MergedOptions)
-            self.assertIs(type(overview.configuration["stacks"]), MergedOptions)
-            self.assertEqual(overview.configuration['mtime'](), mtime)
-            self.assertEqual(dict(overview.configuration['stacks'].items()), {"blah": overview.configuration["stacks.blah"]})
-            self.assertEqual(sorted(overview.configuration.keys()), sorted(["mtime", "stacks"]))
-
     it "includes configuration from the home directory":
         config = self.make_config({"a":1, "b":2, "stacks": {"meh": {}}})
         home_config = self.make_config({"a":3, "c":4})
         with self.make_overview(config, home_config) as overview:
-            self.assertEqual(sorted(overview.configuration.keys()), sorted(['a', 'b', 'c', 'mtime', 'stacks']))
+            self.assertEqual(sorted(overview.configuration.keys()), sorted(['a', 'b', 'c', 'stacks']))
             self.assertEqual(overview.configuration['a'], 1)
             self.assertEqual(overview.configuration['b'], 2)
             self.assertEqual(overview.configuration['c'], 4)
 
-    it "sets up converters for overview":
+    it "sets up converters for bespin":
         config = self.make_config({"bespin": {}})
         with self.make_overview(config, activate_converters=True) as overview:
             self.assertIs(type(overview.configuration["bespin"]), Bespin)

@@ -100,10 +100,6 @@ class Overview(object):
         except yaml.parser.ParserError as error:
             raise BadYaml("Failed to read yaml", location=filepath, error_type=error.__class__.__name__, error="{0}{1}".format(error.problem, error.problem_mark))
 
-    def get_committime_or_mtime(self, location):
-        """Get the commit time of some file or the modified time of of it if can't get from git"""
-        return os.path.getmtime(location)
-
     def home_dir_configuration_location(self):
         """Return the location of the configuration in the user's home directory"""
         return os.path.expanduser("~/.bespin.yml")
@@ -120,10 +116,6 @@ class Overview(object):
         home_dir_configuration = self.home_dir_configuration_location()
         sources = [home_dir_configuration, configuration_file]
 
-        def make_mtime_func(source):
-            """Lazily calculate the mtime to avoid wasted computation"""
-            return lambda: self.get_committime_or_mtime(source)
-
         for source in sources:
             if source is None or not os.path.exists(source):
                 continue
@@ -136,8 +128,6 @@ class Overview(object):
 
             if not result:
                 continue
-
-            result["mtime"] = make_mtime_func(source)
 
             if "stacks" in result:
                 stacks = result.pop("stacks")
