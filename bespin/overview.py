@@ -219,20 +219,20 @@ class Overview(object):
                 action = name
             return (name, Task(action, description=description, options=options, label="Bespin"))
         return dict([
-              t("execute", "Execute a command with assumed creds")
-            , t("tail", "Tail the deployment of a stack")
+              t("tail", "Tail the deployment of a stack")
             , t("show", "Show the available stacks")
             , t("deploy", "Deploy a particular stack")
+            , t("execute", "Execute a command with assumed creds")
             , t("bastion", "SSH into the bastion")
             , t("instances", "Find and ssh into the instances")
             , t("list_tasks", "List the available tasks")
-            , t("clean_old_artifacts", "Cleans old artifacts from S3")
-            , t("confirm_deployment", "Checks all instances were correctly deployed to")
             , t("sanity_check", "Sanity check a stack and it's dependencies")
-            , t("print_artifact_location", "Shows where the artifact will be for this environment")
             , t("publish_artifacts", "Makes and uploads the artifacts for a stack to S3")
-            , t("resume_cloudformation_actions", "Suspends all schedule actions on a cloudformation stack")
-            , t("suspend_cloudformation_actions", "Resumes all schedule actions on a cloudformation stack")
+            , t("confirm_deployment", "Checks all instances were correctly deployed to")
+            , t("clean_old_artifacts", "Cleans old artifacts from S3")
+            , t("print_artifact_location", "Shows where the artifact will be for this environment")
+            , t("resume_cloudformation_actions", "Resumes all schedule actions on a cloudformation stack")
+            , t("suspend_cloudformation_actions", "Suspends all schedule actions on a cloudformation stack")
             ])
 
     def find_tasks(self, configuration=None):
