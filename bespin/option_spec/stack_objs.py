@@ -319,7 +319,7 @@ class SNSConfirmation(dictobj):
                         success.append(message['instance_id'])
                     else:
                         log.info("Failed to deploy instance %s", message['instance_id'])
-                        log.info("Failure Message: ", "%s", message['output'])
+                        log.info("Failure Message: %s", message['output'])
                         failed.append(message['instance_id'])
 
             # Stop trying if we have all the instances
