@@ -34,6 +34,9 @@ describe BespinCase, "MergedOptionStringFormatter":
     it "formats :env as a bash variable":
         self.check_formatting({}, [], value="{blah:env} stuff", expected="${blah} stuff")
 
+    it "formats :underscored as replacing dashes with underscores":
+        self.check_formatting({}, [], value="{blah-and-stuff:underscored}", expected="blah_and_stuff")
+
     it "formats formatted values":
         self.check_formatting({"one": "{two}", "two": 2}, [], value="{one}", expected="2")
 
