@@ -1,11 +1,10 @@
 # coding: spec
 
-from bespin.helpers import a_temp_file, generate_tar_file, until, memoized_property
+from bespin.helpers import a_temp_file, generate_tar_file, until, memoized_property, a_temp_directory
 from bespin.option_spec.artifact_objs import ArtifactPath, ArtifactFile
 
 from tests.helpers import BespinCase
 
-from noseOfYeti.tokeniser.support import noy_sup_setUp
 from contextlib import contextmanager
 import tarfile
 import nose
@@ -27,6 +26,13 @@ describe BespinCase, "a_temp_file":
             with open(fle.name) as fread:
                 self.assertEqual(fread.read(), "blah")
         assert not os.path.exists(fle.name)
+
+describe BespinCase, "a_temp_directory":
+    it "yields the name of a directory that disappears after the context":
+        with a_temp_directory() as directory:
+            assert os.path.exists(directory)
+            assert os.path.isdir(directory)
+        assert not os.path.exists(directory)
 
 describe BespinCase, "until":
 
