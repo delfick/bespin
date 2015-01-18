@@ -1,6 +1,6 @@
 # coding: spec
 
-from bespin.option_spec.bespin_specs import Bespin
+from bespin.option_spec.bespin_specs import Bespin, Environment
 from bespin.option_spec.stack_objs import Stack
 from bespin.option_spec.task_objs import Task
 from bespin.overview import Overview
@@ -103,4 +103,13 @@ describe BespinCase, "Collecting configuration":
             stack = overview.configuration["stacks.blah"]
             self.assertEqual(stack.vars["two"].resolve(), '2')
             self.assertEqual(stack.vars["one"].resolve(), '2')
+
+    it "converts environments":
+        config = self.make_config({"environments": {"dev": {"account_id": "1231434"}, "staging": {"account_id": "087089", "vars": {"one": "ONE"}}}})
+        with self.make_overview(config, activate_converters=True) as overview:
+            environment = overview.configuration["environments"]
+            self.assertEqual(type(environment["dev"]), Environment)
+            self.assertEqual(environment["dev"].account_id, "1231434")
+            self.assertEqual(environment["staging"].account_id, "087089")
+            self.assertEqual(environment["staging"].vars.as_dict(), {"one": "ONE"})
 
