@@ -5,8 +5,8 @@ the argument parsing and for starting up Bespin.
 
 from __future__ import print_function
 
+from bespin.errors import BadOption, UserQuit
 from bespin.overview import Overview
-from bespin.errors import BadOption
 from bespin import VERSION
 
 from rainbow_logging_handler import RainbowLoggingHandler
@@ -216,10 +216,15 @@ def set_boto_useragent():
 
 def main(argv=None):
     try:
-        args, cli_args = CliParser().interpret_args(argv)
-        handler = setup_logging(verbose=args.verbose, silent=args.silent, debug=args.debug)
-        set_boto_useragent()
-        Overview(configuration_file=args.bespin_config.name, logging_handler=handler).start(cli_args)
+        try:
+            args, cli_args = CliParser().interpret_args(argv)
+            handler = setup_logging(verbose=args.verbose, silent=args.silent, debug=args.debug)
+            set_boto_useragent()
+            Overview(configuration_file=args.bespin_config.name, logging_handler=handler).start(cli_args)
+        except KeyboardInterrupt:
+            if CliParser().parse_args(argv)[0].debug:
+                raise
+            raise UserQuit()
     except DelfickError as error:
         print("")
         print("!" * 80)
@@ -230,8 +235,5 @@ def main(argv=None):
         sys.exit(1)
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        pass
+    main()
 
