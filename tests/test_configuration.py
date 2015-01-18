@@ -71,3 +71,36 @@ describe BespinCase, "Collecting configuration":
         with self.make_overview(config, activate_converters=True) as overview:
             self.assertIs(type(overview.configuration["stacks.blah"]), Stack)
 
+    it "merges environment into stack":
+        config = {
+              "environments":
+              { "dev": {"vars": {"one": 1}}
+              , 'staging': {"vars": {"one": 2}}
+              }
+            , "config_root": "."
+            , "stacks":
+              { "blah":
+                { "params_json": self.make_config({})
+                , "stack_json": self.make_config({})
+                , "resources": []
+                , "vars":
+                  { "two": 2
+                  }
+                }
+              }
+            }
+
+        config["environment"] = "dev"
+        config["bespin"] = {"environment": "dev"}
+        with self.make_overview(self.make_config(config), activate_converters=True) as overview:
+            stack = overview.configuration["stacks.blah"]
+            self.assertEqual(stack.vars["two"].resolve(), '2')
+            self.assertEqual(stack.vars["one"].resolve(), '1')
+
+        config["environment"] = "staging"
+        config["bespin"] = {"environment": "staging"}
+        with self.make_overview(self.make_config(config), activate_converters=True) as overview:
+            stack = overview.configuration["stacks.blah"]
+            self.assertEqual(stack.vars["two"].resolve(), '2')
+            self.assertEqual(stack.vars["one"].resolve(), '2')
+
