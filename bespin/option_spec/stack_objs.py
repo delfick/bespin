@@ -314,7 +314,7 @@ class SNSConfirmation(dictobj):
 
                 # Ignore the messages for instances outside this deployment
                 if message['instance_id'] in instances_to_check:
-                    if message['output'] == version_message:
+                    if fnmatch.fnmatch(message['output'], version_message):
                         log.info("Deployed instance %s", message['instance_id'])
                         success.append(message['instance_id'])
                     else:
