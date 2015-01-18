@@ -5,7 +5,6 @@ from bespin import helpers as hp
 import boto.cloudformation
 import datetime
 import logging
-import time
 import json
 import six
 

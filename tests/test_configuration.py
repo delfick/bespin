@@ -3,7 +3,6 @@
 from bespin.option_spec.bespin_specs import Bespin
 from bespin.option_spec.stack_objs import Stack
 from bespin.option_spec.task_objs import Task
-from bespin.executor import CliParser
 from bespin.overview import Overview
 
 from tests.helpers import BespinCase

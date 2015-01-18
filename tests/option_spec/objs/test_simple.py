@@ -5,7 +5,6 @@ from bespin.option_spec import stack_objs as objs
 from tests.helpers import BespinCase
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp, noy_sup_tearDown
-from input_algorithms.spec_base import NotSpecified
 import mock
 import os
 

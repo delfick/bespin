@@ -7,7 +7,6 @@ from bespin.errors import BadSpecValue
 from tests.helpers import BespinCase
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp
-from input_algorithms.spec_base import NotSpecified
 from input_algorithms.meta import Meta
 from option_merge import MergedOptions
 import mock
