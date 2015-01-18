@@ -8,59 +8,18 @@ BadSpec = BadSpec
 BadSpecValue = BadSpecValue
 ProgrammerError = ProgrammerError
 
+########################
+###   CONFIGURATION
+########################
+
 class BadConfiguration(BespinError):
     desc = "Bad configuration"
 
 class BadOptionFormat(BespinError):
     desc = "Bad option format"
 
-class BadTask(BespinError):
-    desc = "Bad task"
-
 class BadOption(BespinError):
     desc = "Bad Option"
-
-class NoSuchKey(BespinError):
-    desc = "Couldn't find key"
-
-class NoSuchStack(BespinError):
-    desc = "Couldn't find stack"
-
-class BadStack(BespinError):
-    desc = "Bad stack"
-
-class BadS3Bucket(BespinError):
-    desc = "Bad S3 Bucket"
-
-class BadJson(BespinError):
-    desc = "Bad json"
-
-class FailedStack(BespinError):
-    desc = "Something about an stack failed"
-
-class BadYaml(BespinError):
-    desc = "Invalid yaml file"
-
-class BadResult(BespinError):
-    desc = "A bad result"
-
-class BadAmazon(BespinError):
-    desc = "Amazon says no"
-
-class StackDoesntExist(BadAmazon):
-    desc = "Missing stack"
-
-class UserQuit(BespinError):
-    desc = "User quit the program"
-
-class BadDockerConnection(BespinError):
-    desc = "Failed to connect to docker"
-
-class BadSQSMessage(BespinError):
-    desc= "Failed to decode message"
-
-class StackDepCycle(BespinError):
-    desc = "Stack dependency cycle"
 
 class MissingOutput(BespinError):
     desc = "Couldn't find an output"
@@ -68,21 +27,57 @@ class MissingOutput(BespinError):
 class MissingFile(BespinError):
     desc = "Couldn't find a file"
 
-class CouldntKill(BespinError):
-    desc = "Failed to kill a process"
+class BadJson(BespinError):
+    desc = "Bad json"
 
-class BadDirectory(BadSpecValue):
-    desc = "Expected a path to a directory"
+class BadYaml(BespinError):
+    desc = "Invalid yaml file"
 
-class BadFilename(BadSpecValue):
-    desc = "Expected a path to a filename"
+########################
+###   OBJECTS
+########################
+
+class BadTask(BespinError):
+    desc = "Bad task"
+
+class NoSuchStack(BespinError):
+    desc = "Couldn't find stack"
+
+class BadStack(BespinError):
+    desc = "Bad stack"
 
 class BadDeployment(BespinError):
     desc = "Failed to get all the correct deployment messages"
 
-class DeprecatedFeature(BadSpecValue):
-    desc = "Feature is deprecated"
-
 class InvalidArtifact(BespinError):
     desc = "Chosen artifact is invalid"
+
+########################
+###   AMAZON
+########################
+
+class BadAmazon(BespinError):
+    desc = "Amazon says no"
+
+class BadS3Bucket(BadAmazon):
+    desc = "Bad S3 Bucket"
+
+class BadSQSMessage(BadAmazon):
+    desc= "Failed to decode message"
+
+class StackDoesntExist(BadAmazon):
+    desc = "Missing stack"
+
+########################
+###   OTHER
+########################
+
+class UserQuit(BespinError):
+    desc = "User quit the program"
+
+class StackDepCycle(BespinError):
+    desc = "Stack dependency cycle"
+
+class CouldntKill(BespinError):
+    desc = "Failed to kill a process"
 
