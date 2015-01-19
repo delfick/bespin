@@ -45,9 +45,14 @@ class Deployer(object):
 
         print("Building - {0}".format(stack.stack_name))
         print(json.dumps(stack.params_json_obj, indent=4))
-        if stack.skip_update_if_equivalent and all(check.resolve() for check in stack.skip_update_if_equivalent):
-            log.info("Stack is determined to be the same, not updating")
-        else:
+
+        skip = False
+        if stack.cloudformation.status.exists:
+            if stack.skip_update_if_equivalent and all(check.resolve() for check in stack.skip_update_if_equivalent):
+                log.info("Stack is determined to be the same, not updating")
+                skip = True
+
+        if not skip:
             stack.create_or_update()
 
         # Avoid race condition
