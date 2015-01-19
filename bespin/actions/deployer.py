@@ -2,6 +2,7 @@ from bespin.actions.builder import Builder
 from bespin.errors import NoSuchStack
 
 import logging
+import time
 import json
 
 log = logging.getLogger("bespin.actions.deployer")
@@ -48,6 +49,9 @@ class Deployer(object):
             log.info("Stack is determined to be the same, not updating")
         else:
             stack.create_or_update()
+
+        # Avoid race condition
+        time.sleep(5)
 
         stack.cloudformation.wait(rollback_is_failure=True)
         stack.cloudformation.reset()
