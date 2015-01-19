@@ -126,7 +126,7 @@ class BespinSpec(object):
                 )))
 
             , ssh = optional_spec(create_spec(stack_objs.SSH
-                , user = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , user = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , bastion = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , bastion_key_location = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , instance_key_location = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))

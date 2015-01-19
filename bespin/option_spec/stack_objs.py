@@ -258,6 +258,7 @@ class SSH(dictobj):
 
         command = "ssh -o ForwardAgent=false -o IdentitiesOnly=true {0} -i {1} {2}@{3} {4}".format(proxy, self.instance_key_path, self.user, ip_address, extra_args)
         parts = shlex.split(command)
+        log.debug("Running %s", command)
         os.execvp(parts[0], parts)
 
 class UrlChecker(dictobj):
