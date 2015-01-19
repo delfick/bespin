@@ -42,8 +42,9 @@ class EC2(object):
         instance_ids = [inst.instance_id for inst in asg[0].instances]
         print("Found {0} instances".format(len(instance_ids)))
         print("=" * 20)
-        for instance in self.conn.get_only_instances(instance_ids=instance_ids):
-            launch_time = datetime.datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
-            delta = (datetime.datetime.utcnow() - launch_time).seconds
-            print("{0}\t{1}\t{2}\tUp {3} seconds".format(instance.id, instance.private_ip_address, instance.state, delta))
+        if instance_ids:
+            for instance in self.conn.get_only_instances(instance_ids=instance_ids):
+                launch_time = datetime.datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
+                delta = (datetime.datetime.utcnow() - launch_time).seconds
+                print("{0}\t{1}\t{2}\tUp {3} seconds".format(instance.id, instance.private_ip_address, instance.state, delta))
 
