@@ -88,7 +88,7 @@ def confirm_deployment(overview, configuration, stacks, stack, **kwargs):
 @a_task(needs_stack=True, needs_artifact=True)
 def print_artifact_location(overview, configuration, stacks, stack, artifact, **kwargs):
     """Shows where the artifact will be for this environment"""
-    stack.artifacts.print_artifact_location(artifact)
+    print(stack.artifacts.get_artifact_location(artifact))
 
 @a_task(needs_stack=True, needs_artifact=True)
 def print_variable(overview, configuration, stacks, stack, artifact, **kwargs):
