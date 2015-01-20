@@ -27,6 +27,9 @@ class MissingOutput(BespinError):
 class MissingFile(BespinError):
     desc = "Couldn't find a file"
 
+class MissingVariable(BespinError):
+    desc = "Couldn't find a variable"
+
 class BadJson(BespinError):
     desc = "Bad json"
 

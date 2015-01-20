@@ -1,5 +1,5 @@
 from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError
-from bespin.errors import StackDoesntExist, BadDeployment
+from bespin.errors import StackDoesntExist, BadDeployment, MissingVariable
 from bespin.helpers import memoized_property
 from input_algorithms.meta import Meta
 from bespin import helpers as hp
@@ -60,6 +60,12 @@ class Stack(dictobj):
 
     def display_line(self):
         return "Stack {0}".format(self.stack_name)
+
+    def get_variable(self, artifact):
+        try:
+            return self.vars[artifact].resolve()
+        except KeyError:
+            raise MissingVariable(wanted=artifact, available=list(self.vars.keys()))
 
     def find_missing_env(self):
         """Find any missing environment variables"""

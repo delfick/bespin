@@ -90,6 +90,11 @@ def print_artifact_location(overview, configuration, stacks, stack, artifact, **
     """Shows where the artifact will be for this environment"""
     stack.artifacts.print_artifact_location(artifact)
 
+@a_task(needs_stack=True, needs_artifact=True)
+def print_variable(overview, configuration, stacks, stack, artifact, **kwargs):
+    """Prints out a variable from the stack"""
+    print(stack.get_variable(artifact))
+
 @a_task(needs_stack=True, needs_credentials=True)
 def suspend_cloudformation_actions(overview, configuration, stacks, stack, **kwargs):
     """Suspends all schedule actions on a cloudformation stack"""
