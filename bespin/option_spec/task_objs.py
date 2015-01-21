@@ -67,7 +67,7 @@ class Task(dictobj):
             if not environment:
                 raise BadOption("Please specify an environment")
 
-            assume_role = NotSpecified if configuration["bespin"].no_assume_role else configuration["bespin"].assume_role
+            assume_role = NotSpecified if self.options.get("no_assume_role", False) or configuration["bespin"].no_assume_role else configuration["bespin"].assume_role
             credentials = Credentials(
                   bespin.region
                 , configuration["environments"][environment].account_id
