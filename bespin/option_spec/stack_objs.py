@@ -61,12 +61,6 @@ class Stack(dictobj):
     def display_line(self):
         return "Stack {0}".format(self.stack_name)
 
-    def get_variable(self, artifact):
-        try:
-            return self.vars[artifact].resolve()
-        except KeyError:
-            raise MissingVariable(wanted=artifact, available=list(self.vars.keys()))
-
     def find_missing_env(self, key="env"):
         """Find any missing environment variables"""
         missing = [e.env_name for e in getattr(self, key) if e.missing]

@@ -13,6 +13,7 @@ from input_algorithms.spec_base import (
 
 from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports
 from bespin.formatter import MergedOptionStringFormatter
+from bespin.option_spec.bespin_obj import Bespin
 from bespin.helpers import memoized_property
 
 from input_algorithms.dictobj import dictobj
@@ -27,12 +28,6 @@ class filename_spec(orig_filename_spec):
     def normalise_either(self, meta, val):
         val = self.spec.normalise(meta, val)
         return super(filename_spec, self).normalise_filled(meta, val)
-
-class Bespin(dictobj):
-    fields = [
-          "dry_run", "assume_role", "flat", "config", "chosen_stack", "no_assume_role", "extra_imports"
-        , "region", "environment", "chosen_artifact", "chosen_task", "extra", "interactive"
-        ]
 
 class Environment(dictobj):
     fields = ["account_id", "vars"]
@@ -150,6 +145,7 @@ class BespinSpec(object):
 
         return create_spec(Bespin
             , config = file_spec()
+            , configuration = any_spec()
 
             , assume_role = optional_spec(string_spec())
 

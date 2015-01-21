@@ -151,6 +151,7 @@ class Overview(object):
             log.info("Converting %s", path)
             meta = Meta(path.configuration, [("bespin", "")])
             configuration.converters.started(path)
+            val["configuration"] = configuration.root()
             return bespin_spec.bespin_spec.normalise(meta, val)
 
         bespin_converter = Converter(convert=convert_bespin, convert_path=["bespin"])
@@ -197,6 +198,7 @@ class Overview(object):
                 thing["bespin"] = configuration["bespin"]
                 thing["environment"] = environment
                 thing["configuration"] = configuration
+                thing["__stack__"] = val
 
             meta = Meta(everything, [("stacks", ""), (stack, "")])
             return bespin_spec.stack_spec.normalise(meta, base)

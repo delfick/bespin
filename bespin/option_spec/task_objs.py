@@ -56,25 +56,33 @@ class Task(dictobj):
             if stack:
                 stack = stacks[stack]
 
-        credentials = None
-        if task_action.needs_credentials:
+        bespin = configuration["bespin"]
+        info = {"done": False}
+        def set_credentials():
+            if info["done"]:
+                return
+            info["done"] = True
+
             environment = configuration["bespin"].environment
             if not environment:
                 raise BadOption("Please specify an environment")
 
             assume_role = NotSpecified if configuration["bespin"].no_assume_role else configuration["bespin"].assume_role
             credentials = Credentials(
-                  configuration["bespin"].region
+                  bespin.region
                 , configuration["environments"][environment].account_id
                 , assume_role
                 )
-            configuration["bespin"].credentials = credentials
+            bespin.credentials = credentials
+        bespin.set_credentials = set_credentials
+        if task_action.needs_credentials:
+            bespin.set_credentials()
 
         artifact = configuration["bespin"].chosen_artifact or None
         if task_action.needs_artifact and not artifact:
                 raise BadOption("Please specify an artifact")
 
-        return task_action(overview, configuration, stacks=stacks, stack=stack, credentials=credentials, artifact=artifact, tasks=tasks)
+        return task_action(overview, configuration, stacks=stacks, stack=stack, artifact=artifact, tasks=tasks)
 
     def determine_stack(self, stack, overview, configuration, needs_stack=True):
         """Complain if we don't have an stack"""

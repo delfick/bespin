@@ -90,10 +90,10 @@ def print_artifact_location(overview, configuration, stacks, stack, artifact, **
     """Shows where the artifact will be for this environment"""
     print(stack.artifacts.get_artifact_location(artifact))
 
-@a_task(needs_stack=True, needs_artifact=True)
+@a_task(needs_artifact=True)
 def print_variable(overview, configuration, stacks, stack, artifact, **kwargs):
     """Prints out a variable from the stack"""
-    print(stack.get_variable(artifact))
+    print(configuration["bespin"].get_variable(artifact))
 
 @a_task(needs_stack=True, needs_credentials=True)
 def suspend_cloudformation_actions(overview, configuration, stacks, stack, **kwargs):
