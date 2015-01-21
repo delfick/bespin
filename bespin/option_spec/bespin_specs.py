@@ -11,7 +11,7 @@ from input_algorithms.spec_base import (
     , valid_string_spec, create_spec, string_choice_spec, filename_spec as orig_filename_spec
     )
 
-from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs
+from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports
 from bespin.formatter import MergedOptionStringFormatter
 from bespin.helpers import memoized_property
 
@@ -30,7 +30,7 @@ class filename_spec(orig_filename_spec):
 
 class Bespin(dictobj):
     fields = [
-          "dry_run", "assume_role", "flat", "config", "chosen_stack", "no_assume_role"
+          "dry_run", "assume_role", "flat", "config", "chosen_stack", "no_assume_role", "extra_imports"
         , "region", "environment", "chosen_artifact", "chosen_task", "extra", "interactive"
         ]
 
@@ -168,5 +168,6 @@ class BespinSpec(object):
             , chosen_artifact = defaulted(formatted_string, "")
 
             , interactive = defaulted(formatted_boolean, True)
+            , extra_imports = listof(imports.import_spec())
             )
 

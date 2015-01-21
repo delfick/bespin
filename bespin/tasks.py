@@ -33,13 +33,13 @@ class a_task(object):
         return func
 
 @a_task()
-def list_tasks(overview, configuration, **kwargs):
+def list_tasks(overview, configuration, tasks, **kwargs):
     """List the available_tasks"""
     print("Available tasks to choose from are:")
     print("Use the --task option to choose one")
     print("")
     keygetter = lambda item: item[1].label
-    tasks = sorted(overview.find_tasks().items(), key=keygetter)
+    tasks = sorted(tasks.items(), key=keygetter)
     for label, items in itertools.groupby(tasks, keygetter):
         print("--- {0}".format(label))
         print("----{0}".format("-" * len(label)))

@@ -21,11 +21,11 @@ class Task(dictobj):
     """
     fields = [("action", "run"), ("label", "Project"), ("options", None), ("overrides", None), ("description", "")]
 
-    def run(self, overview, cli_args, stack, available_tasks=None):
+    def run(self, overview, cli_args, stack, available_actions=None, tasks=None):
         """Run this task"""
-        if available_tasks is None:
-            from bespin.tasks import available_tasks
-        task_func = available_tasks[self.action]
+        if available_actions is None:
+            from bespin.tasks import available_tasks as available_actions
+        task_action = available_actions[self.action]
         configuration = MergedOptions.using(overview.configuration, dont_prefix=overview.configuration.dont_prefix, converters=overview.configuration.converters)
 
         if self.options:
@@ -45,19 +45,19 @@ class Task(dictobj):
             overview.configuration.update(overrides)
 
         stacks = None
-        if task_func.needs_stacks:
+        if task_action.needs_stacks:
             environment = configuration["bespin"].environment
             if not environment:
                 raise BadOption("Please specify an environment")
             if configuration["environments"].get(environment) is None:
                 raise BadOption("No configuration found for specified environment", environment=environment)
 
-            stacks = self.determine_stack(stack, overview, configuration, needs_stack=task_func.needs_stack)
+            stacks = self.determine_stack(stack, overview, configuration, needs_stack=task_action.needs_stack)
             if stack:
                 stack = stacks[stack]
 
         credentials = None
-        if task_func.needs_credentials:
+        if task_action.needs_credentials:
             environment = configuration["bespin"].environment
             if not environment:
                 raise BadOption("Please specify an environment")
@@ -71,10 +71,10 @@ class Task(dictobj):
             configuration["bespin"].credentials = credentials
 
         artifact = configuration["bespin"].chosen_artifact or None
-        if task_func.needs_artifact and not artifact:
+        if task_action.needs_artifact and not artifact:
                 raise BadOption("Please specify an artifact")
 
-        return task_func(overview, configuration, stacks=stacks, stack=stack, credentials=credentials, artifact=artifact)
+        return task_action(overview, configuration, stacks=stacks, stack=stack, credentials=credentials, artifact=artifact, tasks=tasks)
 
     def determine_stack(self, stack, overview, configuration, needs_stack=True):
         """Complain if we don't have an stack"""

@@ -84,3 +84,6 @@ class StackDepCycle(BespinError):
 class CouldntKill(BespinError):
     desc = "Failed to kill a process"
 
+class BadImport(BespinError):
+    desc = "Failed to import"
+

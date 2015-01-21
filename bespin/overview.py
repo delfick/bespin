@@ -47,13 +47,18 @@ class Overview(object):
 
         self.configuration.converters.activate()
         bespin = self.configuration["bespin"]
-        tasks = self.find_tasks()
+
+        task_overrides = {}
+        for importer in bespin.extra_imports:
+            importer.do_import(task_overrides)
+        tasks = self.find_tasks(overrides=task_overrides)
+
         task = bespin["chosen_task"]
         if task not in tasks:
             raise BadTask("Unknown task", task=task, available=tasks.keys())
         stack = getattr(tasks[task], "stack", bespin["chosen_stack"])
 
-        tasks[task].run(self, cli_args, stack, available_tasks=available_tasks)
+        tasks[task].run(self, cli_args, stack, available_actions=available_tasks, tasks=tasks)
 
     ########################
     ###   THEME
@@ -236,7 +241,7 @@ class Overview(object):
             , t("suspend_cloudformation_actions", "Suspends all schedule actions on a cloudformation stack")
             ])
 
-    def find_tasks(self, configuration=None):
+    def find_tasks(self, configuration=None, overrides=None):
         """Find the custom tasks and record the associated stack with each task"""
         if configuration is None:
             configuration = self.configuration
@@ -248,5 +253,7 @@ class Overview(object):
             for task in nxt.values():
                 task.specify_stack(stack)
             tasks.update(nxt)
+        if overrides:
+            tasks.update(overrides)
 
         return tasks
