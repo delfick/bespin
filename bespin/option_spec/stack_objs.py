@@ -133,7 +133,6 @@ class Stack(dictobj):
     def sanity_check(self):
         from bespin.option_spec import stack_specs
         self.find_missing_env()
-        self.find_missing_artifact_env()
         stack_specs.stack_json_spec().normalise(Meta({}, []), self.stack_json_obj)
         if os.path.exists(self.params_json):
             stack_specs.params_json_spec().normalise(Meta({}, []), json.load(open(self.params_json)))
