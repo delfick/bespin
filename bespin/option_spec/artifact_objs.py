@@ -46,16 +46,6 @@ class ArtifactCollection(dictobj):
                     log.info("Deleting artifact %s ", artifact_key.name)
                     s3.delete_key_from_s3(artifact_key, dry_run)
 
-    def get_artifact_location(self, artifact):
-        """Print out the artifact location for a particular artifact"""
-        if artifact not in self.artifacts:
-            raise InvalidArtifact(wanted=artifact, available=self.artifacts.keys())
-        artifact = self.artifacts[artifact]
-
-        self.find_missing_env("env", artifact)
-        environment = dict(env.pair for env in artifact.env)
-        return artifact.upload_to.format(**environment)
-
 class Artifact(dictobj):
     fields = [
           "compression_type", "history_length", "paths"

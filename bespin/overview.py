@@ -238,7 +238,6 @@ class Overview(object):
             , t("publish_artifacts", "Makes and uploads the artifacts for a stack to S3")
             , t("confirm_deployment", "Checks all instances were correctly deployed to")
             , t("clean_old_artifacts", "Cleans old artifacts from S3")
-            , t("print_artifact_location", "Shows where the artifact will be for this environment")
             , t("resume_cloudformation_actions", "Resumes all schedule actions on a cloudformation stack")
             , t("suspend_cloudformation_actions", "Suspends all schedule actions on a cloudformation stack")
             ])

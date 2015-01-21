@@ -85,11 +85,6 @@ def confirm_deployment(overview, configuration, stacks, stack, **kwargs):
     """Confirm deployment via SNS notification for each instance and/or url checks"""
     Deployer().confirm_deployment(stack)
 
-@a_task(needs_stack=True, needs_artifact=True)
-def print_artifact_location(overview, configuration, stacks, stack, artifact, **kwargs):
-    """Shows where the artifact will be for this environment"""
-    print(stack.artifacts.get_artifact_location(artifact))
-
 @a_task(needs_artifact=True)
 def print_variable(overview, configuration, stacks, stack, artifact, **kwargs):
     """Prints out a variable from the stack"""
