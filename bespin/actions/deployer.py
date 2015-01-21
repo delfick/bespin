@@ -34,7 +34,7 @@ class Deployer(object):
                 self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True)
 
         if stack.artifact_retention_after_deployment:
-            self.clean_old_artifacts(stack)
+            Builder().clean_old_artifacts(stack)
 
         self.confirm_deployment(stack)
 
@@ -68,11 +68,6 @@ class Deployer(object):
         """Confirm our deployment"""
         stack.check_sns()
         stack.check_url()
-
-    def clean_old_artifacts(self, stack):
-        """Clean up any old artifacts"""
-        stack.find_missing_artifact_env()
-        stack.artifacts.clean_old_artifacts(stack.s3, dry_run=stack.bespin.dry_run)
 
     def suspend_cloudformation_actions(self, stack):
         """Suspend the ScheduledActions for an AutoScaling group in the stack"""

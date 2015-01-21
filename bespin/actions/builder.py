@@ -61,3 +61,8 @@ class Builder(object):
                 else:
                     stack.s3.upload_file_to_s3(temp_tar_file.name, s3_location)
 
+    def clean_old_artifacts(self, stack):
+        """Clean up any old artifacts"""
+        stack.find_missing_artifact_env()
+        stack.artifacts.clean_old_artifacts(stack.s3, dry_run=stack.bespin.dry_run)
+
