@@ -50,7 +50,7 @@ class Overview(object):
 
         task_overrides = {}
         for importer in bespin.extra_imports:
-            importer.do_import(task_overrides)
+            importer.do_import(bespin, task_overrides)
         tasks = self.find_tasks(overrides=task_overrides)
 
         task = bespin["chosen_task"]

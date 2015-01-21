@@ -19,7 +19,7 @@ class import_spec(many_item_formatted_spec):
 class Import(dictobj):
     fields = ['directory', 'import_name']
 
-    def do_import(self, tasks):
+    def do_import(self, bespin, tasks):
         def task_maker(name, description, action=None, **options):
             if not action:
                 action = name
@@ -39,6 +39,6 @@ class Import(dictobj):
         if not hasattr(module, "__bespin__"):
             raise BadImport("Extra import had no __bespin__ defined", directory=self.directory, importing=self.import_name)
 
-        module.__bespin__(task_maker)
+        module.__bespin__(bespin, task_maker)
 
 
