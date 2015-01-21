@@ -1,4 +1,4 @@
-from bespin.errors import BadOption, BadOptionFormat
+from bespin.errors import BadOption, BadOptionFormat, MissingVariable
 from bespin.option_spec import stack_objs
 
 from input_algorithms.dictobj import dictobj
@@ -52,5 +52,5 @@ class Bespin(dictobj):
 
             return val
         except KeyError:
-            raise MissingVariable(wanted=artifact, available=list(self.bespin.configuration.keys()))
+            raise MissingVariable(wanted=artifact)
 
