@@ -15,7 +15,6 @@ optional_any = lambda: sb.optional_spec(sb.any_spec())
 artifact_spec = sb.create_spec(Artifact
     , compression_type = optional_any()
     , history_length = optional_any()
-    , location_var_name = optional_any()
     , upload_to = optional_any()
     , paths = optional_any()
     , files = optional_any()
@@ -23,30 +22,6 @@ artifact_spec = sb.create_spec(Artifact
     , build_env = sb.listof(stack_specs.env_spec(), expect=stack_objs.Environment)
     , env = sb.listof(stack_specs.env_spec(), expect=stack_objs.Environment)
     )
-
-describe BespinCase, "Artifact":
-
-    def make_artifact(self, values):
-        meta = mock.MagicMock(name="meta")
-        meta.base = {}
-        return artifact_spec.normalise(meta, values)
-
-    describe "vars":
-        it "yields location_var_name to upload_to if both are specified":
-            upload_to = mock.Mock(name="upload_to")
-            location_var_name = mock.Mock(name="location_var_name")
-            artifact = self.make_artifact({"location_var_name": location_var_name, "upload_to": upload_to})
-            self.assertEqual(list(artifact.vars), [(location_var_name, upload_to)])
-
-        it "yields nothing if location_var_name isn't specified":
-            upload_to = mock.Mock(name="upload_to")
-            artifact = self.make_artifact({"upload_to": upload_to})
-            self.assertEqual(list(artifact.vars), [])
-
-        it "yields nothing if upload_to isn't specified":
-            location_var_name = mock.Mock(name="location_var_name")
-            artifact = self.make_artifact({"location_var_name": location_var_name})
-            self.assertEqual(list(artifact.vars), [])
 
     describe "find_missing_env":
         it "does not complain if everything in build_env is in os.environ":

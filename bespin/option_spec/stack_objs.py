@@ -100,7 +100,7 @@ class Stack(dictobj):
         with open(self.params_json) as fle:
             params = fle.read()
 
-        for thing in (self.vars.items(), [env.pair for env in self.env], self.artifact_vars):
+        for thing in (self.vars.items(), [env.pair for env in self.env]):
             for var, value in thing:
                 key = "XXX_{0}_XXX".format(var.upper())
                 if key in params:
@@ -119,13 +119,6 @@ class Stack(dictobj):
             return json.load(open(self.stack_json))
         except ValueError as error:
             raise BadJson("Couldn't parse the stack", filename=self.stack_json, stack=self.key_name, error=error)
-
-    @property
-    def artifact_vars(self):
-        for name, artifact in self.artifacts.items():
-            for var, value in artifact.vars:
-                value = value.format(**dict(env.pair for env in self.env))
-                yield var, value
 
     def create_or_update(self):
         log.info("Creating or updating the stack (%s)", self.stack_name)

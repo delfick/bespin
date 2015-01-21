@@ -113,7 +113,6 @@ class BespinSpec(object):
             , artifacts = container_spec(artifact_objs.ArtifactCollection, dictof(string_spec(), create_spec(artifact_objs.Artifact
                 , compression_type = string_choice_spec(["gz", "xz"])
                 , history_length = integer_spec()
-                , location_var_name = string_spec()
                 , upload_to = formatted(string_spec(), formatter=MergedOptionStringFormatter)
                 , commands = listof(stack_specs.artifact_command_spec(), expect=artifact_objs.ArtifactCommand)
                 , paths = listof(stack_specs.artifact_path_spec(), expect=artifact_objs.ArtifactPath)
