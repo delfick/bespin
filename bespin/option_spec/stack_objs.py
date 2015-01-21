@@ -68,7 +68,7 @@ class Stack(dictobj):
             raise BadOption("Some environment variables aren't in the current environment", missing=missing)
 
     def find_missing_build_env(self):
-        self.artifacts.find_missing_env("build_env")
+        self.find_missing_env("build_env")
 
     @memoized_property
     def cloudformation(self):

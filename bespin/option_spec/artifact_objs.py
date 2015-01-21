@@ -14,14 +14,6 @@ log = logging.getLogger("bespin.option_spec.artifact_objs")
 class ArtifactCollection(dictobj):
     fields = ['artifacts']
 
-    def find_missing_env(self, env_to_find, wanted_artifact=None):
-        missing = dict(
-            (name, [e.env_name for e in getattr(artifact, env_to_find) if e.missing])
-            for name, artifact in self.artifacts.items() if wanted_artifact is None or name == wanted_artifact
-        )
-        if any(missing.values()):
-            raise BadOption("Some artifacts require variables that aren't in the current environment", missing=missing)
-
     def __iter__(self):
         return iter(self.artifacts)
 
