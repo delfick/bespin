@@ -28,11 +28,9 @@ class ArtifactCollection(dictobj):
     def items(self):
         return self.artifacts.items()
 
-    def clean_old_artifacts(self, s3, dry_run=True):
+    def clean_old_artifacts(self, s3, environment, dry_run=True):
         # Iterate over each artifact we need to clean
         for key, artifact in self.artifacts.items():
-            environment = dict(env.pair for env in artifact.env)
-
             # Get contents of bucket
             artifact_path = os.path.dirname(artifact.upload_to.format(**environment))
             artifact_keys = s3.list_keys_from_s3_path(artifact_path)

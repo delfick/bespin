@@ -63,6 +63,7 @@ class Builder(object):
 
     def clean_old_artifacts(self, stack):
         """Clean up any old artifacts"""
-        stack.find_missing_artifact_env()
-        stack.artifacts.clean_old_artifacts(stack.s3, dry_run=stack.bespin.dry_run)
+        stack.find_missing_env()
+        environment = dict(env.pair for env in stack.env)
+        stack.artifacts.clean_old_artifacts(stack.s3, environment, dry_run=stack.bespin.dry_run)
 
