@@ -28,7 +28,7 @@ class Stack(dictobj):
     def __repr__(self):
         return "<Stack({0})>".format(self.name)
 
-    def asg_physical_id_for(self, autoscaling_group_id):
+    def physical_id_for(self, autoscaling_group_id):
         return self.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
 
     def check_url(self):
