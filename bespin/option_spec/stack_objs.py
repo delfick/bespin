@@ -21,7 +21,7 @@ class Stack(dictobj):
     fields = [
           "bespin", "name", "key_name", "environment", "stack_json", "params_json"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts"
-        , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh"
+        , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env"
         , "artifact_retention_after_deployment", "suspend_actions", "url_checker"
         ]
 
@@ -67,14 +67,11 @@ class Stack(dictobj):
         except KeyError:
             raise MissingVariable(wanted=artifact, available=list(self.vars.keys()))
 
-    def find_missing_env(self):
+    def find_missing_env(self, key="env"):
         """Find any missing environment variables"""
-        missing = [e.env_name for e in self.env if e.missing]
+        missing = [e.env_name for e in getattr(self, key) if e.missing]
         if missing:
             raise BadOption("Some environment variables aren't in the current environment", missing=missing)
-
-    def find_missing_artifact_env(self):
-        self.artifacts.find_missing_env("env")
 
     def find_missing_build_env(self):
         self.artifacts.find_missing_env("build_env")

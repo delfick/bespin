@@ -86,6 +86,7 @@ class BespinSpec(object):
             , environment = formatted(overridden("{environment}"), formatter=MergedOptionStringFormatter)
 
             , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
+            , build_env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
 
             , tags = dictionary_spec()
 
@@ -120,8 +121,6 @@ class BespinSpec(object):
                     , content = formatted(string_spec(), formatter=MergedOptionStringFormatter)
                     , path = formatted(string_spec(), formatter=MergedOptionStringFormatter)
                     ))
-                , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
-                , build_env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
                 )))
 
             , ssh = optional_spec(create_spec(stack_objs.SSH

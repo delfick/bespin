@@ -19,40 +19,7 @@ artifact_spec = sb.create_spec(Artifact
     , paths = optional_any()
     , files = optional_any()
     , commands = optional_any()
-    , build_env = sb.listof(stack_specs.env_spec(), expect=stack_objs.Environment)
-    , env = sb.listof(stack_specs.env_spec(), expect=stack_objs.Environment)
     )
-
-    describe "find_missing_env":
-        it "does not complain if everything in build_env is in os.environ":
-            artifact = self.make_artifact({"build_env": ["ONE", "TWO"]})
-            with mock.patch("os.environ", {"ONE": 1, "TWO":2}):
-                artifact.find_missing_env()
-                assert True
-
-        it "does not complain if things with defaults aren't in the os.environ":
-            artifact = self.make_artifact({"build_env": ["ONE", "TWO:3"]})
-            with mock.patch("os.environ", {"ONE": 1}):
-                artifact.find_missing_env()
-                assert True
-
-        it "does not complain if things with set_values aren't in the os.environ":
-            artifact = self.make_artifact({"build_env": ["ONE", "TWO=3"]})
-            with mock.patch("os.environ", {"ONE": 1}):
-                artifact.find_missing_env()
-                assert True
-
-        it "complain if things without default or set_values aren't in the os.environ":
-            artifact = self.make_artifact({"build_env": ["ONE", "TWO"]})
-            with self.fuzzyAssertRaisesError(BadOption, "Some environment variables aren't in the current environment", missing=["TWO"]):
-                with mock.patch("os.environ", {"ONE": 1}):
-                    artifact.find_missing_env()
-
-        it "complains if multiple things without default or set_values aren't in the os.environ":
-            artifact = self.make_artifact({"build_env": ["ONE", "TWO", "THREE"]})
-            with self.fuzzyAssertRaisesError(BadOption, "Some environment variables aren't in the current environment", missing=["TWO", "THREE"]):
-                with mock.patch("os.environ", {"ONE": 1}):
-                    artifact.find_missing_env()
 
 describe BespinCase, "ArtifactPath":
     describe "add_to_tar":
