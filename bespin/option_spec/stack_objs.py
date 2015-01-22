@@ -328,8 +328,12 @@ class SNSConfirmation(dictobj):
         if success:
             log.info("Succeeded to deploy %s", success)
         if failed:
-            log.info("Failed to deploy %s", failed)
+            log.error("Failed to deploy %s", failed)
             raise BadDeployment(failed=failed)
+
+        if not success and not failed:
+            log.error("Failed to receive any messages")
+            raise BadDeployment("Failed to receive any messages")
 
         log.info("All instances have been confirmed to be deployed with version_message [%s]!", version_message)
 
