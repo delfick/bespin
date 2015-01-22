@@ -43,7 +43,7 @@ class Builder(object):
         # Iterate over each artifact we need to build
         for key, artifact in stack.artifacts.items():
             # Gather our environment variables
-            environment = dict(env.pair for env in artifact.build_env)
+            environment = dict(env.pair for env in stack.build_env)
 
             # Create a temporary file to tar to
             with hp.a_temp_file() as temp_tar_file:
