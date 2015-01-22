@@ -23,20 +23,22 @@ class ArtifactCollection(dictobj):
     def clean_old_artifacts(self, s3, environment, dry_run=True):
         # Iterate over each artifact we need to clean
         for key, artifact in self.artifacts.items():
+            log.info("Cleaning old artifacts\tartifact=%s", key)
             # Get contents of bucket
             artifact_path = os.path.dirname(artifact.upload_to.format(**environment))
-            artifact_keys = s3.list_keys_from_s3_path(artifact_path)
+            artifact_keys = list(s3.list_keys_from_s3_path(artifact_path))
 
             # Get all the time stamps and determine the files to delete
-            timestamps = list(map(lambda x: x.last_modified, artifact_keys))
-            timestamps.sort()
-            keys_to_del = timestamps[:-artifact.history_length]
+            sorted_keys = sorted(artifact_keys, key=lambda x: x.last_modified)
+            keys_to_del = sorted_keys[:-artifact.history_length]
 
             # Iterate through all the artifacts deleting any ones flagged for deletion
-            for artifact_key in artifact_keys:
-                if artifact_key.last_modified in keys_to_del:
-                    log.info("Deleting artifact %s ", artifact_key.name)
-                    s3.delete_key_from_s3(artifact_key, dry_run)
+            for artifact_key in keys_to_del:
+                log.info("Deleting artifact %s ", artifact_key.name)
+                if dry_run:
+                    log.info("DRYRUN: Would delete key")
+                else:
+                    artifact_key.delete()
 
 class Artifact(dictobj):
     fields = [

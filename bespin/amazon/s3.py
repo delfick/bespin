@@ -67,7 +67,7 @@ class S3(object):
     def list_keys_from_s3_path(self, query_path):
         query = self.s3_location(query_path)
         bucket = self.get_bucket(query.bucket)
-        return bucket.list(prefix="rca-contract")
+        return bucket.list(prefix=query.key[1:])
 
     def delete_key_from_s3(self, key, dry_run):
         if dry_run:
