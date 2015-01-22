@@ -91,13 +91,15 @@ class Stack(dictobj):
         with open(self.params_json) as fle:
             params = fle.read()
 
+        environment = dict([env.pair for env in self.env])
+
         for thing in (self.vars.items(), [env.pair for env in self.env]):
             for var, value in thing:
                 key = "XXX_{0}_XXX".format(var.upper())
                 if key in params:
                     if not isinstance(value, six.string_types):
                         value = value.resolve()
-                    params = params.replace(key, value)
+                    params = params.replace(key, value.format(**environment))
 
         try:
             return json.loads(params)
