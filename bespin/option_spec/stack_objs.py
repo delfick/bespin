@@ -93,6 +93,9 @@ class Stack(dictobj):
 
         environment = dict([env.pair for env in self.env])
 
+        if any(var.needs_credentials for var in self.vars.values()):
+            self.bespin.set_credentials()
+
         for thing in (self.vars.items(), [env.pair for env in self.env]):
             for var, value in thing:
                 key = "XXX_{0}_XXX".format(var.upper())
@@ -143,13 +146,13 @@ class Stack(dictobj):
         self.cloudformation.validate_template(self.stack_json)
 
 class StaticVariable(dictobj):
-    fields = ["value"]
+    fields = ["value", ("needs_credentials", False)]
 
     def resolve(self):
         return self.value
 
 class DynamicVariable(dictobj):
-    fields = ["stack", "output", ("bespin", None)]
+    fields = ["stack", "output", ("bespin", None), ("needs_credentials", True)]
 
     def resolve(self):
         if isinstance(self.stack, six.string_types):
