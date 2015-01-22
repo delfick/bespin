@@ -287,7 +287,7 @@ class UrlChecker(dictobj):
         raise BadStack("Timedout waiting for the app to give back the correct version")
 
 class SNSConfirmation(dictobj):
-    fields = ["version_message", "env", "deployment_queue", "autoscaling_group_id"]
+    fields = ["version_message", "env", "deployment_queue", "autoscaling_group_id", ("timeout", 300)]
 
     def wait(self, environment, ec2, sqs, cloudformation):
         autoscaling_group_id = self.autoscaling_group_id
@@ -300,7 +300,7 @@ class SNSConfirmation(dictobj):
         success = []
         attempt = 0
 
-        for _ in hp.until(action="Checking for valid deployment actions"):
+        for _ in hp.until(timeout=self.timeout, step=5, action="Checking for valid deployment actions"):
             messages = sqs.get_all_deployment_messages(self.deployment_queue)
 
             # Look for success and failure in the messages

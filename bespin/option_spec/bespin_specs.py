@@ -101,6 +101,7 @@ class BespinSpec(object):
 
             , sns_confirmation = optional_spec(create_spec(stack_objs.SNSConfirmation
                 , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
+                , timeout = defaulted(integer_spec(), 300)
                 , version_message = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , autoscaling_group_id = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , deployment_queue = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
