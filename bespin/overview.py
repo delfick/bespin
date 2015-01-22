@@ -228,6 +228,7 @@ class Overview(object):
         return dict([
               t("tail", "Tail the deployment of a stack")
             , t("show", "Show the available stacks")
+            , t("params", "Print out the params for a stack")
             , t("deploy", "Deploy a particular stack")
             , t("execute", "Execute a command with assumed creds")
             , t("bastion", "SSH into the bastion")

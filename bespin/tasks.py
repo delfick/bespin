@@ -11,6 +11,7 @@ from bespin.actions.builder import Builder
 import itertools
 import logging
 import shlex
+import json
 import os
 
 log = logging.getLogger("bespin.tasks")
@@ -131,4 +132,10 @@ def execute(overview, configuration, **kwargs):
 def tail(overview, configuration, stacks, stack, **kwargs):
     """Tail the deployment of a stack"""
     stack.cloudformation.wait()
+
+@a_task(needs_stack=True)
+def params(overview, configuration, stacks, stack, **kwargs):
+    """Print out the params"""
+    stack.find_missing_env()
+    print(json.dumps(stack.params_json_obj, indent=4))
 
