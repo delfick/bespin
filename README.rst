@@ -33,16 +33,16 @@ Simpler Usage
 To save typing ``--task``, ``--stack`` and ``--environment`` too much
 , the first positional argument is treated as ``task``
 (unless it is prefixed with a ``-``); the second positional argument
-(if also not prefixed with a ``-``) is taken as the ``stack`` and the third is
-treated as the ``environment``.
+(if also not prefixed with a ``-``) is taken as the ``environment`` and the third is
+treated as the ``stack``.
 
 So::
 
-    $ bespin --task deploy --stack app --environment dev
+    $ bespin --task deploy --environment dev --stack app
 
 Is equivalent to::
 
-    $ bespin deploy app dev
+    $ bespin deploy dev app
 
 Logging colors
 --------------
