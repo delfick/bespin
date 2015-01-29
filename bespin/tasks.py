@@ -116,10 +116,11 @@ def instances(overview, configuration, stacks, stack, artifact, **kwargs):
     else:
         stack.ssh.ssh_into(artifact, configuration["$@"])
 
-@a_task(needs_stack=True)
-def bastion(overview, configuration, stacks, stack, **kwargs):
+@a_task()
+def bastion(overview, configuration, **kwargs):
     """SSH into the bastion"""
-    stack.ssh.ssh_into_bastion(configuration["$@"])
+    stack = list(configuration["stacks"].keys())[0]
+    configuration["stacks"][stack].ssh.ssh_into_bastion(configuration["$@"])
 
 @a_task(needs_credentials=True)
 def execute(overview, configuration, **kwargs):
