@@ -144,7 +144,7 @@ class Cloudformation(AmazonMixin):
             last = datetime.datetime.utcnow()
 
         status = self.status
-        if status.failed or (rollback_is_failure and status.is_rollback):
+        if status.failed or (rollback_is_failure and status.is_rollback) or not status.complete:
             raise BadStack("Stack failed to complete", final_status=status)
 
         return status
