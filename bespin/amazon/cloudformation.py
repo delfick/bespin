@@ -83,6 +83,7 @@ class Cloudformation(AmazonMixin):
 
     @property
     def outputs(self):
+        self.wait(rollback_is_failure=True)
         description = self.description()
         if description is None:
             return {}
