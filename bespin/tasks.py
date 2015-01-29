@@ -139,3 +139,8 @@ def params(overview, configuration, stacks, stack, **kwargs):
     stack.find_missing_env()
     print(json.dumps(stack.params_json_obj, indent=4))
 
+@a_task(needs_stack=True, needs_credentials=True)
+def outputs(overview, configuration, stacks, stack, **kwargs):
+    """Print out the outputs"""
+    print(json.dumps(stack.cloudformation.outputs, indent=4))
+

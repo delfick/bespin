@@ -231,6 +231,7 @@ class Overview(object):
             , t("params", "Print out the params for a stack")
             , t("deploy", "Deploy a particular stack")
             , t("execute", "Execute a command with assumed creds")
+            , t("outputs", "Show the outputs for a stack")
             , t("bastion", "SSH into the bastion")
             , t("instances", "Find and ssh into the instances")
             , t("list_tasks", "List the available tasks")
