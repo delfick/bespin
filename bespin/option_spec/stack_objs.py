@@ -300,6 +300,7 @@ class SNSConfirmation(dictobj):
         success = []
         attempt = 0
 
+        log.info("Checking sqs for %s", version_message)
         for _ in hp.until(timeout=self.timeout, step=5, action="Checking for valid deployment actions"):
             messages = sqs.get_all_deployment_messages(self.deployment_queue)
 
