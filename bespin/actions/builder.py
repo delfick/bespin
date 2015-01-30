@@ -8,22 +8,21 @@ log = logging.getLogger("bespin.actions.builder")
 class Builder(object):
     def sanity_check(self, stack, stacks, ignore_deps=False, checked=None):
         """Perform sanity check on this stack and all it's dependencies"""
-        if checked is None:
-            checked = []
-
+        checked = [] if checked is None else checked
         if stack.stack_name in checked:
             return
 
         log.info("Sanity checking %s", stack.key_name)
         stack.sanity_check()
+        checked.append(stack.stack_name)
 
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
-                self.sanity_check(stacks[dependency], stacks, ignore_deps, checked + [stack.stack_name])
+                self.sanity_check(stacks[dependency], stacks, ignore_deps, checked)
 
         if any(stack.build_after):
             for dependency in stack.build_after:
-                self.sanity_check(stacks[dependency], stacks, ignore_deps, checked + [stack.stack_name])
+                self.sanity_check(stacks[dependency], stacks, ignore_deps, checked)
 
     def layered(self, stacks, only_pushable=False):
         """Yield layers of stacks"""

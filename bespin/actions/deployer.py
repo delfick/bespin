@@ -8,30 +8,30 @@ import json
 log = logging.getLogger("bespin.actions.deployer")
 
 class Deployer(object):
-    def deploy_stack(self, stack, stacks, made=None, ignore_deps=False):
+    def deploy_stack(self, stack, stacks, made=None, ignore_deps=False, checked=None):
         """Deploy a stack and all it's dependencies"""
-        Builder().sanity_check(stack, stacks, ignore_deps=ignore_deps)
-
-        made = made or {}
-
+        made = [] if made is None else made
+        checked = [] if checked is None else checked
         if stack.name in made:
             return
+
+        Builder().sanity_check(stack, stacks, ignore_deps=ignore_deps, checked=checked)
+        made.append(stack.name)
 
         if stack.name not in stacks:
             raise NoSuchStack(looking_for=stack.name, available=stacks.keys())
 
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
-                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True)
+                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked)
 
         # Should have all our dependencies now
         log.info("Making stack for '%s' (%s)", stack.name, stack.stack_name)
         self.build_stack(stack)
-        made[stack.name] = True
 
         if any(stack.build_after):
             for dependency in stack.build_after:
-                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True)
+                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked)
 
         if stack.artifact_retention_after_deployment:
             Builder().clean_old_artifacts(stack)
