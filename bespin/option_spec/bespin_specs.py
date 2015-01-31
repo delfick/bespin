@@ -8,7 +8,7 @@ The specifications are responsible for sanitation, validation and normalisation.
 from input_algorithms.spec_base import (
       formatted, defaulted, any_spec, dictionary_spec, dictof, listof, required, delayed
     , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec, or_spec, container_spec
-    , valid_string_spec, create_spec, string_choice_spec, filename_spec as orig_filename_spec
+    , valid_string_spec, create_spec, string_choice_spec, Spec
     )
 
 from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports
@@ -16,18 +16,45 @@ from bespin.formatter import MergedOptionStringFormatter
 from bespin.option_spec.bespin_obj import Bespin
 from bespin.helpers import memoized_property
 
+from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
 from input_algorithms import validators
 
+import json
+import yaml
 import six
+import os
 
-class filename_spec(orig_filename_spec):
-    def setup(self, spec):
-        self.spec = spec
+class valid_params(Spec):
+    filetype = NotImplemented
+    params_spec = NotImplemented
+
+    def setup(self, default):
+        self.dflt = default
 
     def normalise_either(self, meta, val):
-        val = self.spec.normalise(meta, val)
-        return super(filename_spec, self).normalise_filled(meta, val)
+        if isinstance(val, six.string_types) or val is NotSpecified:
+            val = formatted(defaulted(string_spec(), self.dflt), formatter=MergedOptionStringFormatter).normalise(meta, val)
+            if os.path.exists(val):
+                with open(val) as fle:
+                    val = self.filetype.load(fle)
+                self.params_spec().normalise(meta, val)
+        else:
+            self.params_spec().normalise(meta, val)
+
+        return val
+
+class valid_params_json(valid_params):
+    filetype = json
+    params_spec = lambda k: stack_specs.params_json_spec()
+
+class valid_params_yaml(valid_params):
+    filetype = yaml
+    params_spec = lambda k: stack_specs.params_yaml_spec()
+
+class valid_stack_json(valid_params):
+    filetype = json
+    params_spec = lambda k: stack_specs.stack_json_spec()
 
 class Environment(dictobj):
     fields = ["account_id", "vars"]
@@ -85,8 +112,10 @@ class BespinSpec(object):
 
             , tags = dictionary_spec()
 
-            , stack_json = filename_spec(formatted(defaulted(string_spec(), "{config_root}/{_key_name_1}.json"), formatter=MergedOptionStringFormatter))
-            , params_json = filename_spec(formatted(defaulted(string_spec(), "{config_root}/{environment}/{_key_name_1}-params.json"), formatter=MergedOptionStringFormatter))
+            , stack_json = valid_stack_json(default="{config_root}/{_key_name_1}.json")
+
+            , params_json = valid_params_json(default="{config_root}/{environment}/{_key_name_1}-params.json")
+            , params_yaml = valid_params_yaml(default="{config_root}/{environment}/{_key_name_1}-params.yaml")
 
             , build_after = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , ignore_deps = defaulted(boolean(), False)

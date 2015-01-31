@@ -1,7 +1,6 @@
 from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError
-from bespin.errors import StackDoesntExist, BadDeployment, MissingVariable
+from bespin.errors import StackDoesntExist, BadDeployment
 from bespin.helpers import memoized_property
-from input_algorithms.meta import Meta
 from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
@@ -14,6 +13,7 @@ import json
 import stat
 import six
 import os
+import re
 
 log = logging.getLogger("bespin.option_spec.stack_objs")
 
@@ -22,7 +22,7 @@ class Stack(dictobj):
           "bespin", "name", "key_name", "environment", "stack_json", "params_json"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts"
         , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env"
-        , "artifact_retention_after_deployment", "suspend_actions", "url_checker"
+        , "artifact_retention_after_deployment", "suspend_actions", "url_checker", "params_yaml"
         ]
 
     def __repr__(self):
@@ -87,9 +87,15 @@ class Stack(dictobj):
         return self.bespin.credentials.s3
 
     @property
+    def stack_json_obj(self):
+        return self.stack_json
+
+    @property
     def params_json_obj(self):
-        with open(self.params_json) as fle:
-            params = fle.read()
+        if self.params_json is NotSpecified:
+            params = json.dumps(self.params_json)
+        else:
+            params = json.dumps([{"ParameterKey": key, "ParameterValue": value} for key, value in self.params_yaml.items()])
 
         environment = dict([env.pair for env in self.env])
 
@@ -108,13 +114,6 @@ class Stack(dictobj):
             return json.loads(params)
         except ValueError as error:
             raise BadJson("Couldn't parse the parameters", filename=self.params_json, stack=self.key_name, error=error)
-
-    @hp.memoized_property
-    def stack_json_obj(self):
-        try:
-            return json.load(open(self.stack_json))
-        except ValueError as error:
-            raise BadJson("Couldn't parse the stack", filename=self.stack_json, stack=self.key_name, error=error)
 
     def create_or_update(self):
         log.info("Creating or updating the stack (%s)", self.stack_name)
@@ -136,14 +135,20 @@ class Stack(dictobj):
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
 
     def sanity_check(self):
-        from bespin.option_spec import stack_specs
         self.find_missing_env()
-        stack_specs.stack_json_spec().normalise(Meta({}, []), self.stack_json_obj)
-        if os.path.exists(self.params_json):
-            stack_specs.params_json_spec().normalise(Meta({}, []), json.load(open(self.params_json)))
+        if all(isinstance(item, six.string_types) for item in (self.params_json, self.params_yaml)):
+            raise BadStack("Need either params_json or params_yaml", looking_in=[self.params_json, self.params_yaml])
+        if not any(isinstance(item, six.string_types) for item in (self.params_json, self.params_yaml)):
+            raise BadStack("Please don't have both params_json and params_yaml")
+        matches = re.findall("XXX_[A-Z_]+_XXX", json.dumps(self.params_json_obj))
+        if matches:
+            raise BadStack("Found placeholders in the generated params file", stack=self.name, found=matches)
         if self.cloudformation.status.failed:
             raise BadStack("Stack is in a failed state, this means it probably has to be deleted first....", stack=self.stack_name)
-        self.cloudformation.validate_template(self.stack_json)
+
+        with hp.a_temp_file() as fle:
+            json.dump(self.stack_json_obj, open(fle.name, "w"))
+            self.cloudformation.validate_template(fle.name)
 
 class StaticVariable(dictobj):
     fields = ["value", ("needs_credentials", False)]
