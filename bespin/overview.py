@@ -181,6 +181,9 @@ class Overview(object):
             config_as_dict = configuration.as_dict(ignore=["stacks"])
             val_as_dict = val.as_dict(ignore=["stacks"])
             environment_as_dict = configuration[["environments", environment]].as_dict()
+            stack_environment_as_dict = {}
+            if ["stacks", stack, environment] in configuration:
+                stack_environment_as_dict = configuration["stacks", stack, environment].as_dict()
 
             base = path.configuration.root().wrapped()
             everything = path.configuration.root().wrapped()
@@ -193,6 +196,9 @@ class Overview(object):
 
             base.update(environment_as_dict)
             everything.update(environment_as_dict)
+
+            base.update(stack_environment_as_dict)
+            everything.update(stack_environment_as_dict)
 
             for thing in (base, everything):
                 thing["bespin"] = configuration["bespin"]
