@@ -189,7 +189,7 @@ class Overview(object):
             everything = path.configuration.root().wrapped()
 
             base.update(config_as_dict)
-            everything.update(config_as_dict)
+            everything[path].update(config_as_dict)
 
             base.update(val_as_dict)
             everything[path] = val_as_dict
@@ -198,7 +198,7 @@ class Overview(object):
             everything.update(environment_as_dict)
 
             base.update(stack_environment_as_dict)
-            everything.update(stack_environment_as_dict)
+            everything[path].update(stack_environment_as_dict)
 
             for thing in (base, everything):
                 thing["bespin"] = configuration["bespin"]
