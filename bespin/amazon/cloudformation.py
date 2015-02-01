@@ -5,6 +5,7 @@ from bespin import helpers as hp
 import boto.cloudformation
 import datetime
 import logging
+import time
 import json
 import six
 
@@ -79,6 +80,8 @@ class Cloudformation(AmazonMixin):
         if not getattr(self, "_description", None) or force:
             with self.catch_boto_400(StackDoesntExist, "Couldn't find stack"):
                 self._description = self.conn.describe_stacks(self.stack_name)[0]
+                # For the sake of throttling
+                time.sleep(0.01)
         return self._description
 
     @property
