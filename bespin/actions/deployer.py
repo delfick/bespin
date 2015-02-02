@@ -55,10 +55,13 @@ class Deployer(object):
         if not skip:
             stack.create_or_update()
 
-        # Avoid race condition
-        time.sleep(5)
+            # Avoid race condition
+            time.sleep(5)
 
-        stack.cloudformation.wait(rollback_is_failure=True)
+            stack.cloudformation.wait(rollback_is_failure=True)
+        else:
+            stack.cloudformation.wait()
+
         stack.cloudformation.reset()
 
         if stack.suspend_actions:
