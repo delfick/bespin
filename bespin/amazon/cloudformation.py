@@ -1,10 +1,11 @@
-from bespin.errors import StackDoesntExist, BadStack
+from bespin.errors import StackDoesntExist, BadStack, Throttled
 from bespin.amazon.mixin import AmazonMixin
 from bespin import helpers as hp
 
 import boto.cloudformation
 import datetime
 import logging
+import time
 import json
 import six
 
@@ -77,8 +78,15 @@ class Cloudformation(AmazonMixin):
     def description(self, force=False):
         """Get the descriptions for the stack"""
         if not getattr(self, "_description", None) or force:
-            for attempt in self.catch_boto_400(StackDoesntExist, "Couldn't find stack"):
-                self._description = self.conn.describe_stacks(self.stack_name)[0]
+            with self.catch_boto_400(StackDoesntExist, "Couldn't find stack"):
+                while True:
+                    try:
+                        with self.ignore_throttling_error():
+                            self._description = self.conn.describe_stacks(self.stack_name)[0]
+                            break
+                    except Throttled:
+                        log.info("Was throttled, waiting a bit")
+                        time.sleep(0.05)
         return self._description
 
     @property
@@ -111,7 +119,7 @@ class Cloudformation(AmazonMixin):
     def update(self, stack, params):
         log.info("Updating stack (%s)", self.stack_name)
         params = [(param["ParameterKey"], param["ParameterValue"]) for param in params] if params else None
-        for attempt in self.catch_boto_400(BadStack, "Couldn't update the stack", stack_name=self.stack_name):
+        with self.catch_boto_400(BadStack, "Couldn't update the stack", stack_name=self.stack_name):
             try:
                 self.conn.update_stack(self.stack_name, template_body=json.dumps(stack), parameters=params, capabilities=['CAPABILITY_IAM'])
             except boto.exception.BotoServerError as error:
@@ -123,7 +131,7 @@ class Cloudformation(AmazonMixin):
         return True
 
     def validate_template(self, filename):
-        for attempt in self.catch_boto_400(BadStack, "Amazon says no", stack_name=self.stack_name, filename=filename):
+        with self.catch_boto_400(BadStack, "Amazon says no", stack_name=self.stack_name, filename=filename):
             self.conn.validate_template(open(filename).read())
 
     def wait(self, timeout=1200, rollback_is_failure=False):

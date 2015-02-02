@@ -90,3 +90,5 @@ class CouldntKill(BespinError):
 class BadImport(BespinError):
     desc = "Failed to import"
 
+class Throttled(BespinError):
+    desc = "limit rate exceeded"
