@@ -15,6 +15,7 @@ from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs
 from bespin.formatter import MergedOptionStringFormatter
 from bespin.option_spec.bespin_obj import Bespin
 from bespin.helpers import memoized_property
+from bespin.errors import BadFile
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
@@ -36,8 +37,11 @@ class valid_params(Spec):
         if isinstance(val, six.string_types) or val is NotSpecified:
             val = formatted(defaulted(string_spec(), self.dflt), formatter=MergedOptionStringFormatter).normalise(meta, val)
             if os.path.exists(val):
-                with open(val) as fle:
-                    val = self.filetype.load(fle)
+                try:
+                    with open(val) as fle:
+                        val = self.filetype.load(fle)
+                except (ValueError, TypeError) as error:
+                    raise BadFile(error, filename=val, meta=meta)
                 self.params_spec().normalise(meta, val)
         else:
             self.params_spec().normalise(meta, val)

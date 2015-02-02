@@ -13,6 +13,7 @@ from contextlib import contextmanager
 import mock
 import yaml
 import uuid
+import json
 import os
 
 describe BespinCase, "Collecting configuration":
@@ -20,7 +21,7 @@ describe BespinCase, "Collecting configuration":
         self.folder = self.make_temp_dir()
         self.docker_context = mock.Mock(name="docker_context")
 
-    def make_config(self, options, folder=None, filename=None):
+    def make_config(self, options, folder=None, filename=None, is_json=False):
         if folder is None:
             folder = self.folder
 
@@ -28,7 +29,10 @@ describe BespinCase, "Collecting configuration":
             filename = str(uuid.uuid1())
         location = os.path.join(folder, filename)
 
-        yaml.dump(options, open(location, 'w'))
+        filetype = yaml
+        if json:
+            filetype = json
+        filetype.dump(options, open(location, 'w'))
         return location
 
     @contextmanager
@@ -67,7 +71,7 @@ describe BespinCase, "Collecting configuration":
             self.assertIs(type(overview.configuration["stacks.blah.tasks"]["a_task"]), Task)
 
     it "sets up converters for stacks":
-        config = self.make_config({"environment": "dev", "environments": {"dev": {}}, "bespin": {"environment": "dev"}, "config_root": ".", "stacks": {"blah": {"params_json":self.make_config({}), "stack_json": self.make_config({}), "resources": []}}})
+        config = self.make_config({"environment": "dev", "environments": {"dev": {}}, "bespin": {"environment": "dev"}, "config_root": ".", "stacks": {"blah": {"params_yaml":self.make_config({"one":"two"}), "stack_json": self.make_config({"Resources": {}}, is_json=True), "resources": []}}})
         with self.make_overview(config, activate_converters=True) as overview:
             self.assertIs(type(overview.configuration["stacks.blah"]), Stack)
 
@@ -80,8 +84,8 @@ describe BespinCase, "Collecting configuration":
             , "config_root": "."
             , "stacks":
               { "blah":
-                { "params_json": self.make_config({})
-                , "stack_json": self.make_config({})
+                { "params_yaml": self.make_config({"one":"two"})
+                , "stack_json": self.make_config({"Resources": {}}, is_json=True)
                 , "resources": []
                 , "vars":
                   { "two": 2
