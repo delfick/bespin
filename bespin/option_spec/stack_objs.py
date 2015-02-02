@@ -116,6 +116,7 @@ class Stack(dictobj):
             raise BadJson("Couldn't parse the parameters", filename=self.params_json, stack=self.key_name, error=error)
 
     def create_or_update(self):
+        """Create or update the stack, return True if the stack actually changed"""
         log.info("Creating or updating the stack (%s)", self.stack_name)
         status = self.cloudformation.wait()
 
@@ -124,15 +125,17 @@ class Stack(dictobj):
             if self.bespin.dry_run:
                 log.info("DRYRUN: Would create stack")
             else:
-                self.cloudformation.create(self.stack_json_obj, self.params_json_obj, self.tags.as_dict() or None)
+                return self.cloudformation.create(self.stack_json_obj, self.params_json_obj, self.tags.as_dict() or None)
         elif status.complete:
             log.info("Found existing stack, doing an update")
             if self.bespin.dry_run:
                 log.info("DRYRUN: Would update stack")
             else:
-                self.cloudformation.update(self.stack_json_obj, self.params_json_obj)
+                return self.cloudformation.update(self.stack_json_obj, self.params_json_obj)
         else:
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
+
+        return False
 
     def sanity_check(self):
         self.find_missing_env()

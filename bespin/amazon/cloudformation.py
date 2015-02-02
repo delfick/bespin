@@ -106,6 +106,7 @@ class Cloudformation(AmazonMixin):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
         params = [(param["ParameterKey"], param["ParameterValue"]) for param in params] if params else None
         self.conn.create_stack(self.stack_name, template_body=json.dumps(stack), parameters=params, tags=tags, capabilities=['CAPABILITY_IAM'])
+        return True
 
     def update(self, stack, params):
         log.info("Updating stack (%s)", self.stack_name)
@@ -116,8 +117,10 @@ class Cloudformation(AmazonMixin):
             except boto.exception.BotoServerError as error:
                 if error.message == "No updates are to be performed.":
                     log.info("No updates were necessary!")
+                    return False
                 else:
                     raise
+        return True
 
     def validate_template(self, filename):
         for attempt in self.catch_boto_400(BadStack, "Amazon says no", stack_name=self.stack_name, filename=filename):

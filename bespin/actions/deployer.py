@@ -52,8 +52,11 @@ class Deployer(object):
                 log.info("Stack is determined to be the same, not updating")
                 skip = True
 
+        changed = False
         if not skip:
-            stack.create_or_update()
+            changed = stack.create_or_update()
+
+        if changed:
 
             # Avoid race condition
             time.sleep(5)
