@@ -238,7 +238,7 @@ class SSH(dictobj):
     fields = [
           "user", "bastion", "bastion_key_location"
         , "instance_key_location", "autoscaling_group_name"
-        , "instance_key_path", "bastion_key_path"
+        , "instance_key_path", "bastion_key_path", "instance"
         ]
 
     def ssh_into_bastion(self, extra_args):

@@ -8,6 +8,9 @@ one specific stack object.
 
 from bespin.actions.deployer import Deployer
 from bespin.actions.builder import Builder
+from bespin.errors import BespinError
+
+from input_algorithms.spec_base import NotSpecified
 import itertools
 import logging
 import shlex
@@ -111,8 +114,15 @@ def sanity_check(overview, configuration, stacks, stack, **kwargs):
 def instances(overview, configuration, stacks, stack, artifact, **kwargs):
     """Find and ssh into instances"""
     if artifact is None:
-        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(stack.ssh.autoscaling_group_name)
-        stack.ec2.display_instances(asg_physical_id)
+        if stack.ssh.autoscaling_group_name is not NotSpecified:
+            instance = None
+            asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(stack.ssh.autoscaling_group_name)
+        elif stack.ssh.instance is not NotSpecified:
+            instance = stack.cloudformation.map_logical_to_physical_resource_id(stack.ssh.instance)
+            asg_physical_id = None
+        else:
+            raise BespinError("Please specify either ssh.instance or ssh.autoscaling_group_name", stack=stack)
+        stack.ec2.display_instances(asg_physical_id, instance)
     else:
         stack.ssh.ssh_into(artifact, configuration["$@"])
 

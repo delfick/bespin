@@ -36,10 +36,15 @@ class EC2(object):
     def suspend_processes(self, asg_physical_id):
         self.autoscale.suspend_processes(asg_physical_id, ["ScheduledActions"])
 
-    def display_instances(self, asg_physical_id):
+    def display_instances(self, asg_physical_id, instance=None):
         log.info("Finding instances")
-        asg = self.autoscale.get_all_groups(names=[asg_physical_id])
-        instance_ids = [inst.instance_id for inst in asg[0].instances]
+        instance_ids = []
+        if asg_physical_id:
+            asg = self.autoscale.get_all_groups(names=[asg_physical_id])
+            instance_ids = [inst.instance_id for inst in asg[0].instances]
+        elif instance:
+            instance_ids = [instance]
+
         print("Found {0} instances".format(len(instance_ids)))
         print("=" * 20)
         if instance_ids:
