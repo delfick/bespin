@@ -251,8 +251,9 @@ class SSH(dictobj):
             print("Download it to {0}".format(self.bastion_key_path))
             raise BespinError("Couldn't find an ssh key for the bastion")
 
-        os.chmod(self.bastion_key_path, 0)
-        os.chmod(self.bastion_key_path, stat.S_IRUSR)
+        if os.path.exists(self.bastion_key_path):
+            os.chmod(self.bastion_key_path, 0)
+            os.chmod(self.bastion_key_path, stat.S_IRUSR)
 
         command = "ssh {0}@{1} -i {2} -o IdentitiesOnly=true".format(self.user, self.bastion, self.bastion_key_path)
         parts = shlex.split(command)
@@ -281,10 +282,12 @@ class SSH(dictobj):
         if error:
             raise BespinError("Couldn't find ssh keys")
 
-        os.chmod(self.instance_key_path, 0)
-        os.chmod(self.instance_key_path, stat.S_IRUSR)
-        os.chmod(self.bastion_key_path, 0)
-        os.chmod(self.bastion_key_path, stat.S_IRUSR)
+        if os.path.exists(self.bastion_key_path):
+            os.chmod(self.bastion_key_path, 0)
+            os.chmod(self.bastion_key_path, stat.S_IRUSR)
+        if os.path.exists(self.instance_key_path):
+            os.chmod(self.instance_key_path, 0)
+            os.chmod(self.instance_key_path, stat.S_IRUSR)
 
         command = "ssh -o ForwardAgent=false -o IdentitiesOnly=true {0} -i {1} {2}@{3} {4}".format(proxy, self.instance_key_path, self.user, ip_address, extra_args)
         parts = shlex.split(command)
