@@ -20,7 +20,7 @@ log = logging.getLogger("bespin.option_spec.stack_objs")
 class Stack(dictobj):
     fields = [
           "bespin", "name", "key_name", "environment", "stack_json", "params_json"
-        , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts"
+        , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts", "build_first"
         , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env"
         , "artifact_retention_after_deployment", "suspend_actions", "url_checker", "params_yaml"
         ]
@@ -42,6 +42,9 @@ class Stack(dictobj):
             self.sns_confirmation.wait(environment, self.ec2, self.sqs, self.cloudformation)
 
     def dependencies(self, stacks):
+        for key_name in self.build_first:
+            yield key_name
+
         for value in self.vars.values():
             if hasattr(value, "stack") and not isinstance(value.stack, six.string_types):
                 yield value.stack.key_name
@@ -57,6 +60,18 @@ class Stack(dictobj):
     @build_after.setter
     def build_after(self, val):
         self._build_after = val
+
+    @property
+    def build_first(self):
+        for stack in self._build_first:
+            if isinstance(stack, six.string_types):
+                yield stack
+            else:
+                yield stack.key_name
+
+    @build_first.setter
+    def build_first(self, val):
+        self._build_first = val
 
     def display_line(self):
         return "Stack {0}".format(self.stack_name)

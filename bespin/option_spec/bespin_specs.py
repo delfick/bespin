@@ -121,6 +121,7 @@ class BespinSpec(object):
             , params_json = valid_params_json(default="{config_root}/{environment}/{_key_name_1}-params.json")
             , params_yaml = valid_params_yaml(default="{config_root}/{environment}/{_key_name_1}-params.yaml")
 
+            , build_first = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , build_after = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , ignore_deps = defaulted(boolean(), False)
 
