@@ -143,7 +143,7 @@ class Stack(dictobj):
     def create_or_update(self):
         """Create or update the stack, return True if the stack actually changed"""
         log.info("Creating or updating the stack (%s)", self.stack_name)
-        status = self.cloudformation.wait()
+        status = self.cloudformation.wait(may_not_exist=True)
 
         if not status.exists:
             log.info("No existing stack, making one now")

@@ -134,8 +134,11 @@ class Cloudformation(AmazonMixin):
         with self.catch_boto_400(BadStack, "Amazon says no", stack_name=self.stack_name, filename=filename):
             self.conn.validate_template(open(filename).read())
 
-    def wait(self, timeout=1200, rollback_is_failure=False):
+    def wait(self, timeout=1200, rollback_is_failure=False, may_not_exist=True):
         status = self.status
+        if not status.exists and may_not_exist:
+            return status
+
         last = datetime.datetime.utcnow()
         if status.failed:
             raise BadStack("Stack is in a failed state, it must be deleted first", name=self.stack_name, status=status)
