@@ -50,6 +50,16 @@ class Stack(dictobj):
                 yield value.stack.key_name
 
     @property
+    def stack_name(self):
+        self.find_missing_env()
+        environment = dict([env.pair for env in self.env])
+        return self._stack_name.format(**environment)
+
+    @stack_name.setter
+    def stack_name(self, val):
+        self._stack_name = val
+
+    @property
     def build_after(self):
         for stack in self._build_after:
             if isinstance(stack, six.string_types):
