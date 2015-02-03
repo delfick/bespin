@@ -113,6 +113,7 @@ class BespinSpec(object):
 
             , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
             , build_env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
+            , stack_name_env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
 
             , tags = dictionary_spec()
 

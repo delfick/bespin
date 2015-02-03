@@ -21,7 +21,7 @@ class Stack(dictobj):
     fields = [
           "bespin", "name", "key_name", "environment", "stack_json", "params_json"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts", "build_first"
-        , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env"
+        , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env", "stack_name_env"
         , "artifact_retention_after_deployment", "suspend_actions", "url_checker", "params_yaml"
         ]
 
@@ -51,8 +51,8 @@ class Stack(dictobj):
 
     @property
     def stack_name(self):
-        self.find_missing_env()
-        environment = dict([env.pair for env in self.env])
+        self.find_missing_stack_name_env()
+        environment = dict([env.pair for env in self.stack_name_env])
         return self._stack_name.format(**environment)
 
     @stack_name.setter
@@ -94,6 +94,9 @@ class Stack(dictobj):
 
     def find_missing_build_env(self):
         self.find_missing_env("build_env")
+
+    def find_missing_stack_name_env(self):
+        self.find_missing_env("stack_name_env")
 
     @memoized_property
     def cloudformation(self):
