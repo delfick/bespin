@@ -131,6 +131,7 @@ class BespinSpec(object):
             , skip_update_if_equivalent = listof(stack_specs.skipper_spec())
 
             , suspend_actions = defaulted(boolean(), False)
+            , autoscaling_group_id = optional_spec(string_spec())
 
             , artifact_retention_after_deployment = defaulted(boolean(), False)
 

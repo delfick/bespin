@@ -77,14 +77,14 @@ class Deployer(object):
 
     def suspend_cloudformation_actions(self, stack):
         """Suspend the ScheduledActions for an AutoScaling group in the stack"""
-        autoscaling_group_id = stack.sns_confirmation.autoscaling_group_id
+        autoscaling_group_id = stack.autoscaling_group_id
         asg_physical_id = stack.physical_id_for(autoscaling_group_id)
         stack.ec2.suspend_processes(asg_physical_id)
         log.info("Suspended Processes on AutoScaling Group %s", asg_physical_id)
 
     def resume_cloudformation_actions(self, stack):
         """Resume the ScheduledActions for an AutoScaling group in the stack"""
-        autoscaling_group_id = stack.sns_confirmation.autoscaling_group_id
+        autoscaling_group_id = stack.autoscaling_group_id
         asg_physical_id = stack.physical_id_for(autoscaling_group_id)
         stack.ec2.resume_processes(asg_physical_id)
         log.info("Resumed Processes on AutoScaling Group %s", asg_physical_id)

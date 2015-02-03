@@ -19,7 +19,7 @@ log = logging.getLogger("bespin.option_spec.stack_objs")
 
 class Stack(dictobj):
     fields = [
-          "bespin", "name", "key_name", "environment", "stack_json", "params_json"
+          "bespin", "name", "key_name", "environment", "stack_json", "params_json", "autoscaling_group_id"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts", "build_first"
         , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env", "stack_name_env"
         , "artifact_retention_after_deployment", "suspend_actions", "url_checker", "params_yaml"
