@@ -31,7 +31,7 @@ class EC2(object):
         return instances
 
     def resume_processes(self, asg_physical_id):
-        self.autoscale.suspend_processes(asg_physical_id, ["ScheduledActions"])
+        self.autoscale.resume_processes(asg_physical_id, ["ScheduledActions"])
 
     def suspend_processes(self, asg_physical_id):
         self.autoscale.suspend_processes(asg_physical_id, ["ScheduledActions"])
