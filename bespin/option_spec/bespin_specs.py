@@ -137,6 +137,8 @@ class BespinSpec(object):
 
             , command = optional_spec(string_spec())
 
+            , instance_count_limit = defaulted(integer_spec(), 10)
+
             , sns_confirmation = optional_spec(create_spec(stack_objs.SNSConfirmation
                 , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
                 , timeout = defaulted(integer_spec(), 300)

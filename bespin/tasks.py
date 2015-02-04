@@ -180,3 +180,27 @@ def command_on_instances(overview, configuration, stacks, stack, artifact, **kwa
 
     SSH(ips, command, stack.ssh.user, instance_key_path, **extra_kwargs).run()
 
+@a_task(needs_stack=True, needs_credentials=True, needs_artifact=True)
+def scale_instances(overview, configuration, stacks, stack, artifact, **kwargs):
+    if isinstance(artifact, int) or artifact.isdigit():
+        artifact = int(artifact)
+    else:
+        raise BespinError("The number of instances must be an integer")
+
+    if artifact > stack.instance_count_limit:
+        raise BespinError("The instance_count_limit is smaller than the specified number of instances", limit=stack.instance_count_limit, wanted=artifact)
+
+    group = stack.autoscaling_group
+    current_count = group.desired_capacity
+    log.info("Changing the number of instances in the %s stack from %s to %s", stack.stack_name, current_count, artifact)
+
+    if group.min_size > artifact:
+        log.info("Changing min_size from %s to %s", group.min_size, artifact)
+        group.min_size = artifact
+    if group.max_size < artifact:
+        log.info("Changing max_size from %s to %s", group.max_size, artifact)
+        group.max_size = artifact
+    group.update()
+
+    group.set_capacity(artifact)
+

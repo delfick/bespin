@@ -22,7 +22,7 @@ class Stack(dictobj):
           "bespin", "name", "key_name", "environment", "stack_json", "params_json", "autoscaling_group_id"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts", "build_first", "command"
         , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env", "stack_name_env"
-        , "artifact_retention_after_deployment", "suspend_actions", "url_checker", "params_yaml"
+        , "artifact_retention_after_deployment", "suspend_actions", "url_checker", "params_yaml", "instance_count_limit"
         ]
 
     def __repr__(self):
@@ -109,6 +109,11 @@ class Stack(dictobj):
     @memoized_property
     def sqs(self):
         return self.bespin.credentials.sqs
+
+    @memoized_property
+    def autoscaling_group(self):
+        asg_physical_id = self.cloudformation.map_logical_to_physical_resource_id(self.autoscaling_group_id)
+        return self.ec2.autoscale.get_all_groups(names=[asg_physical_id])[0]
 
     @memoized_property
     def s3(self):
