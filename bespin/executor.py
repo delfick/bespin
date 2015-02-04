@@ -33,6 +33,7 @@ def setup_logging(verbose=False, silent=False, debug=False):
 
     logging.getLogger("boto").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
     logging.getLogger("requests").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
+    logging.getLogger("paramiko.transport").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
     return handler
 
 class CliParser(object):
@@ -144,6 +145,10 @@ class CliParser(object):
             , help = "Should Bespin take any real action or print out what is intends to do"
             , dest = "bespin_dry_run"
             , action = "store_true"
+            )
+
+        parser.add_argument("--command"
+            , help = "Command to run for the command_on_instances task"
             )
 
         extra = {"default": "list_tasks"}

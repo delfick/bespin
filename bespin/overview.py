@@ -39,6 +39,7 @@ class Overview(object):
         self.configuration.update(
             { "$@": bespin.get("extra", "")
             , "bespin": bespin
+            , "command": cli_args['command']
             , "config_root": self.configuration_folder
             , "environment": bespin.get("environment")
             }
@@ -245,6 +246,7 @@ class Overview(object):
             , t("print_variable", "Prints a variable")
             , t("publish_artifacts", "Makes and uploads the artifacts for a stack to S3")
             , t("confirm_deployment", "Checks all instances were correctly deployed to")
+            , t("command_on_instances", "Used with --command, runs that command on the instances")
             , t("clean_old_artifacts", "Cleans old artifacts from S3")
             , t("resume_cloudformation_actions", "Resumes all schedule actions on a cloudformation stack")
             , t("suspend_cloudformation_actions", "Suspends all schedule actions on a cloudformation stack")

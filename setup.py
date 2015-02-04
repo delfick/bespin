@@ -17,6 +17,7 @@ setup(
       , "humanize"
       , "requests"
 
+      , "radssh==1.0.1"
       , "boto==2.34.0"
       , "pyYaml==3.10"
       , "rainbow_logging_handler==2.2.2"

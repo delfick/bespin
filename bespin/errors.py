@@ -92,3 +92,7 @@ class BadImport(BespinError):
 
 class Throttled(BespinError):
     desc = "limit rate exceeded"
+
+class MissingSSHKey(BespinError):
+    desc = "Couldn't find an ssh key"
+

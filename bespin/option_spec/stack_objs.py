@@ -1,5 +1,5 @@
 from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError
-from bespin.errors import StackDoesntExist, BadDeployment
+from bespin.errors import StackDoesntExist, BadDeployment, MissingSSHKey
 from bespin.helpers import memoized_property
 from bespin import helpers as hp
 
@@ -20,7 +20,7 @@ log = logging.getLogger("bespin.option_spec.stack_objs")
 class Stack(dictobj):
     fields = [
           "bespin", "name", "key_name", "environment", "stack_json", "params_json", "autoscaling_group_id"
-        , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts", "build_first"
+        , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts", "build_first", "command"
         , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env", "stack_name_env"
         , "artifact_retention_after_deployment", "suspend_actions", "url_checker", "params_yaml"
         ]
@@ -244,55 +244,95 @@ class SSH(dictobj):
         , "instance_key_path", "bastion_key_path", "instance"
         ]
 
+    def find_instance_ids(self, stack):
+        if self.autoscaling_group_name is not NotSpecified:
+            instance = None
+            asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(self.autoscaling_group_name)
+        elif self.instance is not NotSpecified:
+            instance = stack.cloudformation.map_logical_to_physical_resource_id(self.instance)
+            asg_physical_id = None
+        else:
+            raise BespinError("Please specify either ssh.instance or ssh.autoscaling_group_name", stack=stack)
+
+        log.info("Finding instances")
+        instance_ids = []
+        if asg_physical_id:
+            instance_ids = stack.ec2.instance_ids_in_autoscaling_group(asg_physical_id)
+        elif instance:
+            instance_ids = [instance]
+
+        return instance_ids
+
+    def find_ips(self, stack):
+        instance_ids = self.find_instance_ids(stack)
+        return stack.ec2.ips_for_instance_ids(instance_ids)
+
+    def proxy_options(self, bastion_key_path):
+        if self.bastion is not NotSpecified:
+            return '-o ProxyCommand="ssh {0}@{1} -W %h:%p -i {2} -o IdentitiesOnly=true"'.format(self.user, self.bastion, bastion_key_path)
+        else:
+            return ""
+
     def ssh_into_bastion(self, extra_args):
-        if not os.path.exists(self.bastion_key_path):
-            log.error("Didn't find a bastion key, please download the key")
-            print("Bastion key can be found at {0}".format(self.bastion_key_location))
-            print("Download it to {0}".format(self.bastion_key_path))
-            raise BespinError("Couldn't find an ssh key for the bastion")
-
-        if os.path.exists(self.bastion_key_path):
-            os.chmod(self.bastion_key_path, 0)
-            os.chmod(self.bastion_key_path, stat.S_IRUSR)
-
+        self.chmod_bastion_key_path()
         command = "ssh {0}@{1} -i {2} -o IdentitiesOnly=true".format(self.user, self.bastion, self.bastion_key_path)
         parts = shlex.split(command)
         os.execvp(parts[0], parts)
 
     def ssh_into(self, ip_address, extra_args):
-        proxy = ""
-        error = False
-        if self.bastion is not NotSpecified:
+        bastion_key_path, instance_key_path = self.chmod_keys()
+        proxy = self.proxy_options(bastion_key_path)
+
+        if proxy:
             log.info("Logging into %s via %s", ip_address, self.bastion)
-            if not os.path.exists(self.bastion_key_path):
-                log.error("Didn't find a bastion key, please download the key")
-                print("Bastion key can be found at {0}".format(self.bastion_key_location))
-                print("Download it to {0}".format(self.bastion_key_path))
-                error = True
-            proxy = '-o ProxyCommand="ssh {0}@{1} -W %h:%p -i {2} -o IdentitiesOnly=true"'.format(self.user, self.bastion, self.bastion_key_path)
         else:
             log.info("Logging into %s", ip_address)
 
-        if not os.path.exists(self.instance_key_path):
-            log.error("Didn't find a instance key, please download the key")
-            print("Instance key can be found at {0}".format(self.instance_key_location))
-            print("Download it to {0}".format(self.instance_key_path))
+        command = "ssh -o ForwardAgent=false -o IdentitiesOnly=true {0} -i {1} {2}@{3} {4}".format(proxy, instance_key_path, self.user, ip_address, extra_args)
+        parts = shlex.split(command)
+        log.debug("Running %s", command)
+        os.execvp(parts[0], parts)
+
+    def chmod_keys(self):
+        error = False
+        bastion_key_path = None
+        if self.bastion is not NotSpecified:
+            try:
+                bastion_key_path = self.chmod_bastion_key_path()
+            except MissingSSHKey:
+                error = True
+
+        try:
+            instance_key_path = self.chmod_instance_key_path()
+        except MissingSSHKey:
             error = True
 
         if error:
             raise BespinError("Couldn't find ssh keys")
 
-        if os.path.exists(self.bastion_key_path):
-            os.chmod(self.bastion_key_path, 0)
-            os.chmod(self.bastion_key_path, stat.S_IRUSR)
-        if os.path.exists(self.instance_key_path):
-            os.chmod(self.instance_key_path, 0)
-            os.chmod(self.instance_key_path, stat.S_IRUSR)
+        return bastion_key_path, instance_key_path
 
-        command = "ssh -o ForwardAgent=false -o IdentitiesOnly=true {0} -i {1} {2}@{3} {4}".format(proxy, self.instance_key_path, self.user, ip_address, extra_args)
-        parts = shlex.split(command)
-        log.debug("Running %s", command)
-        os.execvp(parts[0], parts)
+    def chmod_instance_key_path(self):
+        if not os.path.exists(self.instance_key_path):
+            log.error("Didn't find a instance key, please download the key")
+            print("Instance key can be found at {0}".format(self.instance_key_location))
+            print("Download it to {0}".format(self.instance_key_path))
+            raise MissingSSHKey()
+
+        os.chmod(self.instance_key_path, 0)
+        os.chmod(self.instance_key_path, stat.S_IRUSR)
+        return self.instance_key_path
+
+    def chmod_bastion_key_path(self):
+        if not os.path.exists(self.bastion_key_path):
+            log.error("Didn't find a bastion key, please download the key")
+            print("Bastion key can be found at {0}".format(self.bastion_key_location))
+            print("Download it to {0}".format(self.bastion_key_path))
+            raise MissingSSHKey(looking_for="bastion")
+
+        os.chmod(self.bastion_key_path, 0)
+        os.chmod(self.bastion_key_path, stat.S_IRUSR)
+        return self.bastion_key_path
 
 class UrlChecker(dictobj):
     fields = ["check_url", "endpoint", "expect", "timeout_after"]

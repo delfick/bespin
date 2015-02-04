@@ -10,6 +10,7 @@ import signal
 import shlex
 import fcntl
 import time
+import six
 import os
 
 log = logging.getLogger("bespin.processes")
@@ -33,7 +34,10 @@ def command_output(command, *command_extras, **kwargs):
     """Get the output from a command"""
     output = []
     cwd = kwargs.get("cwd", None)
-    args = shlex.split(' '.join([command] + list(command_extras)))
+    if isinstance(command, six.string_types):
+        args = shlex.split(' '.join([command] + list(command_extras)))
+    else:
+        args = command + shlex.split(' '.join(list(command_extras)))
     timeout = kwargs.get("timeout", 10)
     verbose = kwargs.get("verbose", False)
 
@@ -79,7 +83,10 @@ def command_output(command, *command_extras, **kwargs):
             attempted_sigkill = True
 
     for nxt in read_non_blocking(process.stdout):
-        output.append(nxt.decode("utf8").strip())
+        nxt_out = nxt.decode("utf8").strip()
+        output.append(nxt_out)
+        if verbose:
+            print(nxt_out)
 
     if attempted_sigkill:
         time.sleep(0.01)
@@ -88,6 +95,12 @@ def command_output(command, *command_extras, **kwargs):
 
     if process.poll() != 0:
         log.error("Failed to run command\tcommand=%s", args)
+
+    for nxt in read_non_blocking(process.stdout):
+        nxt_out = nxt.decode("utf8").strip()
+        output.append(nxt_out)
+        if verbose:
+            print(nxt_out)
 
     return output, process.poll()
 

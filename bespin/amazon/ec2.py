@@ -36,20 +36,24 @@ class EC2(object):
     def suspend_processes(self, asg_physical_id):
         self.autoscale.suspend_processes(asg_physical_id, ["ScheduledActions"])
 
-    def display_instances(self, asg_physical_id, instance=None):
-        log.info("Finding instances")
-        instance_ids = []
-        if asg_physical_id:
-            asg = self.autoscale.get_all_groups(names=[asg_physical_id])
-            instance_ids = [inst.instance_id for inst in asg[0].instances]
-        elif instance:
-            instance_ids = [instance]
+    def instance_ids_in_autoscaling_group(self, asg_physical_id):
+        asg = self.autoscale.get_all_groups(names=[asg_physical_id])
+        return [inst.instance_id for inst in asg[0].instances]
 
-        print("Found {0} instances".format(len(instance_ids)))
-        print("=" * 20)
+    def ips_for_instance_ids(self, instance_ids):
+        for instance in self.instances(instance_ids):
+            yield instance.private_ip_address
+
+    def instances(self, instance_ids):
         if instance_ids:
             for instance in self.conn.get_only_instances(instance_ids=instance_ids):
-                launch_time = datetime.datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
-                delta = (datetime.datetime.utcnow() - launch_time).seconds
-                print("{0}\t{1}\t{2}\tUp {3} seconds".format(instance.id, instance.private_ip_address, instance.state, delta))
+                yield instance
+
+    def display_instances(self, instance_ids):
+        print("Found {0} instances".format(len(instance_ids)))
+        print("=" * 20)
+        for instance in self.instances(instance_ids):
+            launch_time = datetime.datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
+            delta = (datetime.datetime.utcnow() - launch_time).seconds
+            print("{0}\t{1}\t{2}\tUp {3} seconds".format(instance.id, instance.private_ip_address, instance.state, delta))
 

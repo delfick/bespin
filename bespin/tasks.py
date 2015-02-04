@@ -9,6 +9,7 @@ one specific stack object.
 from bespin.actions.deployer import Deployer
 from bespin.actions.builder import Builder
 from bespin.errors import BespinError
+from bespin.actions.ssh import SSH
 
 from input_algorithms.spec_base import NotSpecified
 import itertools
@@ -114,15 +115,8 @@ def sanity_check(overview, configuration, stacks, stack, **kwargs):
 def instances(overview, configuration, stacks, stack, artifact, **kwargs):
     """Find and ssh into instances"""
     if artifact is None:
-        if stack.ssh.autoscaling_group_name is not NotSpecified:
-            instance = None
-            asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(stack.ssh.autoscaling_group_name)
-        elif stack.ssh.instance is not NotSpecified:
-            instance = stack.cloudformation.map_logical_to_physical_resource_id(stack.ssh.instance)
-            asg_physical_id = None
-        else:
-            raise BespinError("Please specify either ssh.instance or ssh.autoscaling_group_name", stack=stack)
-        stack.ec2.display_instances(asg_physical_id, instance)
+        instance_ids = stack.ssh.find_instance_ids(stack)
+        stack.ec2.display_instances(instance_ids)
     else:
         stack.ssh.ssh_into(artifact, configuration["$@"])
 
@@ -155,4 +149,34 @@ def params(overview, configuration, stacks, stack, **kwargs):
 def outputs(overview, configuration, stacks, stack, **kwargs):
     """Print out the outputs"""
     print(json.dumps(stack.cloudformation.outputs, indent=4))
+
+@a_task(needs_stack=True, needs_credentials=True)
+def command_on_instances(overview, configuration, stacks, stack, artifact, **kwargs):
+    """Run a shell command on all the instances in the stack"""
+    if stack.command is NotSpecified:
+        raise BespinError("No command was found to run")
+
+    log.info("Running '%s' on all instances for the %s stack", stack.command, stack.stack_name)
+    if artifact:
+        ips = [artifact]
+    else:
+        ips = list(stack.ssh.find_ips(stack))
+
+    if not ips:
+        raise BespinError("Didn't find any instances to run the command on")
+    log.info("Running command on the following ips: %s", ips)
+
+    if configuration["bespin"].dry_run:
+        log.warning("Dry-run, only gonna run hostname on the boxes")
+        command = "hostname"
+    else:
+        command = stack.command
+
+    bastion_key_path, instance_key_path = stack.ssh.chmod_keys()
+    proxy = stack.ssh.proxy_options(bastion_key_path)
+    extra_kwargs = {}
+    if proxy:
+        extra_kwargs = {"proxy": stack.ssh.bastion, "proxy_ssh_key": bastion_key_path, "proxy_ssh_user": stack.ssh.user}
+
+    SSH(ips, command, stack.ssh.user, instance_key_path, **extra_kwargs).run()
 
