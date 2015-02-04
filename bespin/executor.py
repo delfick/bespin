@@ -149,6 +149,7 @@ class CliParser(object):
 
         parser.add_argument("--command"
             , help = "Command to run for the command_on_instances task"
+            , default = ""
             )
 
         extra = {"default": "list_tasks"}
