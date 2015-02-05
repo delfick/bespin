@@ -6,9 +6,10 @@ necessary to provide the task with the object containing all the stacks and/or
 one specific stack object.
 """
 
+from bespin.amazon.credentials import Credentials
+from bespin.errors import BespinError, BadOption
 from bespin.actions.deployer import Deployer
 from bespin.actions.builder import Builder
-from bespin.errors import BespinError
 from bespin.actions.ssh import SSH
 
 from input_algorithms.spec_base import NotSpecified
@@ -203,4 +204,27 @@ def scale_instances(overview, configuration, stacks, stack, artifact, **kwargs):
     group.update()
 
     group.set_capacity(artifact)
+
+@a_task()
+def become(overview, configuration, stacks, stack, artifact, **kwargs):
+    bespin = configuration['bespin']
+    environment = bespin.environment
+    if not environment:
+        raise BadOption("Please specify an environment")
+
+    if all(thing in ("", None, NotSpecified) for thing in (stack, artifact)):
+        raise BespinError("Please specify your desired role as an artifact")
+
+    if artifact:
+        role = artifact
+    else:
+        role = stack
+
+    credentials = Credentials(bespin.region, configuration["environments"][environment].account_id, role)
+    credentials.verify_creds()
+
+    print("export AWS_ACCESS_KEY_ID={0}".format(os.environ['AWS_ACCESS_KEY_ID']))
+    print("export AWS_SECRET_ACCESS_KEY={0}".format(os.environ['AWS_SECRET_ACCESS_KEY']))
+    print("export AWS_SECURITY_TOKEN={0}".format(os.environ['AWS_SECURITY_TOKEN']))
+    print("export AWS_SESSION_TOKEN={0}".format(os.environ['AWS_SESSION_TOKEN']))
 
