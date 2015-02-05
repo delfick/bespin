@@ -43,14 +43,15 @@ class many_item_formatted_spec(Spec):
         elif isinstance(val, six.string_types):
             vals = []
             dividers = []
-            while val and any(seperator in val for seperator in self.seperators):
-                for seperator in self.seperators:
-                    if seperator in val:
-                        nxt, val = val.split(seperator, 1)
-                        vals.append(nxt)
-                        dividers.append(seperator)
-                        break
-            vals.append(val)
+            if self.seperators:
+                while val and any(seperator in val for seperator in self.seperators):
+                    for seperator in self.seperators:
+                        if seperator in val:
+                            nxt, val = val.split(seperator, 1)
+                            vals.append(nxt)
+                            dividers.append(seperator)
+                            break
+                vals.append(val)
 
             if not vals:
                 vals = [val]

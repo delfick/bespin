@@ -199,3 +199,26 @@ describe BespinCase, "artifact_command_spec":
         res = specs.artifact_command_spec().normalise(self.meta, {"modify": {"somewhere": {"append": "stuff"}}})
         self.assertEqual(res.modify, {"somewhere": {"append": ["stuff"]}})
 
+describe BespinCase, "s3_address":
+    before_each:
+        self.meta = mock.Mock(name="meta", spec=Meta)
+
+    it "returns an S3 Address":
+        res = specs.s3_address().normalise(self.meta, "s3://blah/and/stuff")
+        self.assertEqual(res, objs.S3Address("blah", "/and/stuff", 600))
+
+        res = specs.s3_address().normalise(self.meta, "s3://blah")
+        self.assertEqual(res, objs.S3Address("blah", "/", 600))
+
+        res = specs.s3_address().normalise(self.meta, "s3://blah/")
+        self.assertEqual(res, objs.S3Address("blah", "/", 600))
+
+    it "can have a timeout specified as well":
+        res = specs.s3_address().normalise(self.meta, ["s3://blah/and/stuff", 700])
+        self.assertEqual(res, objs.S3Address("blah", "/and/stuff", 700))
+
+    it "complains if the address is invalid":
+        for val in ("http://somewhere", "amds"):
+            with self.fuzzyAssertRaisesError(BadSpecValue, "Not a valid s3 address", got=val, meta=self.meta):
+                specs.s3_address().normalise(self.meta, val)
+

@@ -17,6 +17,7 @@ of MergedOptions to do the lookup for us.
 from bespin.errors import BadOptionFormat
 from input_algorithms.meta import Meta
 
+from datetime import datetime
 import string
 import six
 
@@ -124,7 +125,7 @@ class MergedOptionStringFormatter(string.Formatter):
 
     def get_field(self, value, args, kwargs, format_spec=None):
         """Also take the spec into account"""
-        if format_spec in ("env", "underscored"):
+        if format_spec in ("env", "underscored", "date"):
             return value, ()
 
         if value in self.chain:
@@ -138,6 +139,8 @@ class MergedOptionStringFormatter(string.Formatter):
             return "${{{0}}}".format(obj)
         elif format_spec == "underscored":
             return obj.replace("-", "_")
+        elif format_spec == "date":
+            return datetime.now().strftime(obj)
 
         if isinstance(obj, dict):
             return obj

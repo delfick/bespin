@@ -139,6 +139,8 @@ class BespinSpec(object):
 
             , instance_count_limit = defaulted(integer_spec(), 10)
 
+            , deploys_s3_path = optional_spec(listof(stack_specs.s3_address()))
+
             , sns_confirmation = optional_spec(create_spec(stack_objs.SNSConfirmation
                 , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
                 , timeout = defaulted(integer_spec(), 300)

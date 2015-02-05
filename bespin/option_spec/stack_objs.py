@@ -21,7 +21,7 @@ class Stack(dictobj):
     fields = [
           "bespin", "name", "key_name", "environment", "stack_json", "params_json", "autoscaling_group_id"
         , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts", "build_first", "command"
-        , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env", "stack_name_env"
+        , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env", "stack_name_env", "deploys_s3_path"
         , "artifact_retention_after_deployment", "suspend_actions", "url_checker", "params_yaml", "instance_count_limit"
         ]
 
@@ -40,6 +40,12 @@ class Stack(dictobj):
         environment = dict(env.pair for env in self.env)
         if self.sns_confirmation is not NotSpecified:
             self.sns_confirmation.wait(environment, self.ec2, self.sqs, self.cloudformation)
+
+    def check_deployed_s3_paths(self, start):
+        environment = dict(env.pair for env in self.env)
+        if self.deploys_s3_path is not NotSpecified:
+            for path in self.deploys_s3_path:
+                self.s3.wait_for(path.bucket.format(**environment), path.key.format(**environment), path.timeout, start=start)
 
     def dependencies(self, stacks):
         for key_name in self.build_first:
@@ -421,4 +427,7 @@ class SNSConfirmation(dictobj):
             raise BadDeployment("Failed to receive any messages")
 
         log.info("All instances have been confirmed to be deployed with version_message [%s]!", version_message)
+
+class S3Address(dictobj):
+    fields = ["bucket", "key", "timeout"]
 

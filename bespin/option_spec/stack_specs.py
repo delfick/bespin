@@ -5,14 +5,16 @@ The idea is that these understand the conditions around representation of the
 options.
 """
 
-from bespin.option_spec.stack_objs import StaticVariable, DynamicVariable, Environment, Skipper
+from bespin.option_spec.stack_objs import StaticVariable, DynamicVariable, Environment, Skipper, S3Address
 from bespin.option_spec.specs import many_item_formatted_spec
 from bespin.option_spec.artifact_objs import ArtifactCommand
 from bespin.option_spec.artifact_objs import ArtifactPath
 from bespin.formatter import MergedOptionStringFormatter
+from bespin.errors import BadSpecValue
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms import spec_base as sb
+from six.moves.urllib.parse import urlparse
 
 class var_spec(many_item_formatted_spec):
     value_name = "Variable"
@@ -64,6 +66,31 @@ class skipper_spec(many_item_formatted_spec):
 
     def create_result(self, var1, var2, meta, val, dividers):
         return Skipper(var1, var2)
+
+class s3_address(many_item_formatted_spec):
+    value_name = "s3 address"
+    specs = [sb.string_spec()]
+    optional_specs = [sb.integer_spec()]
+    seperators = None
+    formatter = MergedOptionStringFormatter
+
+    def create_result(self, address, timeout, meta, val, dividers):
+        if timeout is NotSpecified:
+            timeout = 600
+
+        options = urlparse(address)
+        if options.scheme != "s3":
+            raise BadSpecValue("Not a valid s3 address", meta=meta, got=val)
+        if not options.netloc:
+            path = ''
+            domain = options.path
+        else:
+            path = options.path
+            domain = options.netloc
+
+        if not path.startswith('/'):
+            path  = '/'
+        return S3Address(domain, path, timeout)
 
 formatted_string = sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)
 

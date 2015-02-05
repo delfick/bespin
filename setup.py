@@ -14,6 +14,7 @@ setup(
       , "argparse==1.3.0"
 
       , "six"
+      , "pytz"
       , "humanize"
       , "requests"
 

@@ -1,6 +1,7 @@
 from bespin.actions.builder import Builder
 from bespin.errors import NoSuchStack
 
+from datetime import datetime
 import logging
 import time
 import json
@@ -8,8 +9,11 @@ import json
 log = logging.getLogger("bespin.actions.deployer")
 
 class Deployer(object):
-    def deploy_stack(self, stack, stacks, made=None, ignore_deps=False, checked=None):
+    def deploy_stack(self, stack, stacks, made=None, ignore_deps=False, checked=None, start=None):
         """Deploy a stack and all it's dependencies"""
+        if start is None:
+            start = datetime.utcnow()
+
         made = [] if made is None else made
         checked = [] if checked is None else checked
         if stack.name in made:
@@ -23,7 +27,7 @@ class Deployer(object):
 
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
-                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked)
+                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked, start=start)
 
         # Should have all our dependencies now
         log.info("Making stack for '%s' (%s)", stack.name, stack.stack_name)
@@ -31,12 +35,12 @@ class Deployer(object):
 
         if any(stack.build_after):
             for dependency in stack.build_after:
-                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked)
+                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked, start=start)
 
         if stack.artifact_retention_after_deployment:
             Builder().clean_old_artifacts(stack)
 
-        self.confirm_deployment(stack)
+        self.confirm_deployment(stack, start)
 
     def build_stack(self, stack):
         """Build a single stack"""
@@ -70,10 +74,12 @@ class Deployer(object):
         if stack.suspend_actions:
             self.resume_cloudformation_actions(stack)
 
-    def confirm_deployment(self, stack):
+    def confirm_deployment(self, stack, start=None):
         """Confirm our deployment"""
+        stack.find_missing_env()
         stack.check_sns()
         stack.check_url()
+        stack.check_deployed_s3_paths(start=start)
 
     def suspend_cloudformation_actions(self, stack):
         """Suspend the ScheduledActions for an AutoScaling group in the stack"""

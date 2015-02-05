@@ -1,15 +1,17 @@
-from bespin.helpers import memoized_property
 from bespin.errors import BadS3Bucket
+from bespin import helpers as hp
 
 from six.moves.urllib.parse import urlparse
 from contextlib import contextmanager
 from collections import namedtuple
 from filechunkio import FileChunkIO
 
-import boto.s3
+from datetime import datetime
 import humanize
 import logging
+import boto.s3
 import boto
+import pytz
 import sys
 import os
 
@@ -24,7 +26,7 @@ class S3(object):
     def __init__(self, region="ap-southeast-2"):
         self.region = region
 
-    @memoized_property
+    @hp.memoized_property
     def conn(self):
         return boto.s3.connect_to_region(self.region)
 
@@ -40,6 +42,46 @@ class S3(object):
 
         key = info.path
         return S3Location(bucket, key, value)
+
+    def wait_for(self, bucket, key, timeout, start=None):
+        if start is None:
+            start = datetime.utcnow()
+
+        for _ in hp.until(timeout=timeout, step=5):
+            try:
+                bucket_obj = self.get_bucket(bucket)
+            except BadS3Bucket as error:
+                log.error(error)
+                continue
+
+            if key == '/':
+                log.info("The bucket exists! and that is all we are looking for")
+                return
+
+            k = Key(bucket_obj)
+            k.key = key
+
+            try:
+                k.read()
+            except boto.exception.S3ResponseError as error:
+                if error.status == 404:
+                    log.info("Key doesn't exist yet\tbucket=%s\tkey=%s", bucket_obj.name, key)
+                    continue
+                else:
+                    log.error(error)
+                    continue
+
+            last_modified = k.last_modified
+            log.info("Found key in the bucket\tbucket=%s\tkey=%s\tlast_modified=%s", bucket_obj.name, key, last_modified)
+
+            gmt = pytz.timezone("GMT")
+            date = datetime.strptime(last_modified, "%a, %d-%b-%Y %H:%M:%S GMT")
+            date = gmt.localize(date).astimezone(pytz.timezone("UTC"))
+
+            if date > start:
+                log.info("Key is newer than our start time!")
+            else:
+                log.info("Found key but it's older than our start time, hasn't been updated yet")
 
     @contextmanager
     def a_multipart_upload(self, bucket, key):

@@ -7,6 +7,7 @@ from tests.helpers import BespinCase
 
 from input_algorithms.spec_base import NotSpecified
 from option_merge import MergedOptions
+from datetime import datetime
 
 describe BespinCase, "MergedOptionStringFormatter":
     def check_formatting(self, configuration, path, value=NotSpecified, expected=NotSpecified, **configuration_kwargs):
@@ -46,4 +47,11 @@ describe BespinCase, "MergedOptionStringFormatter":
 
     it "can format into nested dictionaries because MergedOptions is awesome":
         self.check_formatting({"one": {"two": {"three": 4, "five": 5}, "six": 6}}, [], value="{one.two.three}", expected="4")
+
+    it "can format the current date":
+        expected = datetime.now().strftime("%Y")
+        self.check_formatting({}, [], value="{%Y:date}", expected=expected)
+
+        expected = datetime.now().strftime("%Y%b")
+        self.check_formatting({}, [], value="{%Y%b:date}", expected=expected)
 
