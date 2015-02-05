@@ -86,7 +86,7 @@ class Cloudformation(AmazonMixin):
                             break
                     except Throttled:
                         log.info("Was throttled, waiting a bit")
-                        time.sleep(0.05)
+                        time.sleep(0.5)
         return self._description
 
     @property
