@@ -250,7 +250,7 @@ class Skipper(dictobj):
 
 class SSH(dictobj):
     fields = [
-          "user", "bastion", "bastion_key_location"
+          "user", "bastion", "bastion_key_location", "address"
         , "instance_key_location", "autoscaling_group_name"
         , "instance_key_path", "bastion_key_path", "instance"
         ]
@@ -275,8 +275,11 @@ class SSH(dictobj):
         return instance_ids
 
     def find_ips(self, stack):
-        instance_ids = self.find_instance_ids(stack)
-        return stack.ec2.ips_for_instance_ids(instance_ids)
+        if self.address is not NotSpecified:
+            return [self.address]
+        else:
+            instance_ids = self.find_instance_ids(stack)
+            return stack.ec2.ips_for_instance_ids(instance_ids)
 
     def proxy_options(self, bastion_key_path):
         if self.bastion is not NotSpecified:

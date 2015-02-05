@@ -3,6 +3,7 @@ from bespin.helpers import memoized_property
 import boto.ec2
 import boto.ec2.autoscale
 
+from input_algorithms.spec_base import NotSpecified
 import datetime
 import logging
 
@@ -49,11 +50,14 @@ class EC2(object):
             for instance in self.conn.get_only_instances(instance_ids=instance_ids):
                 yield instance
 
-    def display_instances(self, instance_ids):
+    def display_instances(self, instance_ids, address=NotSpecified):
         print("Found {0} instances".format(len(instance_ids)))
         print("=" * 20)
         for instance in self.instances(instance_ids):
             launch_time = datetime.datetime.strptime(instance.launch_time, '%Y-%m-%dT%H:%M:%S.000Z')
             delta = (datetime.datetime.utcnow() - launch_time).seconds
-            print("{0}\t{1}\t{2}\tUp {3} seconds".format(instance.id, instance.private_ip_address, instance.state, delta))
+            ip_address = instance.private_ip_address
+            if address is not NotSpecified:
+                ip_address = address
+            print("{0}\t{1}\t{2}\tUp {3} seconds".format(instance.id, ip_address, instance.state, delta))
 

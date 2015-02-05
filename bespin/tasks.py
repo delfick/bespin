@@ -116,7 +116,7 @@ def instances(overview, configuration, stacks, stack, artifact, **kwargs):
     """Find and ssh into instances"""
     if artifact is None:
         instance_ids = stack.ssh.find_instance_ids(stack)
-        stack.ec2.display_instances(instance_ids)
+        stack.ec2.display_instances(instance_ids, address=stack.ssh.address)
     else:
         stack.ssh.ssh_into(artifact, configuration["$@"])
 

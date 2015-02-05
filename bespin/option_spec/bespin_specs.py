@@ -167,6 +167,7 @@ class BespinSpec(object):
                 , bastion_key_location = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , instance_key_location = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
+                , address = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , instance = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , autoscaling_group_name = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
