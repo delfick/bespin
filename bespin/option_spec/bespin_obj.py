@@ -27,7 +27,6 @@ class Bespin(dictobj):
             configuration for this environment.
         """
       , "chosen_task": "to_be_filled_in"
-      , "interactive": "to_be_filled_in"
       , "chosen_stack": "to_be_filled_in"
       , "extra_imports": "to_be_filled_in"
       , "configuration": "to_be_filled_in"

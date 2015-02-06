@@ -129,12 +129,6 @@ class CliParser(object):
             , **opts
             )
 
-        parser.add_argument("--non-interactive"
-            , help = "Make this non interactive"
-            , dest = "bespin_interactive"
-            , action = "store_false"
-            )
-
         parser.add_argument("--flat"
             , help = "Used by the show command"
             , dest = "bespin_flat"

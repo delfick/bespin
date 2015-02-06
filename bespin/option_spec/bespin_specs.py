@@ -207,7 +207,6 @@ class BespinSpec(object):
             , chosen_stack = defaulted(formatted_string, "")
             , chosen_artifact = defaulted(formatted_string, "")
 
-            , interactive = defaulted(formatted_boolean, True)
             , extra_imports = listof(imports.import_spec())
             )
 
