@@ -1,6 +1,8 @@
+Bespin
+======
 
-An opinionated wrapper around the boto API that knows how to read
-yaml files and make things happen.
+An opinionated wrapper around Amazon Cloudformation that reads yaml files.
+and make things happen.
 
 .. image:: https://travis-ci.org/realestate-com-au/bespin.png?branch=master
     :target: https://travis-ci.org/realestate-com-au/bespin
@@ -21,11 +23,6 @@ When you call bespin without any arguments it will print out the tasks you
 have available.
 
 You may invoke these tasks with the ``task`` option.
-
-The default tasks are as follows:
-
-deploy
-  Deploy your stack
 
 Simpler Usage
 -------------

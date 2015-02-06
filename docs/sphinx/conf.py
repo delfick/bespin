@@ -6,11 +6,15 @@ import sys, os
 import sphinx_rtd_theme
 
 this_dir = os.path.abspath(os.path.dirname(__file__))
+extension_dir = os.path.join(this_dir, "ext")
+sys.path.extend([extension_dir])
 
-extensions = []
+extensions = ['show_specs', 'show_tasks']
 
 html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme_path = [os.path.join(this_dir, '_templates'), sphinx_rtd_theme.get_html_theme_path()]
+html_static_path = [os.path.join(this_dir, "static")]
+html_style = 'css/styles.css'
 
 exclude_patterns = []
 

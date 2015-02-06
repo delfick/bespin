@@ -228,30 +228,30 @@ class Overview(object):
 
     def default_tasks(self):
         """Return default tasks"""
-        def t(name, description, action=None, **options):
+        def t(name, description=None, action=None, **options):
             if not action:
                 action = name
             return (name, Task(action, description=description, options=options, label="Bespin"))
-        return dict([
-              t("tail", "Tail the deployment of a stack")
-            , t("show", "Show the available stacks")
-            , t("params", "Print out the params for a stack")
-            , t("become", "Print out exports for assuming role")
-            , t("deploy", "Deploy a particular stack")
-            , t("execute", "Execute a command with assumed creds")
-            , t("outputs", "Show the outputs for a stack")
-            , t("bastion", "SSH into the bastion")
-            , t("instances", "Find and ssh into the instances")
-            , t("list_tasks", "List the available tasks")
-            , t("sanity_check", "Sanity check a stack and it's dependencies")
-            , t("print_variable", "Prints a variable")
-            , t("scale_instances", "Change the number of instances in the scaling group")
-            , t("publish_artifacts", "Makes and uploads the artifacts for a stack to S3")
-            , t("confirm_deployment", "Checks all instances were correctly deployed to")
-            , t("command_on_instances", "Used with --command, runs that command on the instances")
-            , t("clean_old_artifacts", "Cleans old artifacts from S3")
-            , t("resume_cloudformation_actions", "Resumes all schedule actions on a cloudformation stack")
-            , t("suspend_cloudformation_actions", "Suspends all schedule actions on a cloudformation stack")
+        return dict(t(name) for name in [
+              "tail"
+            , "show"
+            , "params"
+            , "become"
+            , "deploy"
+            , "execute"
+            , "outputs"
+            , "bastion"
+            , "instances"
+            , "list_tasks"
+            , "sanity_check"
+            , "print_variable"
+            , "scale_instances"
+            , "publish_artifacts"
+            , "confirm_deployment"
+            , "command_on_instances"
+            , "clean_old_artifacts"
+            , "resume_cloudformation_actions"
+            , "suspend_cloudformation_actions"
             ])
 
     def find_tasks(self, configuration=None, overrides=None):

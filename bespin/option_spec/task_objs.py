@@ -21,11 +21,24 @@ class Task(dictobj):
     """
     fields = [("action", "run"), ("label", "Project"), ("options", None), ("overrides", None), ("description", "")]
 
+    def setup(self, *args, **kwargs):
+        super(Task, self).setup(*args, **kwargs)
+        self.set_description()
+
+    def set_description(self, available_actions=None):
+        if not self.description:
+            if not available_actions:
+                from bespin.tasks import available_tasks as available_actions
+            if self.action in available_actions:
+                self.description = available_actions[self.action].__doc__
+
     def run(self, overview, cli_args, stack, available_actions=None, tasks=None):
         """Run this task"""
         if available_actions is None:
             from bespin.tasks import available_tasks as available_actions
+
         task_action = available_actions[self.action]
+        self.set_description(available_actions)
         configuration = MergedOptions.using(overview.configuration, dont_prefix=overview.configuration.dont_prefix, converters=overview.configuration.converters)
 
         if self.options:

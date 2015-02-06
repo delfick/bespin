@@ -65,6 +65,8 @@ if sys.version.startswith('2.7'): sys.exit(1)
 
   source $TMP_DIR/bin/activate
   pip install -r sphinx/requirements.txt
+  cd $DIR/..
+  pip install -e .
 fi
 
 # use with --clean if you change anything in sphinx
@@ -76,8 +78,4 @@ fi
 source $DIR/sphinx/venv/bin/activate
 pip install -r $DIR/sphinx/requirements.txt
 $DIR/sphinx/venv/bin/sphinx-build -b html -c $DIR/sphinx -d $DIR/sphinx/_build/doctrees docs $DIR/sphinx/_build/html
-
-if (($CLEAN==1)); then
-  echo "h2 { background: rgba(26, 255, 0, 0.12); padding: 3px; }" >> $DIR/sphinx/_build/html/_static/css/theme.css
-fi
 

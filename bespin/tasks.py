@@ -13,6 +13,7 @@ from bespin.actions.builder import Builder
 from bespin.actions.ssh import SSH
 
 from input_algorithms.spec_base import NotSpecified
+from textwrap import dedent
 import itertools
 import logging
 import shlex
@@ -52,12 +53,18 @@ def list_tasks(overview, configuration, tasks, **kwargs):
         sorted_tasks = sorted(list(items), key=lambda item: len(item[0]))
         max_length = max(len(name) for name, _ in sorted_tasks)
         for key, task in sorted_tasks:
-            print("\t{0}{1} :-: {2}".format(" " * (max_length-len(key)), key, task.description or ""))
+            desc = dedent(task.description or "").strip().split('\n')[0]
+            print("\t{0}{1} :-: {2}".format(" " * (max_length-len(key)), key, desc))
         print("")
 
 @a_task(needs_stacks=True)
 def show(overview, configuration, stacks, **kwargs):
-    """Show what stacks we have"""
+    """
+    Show what stacks we have in layered order.
+
+    When combined with the ``--flat`` option, the stacks are shown as a flat
+    list instead of in layers.
+    """
     flat = configuration.get("bespin.flat", False)
     only_pushable = configuration.get("bespin.only_pushable", False)
 
@@ -183,6 +190,7 @@ def command_on_instances(overview, configuration, stacks, stack, artifact, **kwa
 
 @a_task(needs_stack=True, needs_credentials=True, needs_artifact=True)
 def scale_instances(overview, configuration, stacks, stack, artifact, **kwargs):
+    """Change the number of instances in the stack's autoscaling_group"""
     if isinstance(artifact, int) or artifact.isdigit():
         artifact = int(artifact)
     else:
@@ -207,6 +215,7 @@ def scale_instances(overview, configuration, stacks, stack, artifact, **kwargs):
 
 @a_task()
 def become(overview, configuration, stacks, stack, artifact, **kwargs):
+    """Print export statements for assuming an amazon iam role"""
     bespin = configuration['bespin']
     environment = bespin.environment
     if not environment:
