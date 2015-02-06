@@ -26,12 +26,12 @@ class Bespin(dictobj):
             When a stack is created the stack configuration is merged with the
             configuration for this environment.
         """
-      , "chosen_task": "to_be_filled_in"
-      , "chosen_stack": "to_be_filled_in"
-      , "extra_imports": "to_be_filled_in"
-      , "configuration": "to_be_filled_in"
-      , "no_assume_role": "to_be_filled_in"
-      , "chosen_artifact": "to_be_filled_in"
+      , "chosen_task": "The task to execute"
+      , "chosen_stack": "The stack to pass into the task"
+      , "extra_imports": "Any extra files to import before searching for the chosen task"
+      , "configuration": "The root of the configuration"
+      , "no_assume_role": "Boolean saying if we should assume role or not"
+      , "chosen_artifact": "The value of the --artifact option. This is used to mean several things via the tasks"
       }
 
     def get_variable(self, artifact):
