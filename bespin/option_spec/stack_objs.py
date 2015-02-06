@@ -18,12 +18,60 @@ import re
 log = logging.getLogger("bespin.option_spec.stack_objs")
 
 class Stack(dictobj):
-    fields = [
-          "bespin", "name", "key_name", "environment", "stack_json", "params_json", "autoscaling_group_id"
-        , "vars", "stack_name", "env", "build_after", "ignore_deps", "artifacts", "build_first", "command"
-        , "skip_update_if_equivalent", "tags", "sns_confirmation", "ssh", "build_env", "stack_name_env", "deploys_s3_path"
-        , "artifact_retention_after_deployment", "suspend_actions", "url_checker", "params_yaml", "instance_count_limit"
-        ]
+    fields = {
+          "tags": """
+              A dictionary specifying the tags to apply to the stack on creation"
+
+              Note that a limitation of cloudformation is such that tags can only be
+              applied to the template or changed at creation time.
+          """
+        , "name": "The name of this stack"
+        , "key_name": "The original key of this stack in the configuration['stacks']"
+        , "stack_name": """
+            The name given to the deployed cloudformation stack
+
+            Note that this may include environment variables as defined by the ``stack_name_env``
+            option::
+
+                stack_name: "rerun-{{RELEASE_VERSION}}"
+                stack_name_env:
+                    - RELEASE_VERSION
+          """
+        , "bespin": "The Bespin object"
+        , "environment": "The name of the environment to deploy to"
+
+        , "env": "A list of environment variables that are necessary for this deployment"
+        , "build_env": "A list of environment variables that are necessary when building artifacts"
+        , "stack_name_env": "A list of environment variables that are necessary for creating the stack name"
+
+        , "build_first": "A list of stacks that should be built before this one is built"
+        , "build_after": "A list of stacks that should be built after this one is buildt"
+        , "ignore_deps": "Don't build any dependency stacks"
+        , "deploys_s3_path": "Check that the deployment creates one or more objects in S3"
+        , "suspend_actions": """
+              Suspend Scheduled Actions for the stack before deploying, and resume Scheduled
+              actions after finished deploying.
+
+              This uses the ``autoscaling_group_id`` attribute to determine what autoscaling group
+              to suspend and resume
+          """
+        , "instance_count_limit": "The max number of instances the scale_instances action is allowed to scale to"
+        , "skip_update_if_equivalent": "A list of two variable definitions. If they resolve to the same value, then don't deploy"
+        , "artifact_retention_after_deployment": "Delete old artifacts after this deployment is done"
+
+        , "vars": "A dictionary of variable definitions that may be referred to in other parts of the configuration"
+        , "stack_json": "The path to a json file for the cloudformation stack definition"
+        , "params_json": "The path to a json file for the parameters used by the cloudformation stack"
+        , "params_yaml": "Either a dictionary of parameters to use in the stack, or path to a yaml file with the dictionary of parameters"
+        , "autoscaling_group_id": "The name of the auto scaling group used in the stack"
+
+        , "ssh": "Options for ssh'ing into instances"
+        , "artifacts": "Options for building artifacts used by the stack"
+        , "url_checker": "Options for using a public url to check the deployment deployed the correct version"
+        , "sns_confirmation": "Options for using SNS and SQS to check the deployment deployed the correct version"
+
+        , "command": "Used by the ``command_on_instances`` task as the command to run on the instances"
+        }
 
     def __repr__(self):
         return "<Stack({0})>".format(self.name)
