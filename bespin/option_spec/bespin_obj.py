@@ -8,10 +8,32 @@ import string
 import six
 
 class Bespin(dictobj):
-    fields = [
-          "dry_run", "assume_role", "flat", "config", "chosen_stack", "no_assume_role", "extra_imports"
-        , "region", "environment", "chosen_artifact", "chosen_task", "extra", "interactive", "configuration"
-        ]
+    fields = {
+        "flat": "Used by the ``Show`` task to show the stacks as a flat list. Set by ``--flat``"
+      , "extra": "Holds the extra command line arguments after ``--``"
+      , "config": "Holds a file object to the specified Bespin configuration file"
+      , "region": "The amazon region to perform actions in"
+      , "dry_run": "Don't run any destructive or modification amazon requests"
+      , "assume_role": """
+            An iam role to assume into before doing any amazon requests.
+
+            This behaviour can be disabled by setting the ``NO_ASSUME_ROLE``
+            environment variable to any value.
+        """
+      , "environment": """
+            The environment in the configuration to use.
+
+            When a stack is created the stack configuration is merged with the
+            configuration for this environment.
+        """
+      , "chosen_task": "to_be_filled_in"
+      , "interactive": "to_be_filled_in"
+      , "chosen_stack": "to_be_filled_in"
+      , "extra_imports": "to_be_filled_in"
+      , "configuration": "to_be_filled_in"
+      , "no_assume_role": "to_be_filled_in"
+      , "chosen_artifact": "to_be_filled_in"
+      }
 
     def get_variable(self, artifact):
         try:
