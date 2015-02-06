@@ -110,7 +110,11 @@ class ShowSpecsDirective(Directive):
 
                 fields = {}
                 if creates and hasattr(creates, 'fields') and isinstance(creates.fields, dict):
-                    fields = creates.fields
+                    for key, val in creates.fields.items():
+                        if isinstance(key, tuple):
+                            fields[key[0]] = val
+                        else:
+                            fields[key] = val
 
                 txt = fields.get(name) or "No description"
                 viewlist = ViewList()

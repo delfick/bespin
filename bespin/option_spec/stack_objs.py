@@ -297,11 +297,18 @@ class Skipper(dictobj):
         return v1 and v2 and v1 == v2
 
 class SSH(dictobj):
-    fields = [
-          "user", "bastion", "bastion_key_location", "address"
-        , "instance_key_location", "autoscaling_group_name"
-        , "instance_key_path", "bastion_key_path", "instance"
-        ]
+    fields = {
+          "user": "The user to ssh into the instances as"
+        , "bastion": "The bastion jumpbox to use to get to the instances"
+        , "address": "The address to use to get into the single instance if ``instance`` is specified"
+        , "instance": "The Logical id of the instance in the template to ssh into"
+        , "autoscaling_group_name": "The logical id of the auto scaling group that has the instances of interest"
+
+        , "bastion_key_path": "The location on disk of the bastion ssh key"
+        , "instance_key_path": "The location on disk of the instance ssh key"
+        , "bastion_key_location": "The place where the bastion key may be downloaded from"
+        , "instance_key_location": "The place where the instance key may be downloaded from"
+        }
 
     def find_instance_ids(self, stack):
         if self.autoscaling_group_name is not NotSpecified:
@@ -397,7 +404,12 @@ class SSH(dictobj):
         return self.bastion_key_path
 
 class UrlChecker(dictobj):
-    fields = ["check_url", "endpoint", "expect", "timeout_after"]
+    fields = {
+          "expect": "The value we expect for a successful deployment"
+        , "endpoint": "The domain of the url to hit"
+        , "check_url": "The path of the url to hit"
+        , "timeout_after": "Stop waiting after this many seconds"
+        }
 
     def wait(self, environment):
         endpoint = self.endpoint().resolve()
@@ -428,7 +440,13 @@ class UrlChecker(dictobj):
         raise BadStack("Timedout waiting for the app to give back the correct version")
 
 class SNSConfirmation(dictobj):
-    fields = ["version_message", "env", "deployment_queue", "autoscaling_group_id", ("timeout", 300)]
+    fields = {
+          "env": "Any environment variables necessary for formatting the version_message"
+        , "version_message": "The expected version that indicates successful deployment"
+        , "deployment_queue": "The sqs queue to check for messages"
+        , "autoscaling_group_id": "The autoscaling group that contains the instances we are expecting messages from"
+        , ("timeout", 300): "Stop waiting after this amount of time"
+        }
 
     def wait(self, environment, ec2, sqs, cloudformation):
         autoscaling_group_id = self.autoscaling_group_id

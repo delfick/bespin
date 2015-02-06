@@ -41,10 +41,27 @@ class ArtifactCollection(dictobj):
                     artifact_key.delete()
 
 class Artifact(dictobj):
-    fields = [
-          "compression_type", "history_length", "paths"
-        , "files", "commands", "upload_to"
-        ]
+    fields = {
+          "paths": "Paths to copy from disk into the artifact"
+        , "files": """
+              Any files to add into the artifact
+
+              For example::
+
+                files:
+                  - content: "{__stack__.vars.version}"
+                    path: /artifacts/app/VERSION.txt
+          """
+        , "commands": "Commands that need to be run to generate content for the artifact"
+        , "upload_to": "S3 path to upload the artifact to"
+        , "history_length": """
+              The number of artifacts to keep in s3
+
+              .. note:: These only get purged if the stack has ``artifact_retention_after_deployment`` set
+                to true or if the ``clean_old_artifacts`` task is run
+          """
+        , "compression_type": "The compression to use on the artifact"
+        }
 
 class ArtifactPath(dictobj):
     fields = ["host_path", "artifact_path"]
