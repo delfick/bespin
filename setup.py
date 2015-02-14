@@ -11,11 +11,11 @@ setup(
       [ "delfick_error==1.6.1"
       , "option_merge==0.9.1"
       , "input_algorithms==0.4.3"
-      , "argparse==1.3.0"
 
       , "six"
       , "pytz"
       , "humanize"
+      , "argparse"
       , "requests"
 
       , "radssh==1.0.1"
