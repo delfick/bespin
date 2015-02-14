@@ -17,6 +17,7 @@ setup(
       , "humanize"
       , "argparse"
       , "requests"
+      , "paramiko"
 
       , "radssh==1.0.1"
       , "boto==2.36.0"

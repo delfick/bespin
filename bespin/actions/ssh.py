@@ -7,9 +7,24 @@ from radssh.plugins import jumpbox
 from radssh import plugins, config
 from radssh.ssh import Cluster
 
+from six.moves import input
+import binascii
+import tempfile
+import requests
+import paramiko
 import logging
+import getpass
+import json
+import sys
+import os
 
 log = logging.getLogger("bespin.actions.ssh")
+
+def insert_char_every_n_chars(string, char='\n', every=64):
+    return char.join(string[i:i + every] for i in range(0, len(string), every))
+
+def fingerprint(key):
+    return insert_char_every_n_chars(binascii.hexlify(key.get_fingerprint()).decode('utf-8'), ':', 2)
 
 class SSH(object):
     def __init__(self, ips, command, ssh_user, ssh_key, proxy=None, proxy_ssh_key=None, proxy_ssh_user=None):
@@ -67,4 +82,89 @@ class SSH(object):
         finally:
             if cluster:
                 cluster.close_connections()
+
+class RatticSSHKeys(object):
+    def __init__(self, host, bastion_location, bastion_path, instance_location, instance_path):
+        self.host = host
+        self.bastion_path = bastion_path
+        self.instance_path = instance_path
+        self.bastion_location = bastion_location
+        self.instance_location = instance_location
+
+    def retrieve(self, typ):
+        if typ == "bastion":
+            return self.retrieve_key(self.host, self.bastion_location, self.bastion_path)
+        else:
+            return self.retrieve_key(self.host, self.instance_location, self.instance_path)
+
+    def retrieve_key(self, host, location, path):
+        if os.path.exists(path):
+            try:
+                current_key = paramiko.RSAKey.from_private_key(open(path))
+                if fingerprint(current_key) != self.rattic_fingerprint(host, location):
+                    log.info("You current key is not the correct fingerprint, downloading new key\tlooking_at=%s", path)
+                else:
+                    return False
+            except paramiko.ssh_exception.SSHException as error:
+                log.error("You current key is invalid (%s), downloading it now\tlooking_at=%s", error, path)
+        else:
+            log.info("No key found, downloading it now\tlooking_at=%s", path)
+
+        self.rattic_download_key(host, location, path)
+        return True
+
+    def rattic_fingerprint(self, host, location):
+        return requests.get("{0}/cred/detail/{1}/fingerprint".format(host, location)).content.decode('utf-8')
+
+    @property
+    def rattic_api_key(self):
+        if getattr(self, "_rattic_api_key", None) is None:
+            self._rattic_api_key = self.make_api_key()
+        return self._rattic_api_key
+
+    def make_api_key(self):
+        api_key_url = "{0}/account/generate_api_key".format(self.host)
+        cookies = requests.get(api_key_url, headers={"Referer": self.host}).cookies
+        data = {'rattic_tfa_generate_api_key-current_step': 'auth', 'csrfmiddlewaretoken': cookies['csrftoken']}
+
+        sys.stderr.write("username: ")
+        sys.stderr.flush()
+        username = input()
+
+        sys.stderr.write("password: ")
+        sys.stderr.flush()
+        password = getpass.getpass("")
+
+        data['auth-username'] = username
+        data['auth-password'] = password
+
+        res = requests.post(api_key_url, data=data, cookies=cookies, headers={"Referer": self.host})
+        if res.status_code not in (200, 400):
+            print(res.content.decode('utf-8'))
+            raise BespinError("Failed to generate an api token from rattic")
+
+        if res.status_code == 400:
+            data['rattic_tfa_generate_api_key-current_step'] = 'token'
+            sys.stderr.write("token: ")
+            sys.stderr.flush()
+            token = input()
+            data['token-otp_token'] = token
+            res = requests.post(api_key_url, data=data, cookies=cookies, headers={"Referer": self.host})
+
+        return "ApiKey {0}:{1}".format(username, res.content.decode('utf-8'))
+
+    def rattic_download_key(self, host, location, path):
+        cred_url = "{0}/api/v1/cred/{1}/".format(host, location)
+        headers = {"Authorization": self.rattic_api_key, "Referer": self.host}
+        res = requests.get(cred_url, headers=headers)
+
+        if os.path.exists(path):
+            os.remove(path)
+
+        parent_dir = os.path.dirname(path)
+        if not os.path.exists(parent_dir):
+            os.makedirs(parent_dir)
+
+        with open(path, 'w') as fle:
+            fle.write(json.loads(res.content.decode('utf-8'))['ssh_key'])
 

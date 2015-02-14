@@ -1,6 +1,7 @@
 from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError
 from bespin.errors import StackDoesntExist, MissingSSHKey
 from bespin.helpers import memoized_property
+from bespin.actions.ssh import RatticSSHKeys
 from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
@@ -321,7 +322,20 @@ class SSH(dictobj):
         , "instance_key_path": "The location on disk of the instance ssh key"
         , "bastion_key_location": "The place where the bastion key may be downloaded from"
         , "instance_key_location": "The place where the instance key may be downloaded from"
+
+        , "storage_type": "The storage type for the ssh keys"
+        , "storage_host": "The host for the storage of the ssh key"
         }
+
+    @memoized_property
+    def storage(self):
+        if self.storage_type == "url":
+            return type("Storage", (object, ), {"retrieve": lambda *args: False})()
+        else:
+            return RatticSSHKeys(self.storage_host
+                , self.bastion_key_location, self.bastion_key_path
+                , self.instance_key_location, self.instance_key_path
+                )
 
     def find_instance_ids(self, stack):
         if self.auto_scaling_group_name is not NotSpecified:
@@ -395,6 +409,7 @@ class SSH(dictobj):
         return bastion_key_path, instance_key_path
 
     def chmod_instance_key_path(self):
+        self.storage.retrieve("instance")
         if not os.path.exists(self.instance_key_path):
             log.error("Didn't find a instance key, please download the key")
             print("Instance key can be found at {0}".format(self.instance_key_location))
@@ -406,6 +421,7 @@ class SSH(dictobj):
         return self.instance_key_path
 
     def chmod_bastion_key_path(self):
+        self.storage.retrieve("bastion")
         if not os.path.exists(self.bastion_key_path):
             log.error("Didn't find a bastion key, please download the key")
             print("Bastion key can be found at {0}".format(self.bastion_key_location))

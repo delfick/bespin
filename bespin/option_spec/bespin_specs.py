@@ -219,6 +219,9 @@ class BespinSpec(object):
 
                 , bastion_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/bastion_ssh_key.pem"), formatter=MergedOptionStringFormatter)
                 , instance_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/ssh_key.pem"), formatter=MergedOptionStringFormatter)
+
+                , storage_type = formatted(defaulted(string_choice_spec(["url", "rattic"]), "url"), formatter=MergedOptionStringFormatter)
+                , storage_host = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 ))
 
             , confirm_deployment = optional_spec(self.confirm_deployment_spec)
