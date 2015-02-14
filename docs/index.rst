@@ -1,10 +1,9 @@
 .. toctree::
     :hidden:
 
-    configuration
-    tasks
+    docs/configuration
+    docs/tasks
 
 .. _bespin:
 
 .. include:: ../../README.rst
-
