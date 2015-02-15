@@ -11,10 +11,9 @@ sys.path.extend([extension_dir])
 
 extensions = ['show_specs', 'show_tasks']
 
-html_theme = 'sphinx_rtd_theme'
-html_theme_path = [os.path.join(this_dir, '_templates'), sphinx_rtd_theme.get_html_theme_path()]
+html_theme = 'the_theme'
+html_theme_path = [os.path.join(this_dir, 'templates'), sphinx_rtd_theme.get_html_theme_path()]
 html_static_path = [os.path.join(this_dir, "static")]
-html_style = 'css/styles.css'
 
 exclude_patterns = ["_build/**", "ext/**", "venv/**"]
 
