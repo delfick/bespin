@@ -309,7 +309,7 @@ class SSH(dictobj):
         log.info("Finding instances")
         instance_ids = []
         if asg_physical_id:
-            instance_ids = stack.ec2.instance_ids_in_auto_scaling_group(asg_physical_id)
+            instance_ids = stack.ec2.instance_ids_in_autoscaling_group(asg_physical_id)
         elif instance:
             instance_ids = [instance]
 
