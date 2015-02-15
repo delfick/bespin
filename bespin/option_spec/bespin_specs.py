@@ -11,7 +11,7 @@ from input_algorithms.spec_base import (
     , valid_string_spec, create_spec, string_choice_spec, Spec
     )
 
-from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports
+from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports, deployment_check
 from bespin.formatter import MergedOptionStringFormatter
 from bespin.option_spec.bespin_obj import Bespin
 from bespin.helpers import memoized_property
@@ -169,19 +169,19 @@ class BespinSpec(object):
                 , instance_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/ssh_key.pem"), formatter=MergedOptionStringFormatter)
                 ))
 
-            , confirm_deployment = optional_spec(create_spec(stack_objs.ConfirmDeployment
+            , confirm_deployment = optional_spec(create_spec(deployment_check.ConfirmDeployment
                 , deploys_s3_path = optional_spec(listof(stack_specs.s3_address()))
                 , zero_instances_is_ok = defaulted(boolean(), False)
                 , autoscaling_group_name = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
-                , url_checker = optional_spec(create_spec(stack_objs.UrlChecker
+                , url_checker = optional_spec(create_spec(deployment_check.UrlChecker
                     , check_url = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                     , endpoint = required(delayed(stack_specs.var_spec()))
                     , expect = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                     , timeout_after = defaulted(integer_spec(), 600)
                     ))
 
-                , sns_confirmation = optional_spec(create_spec(stack_objs.SNSConfirmation
+                , sns_confirmation = optional_spec(create_spec(deployment_check.SNSConfirmation
                     , validators.deprecated_key("autoscaling_group_id", "Use ``confirm_deployment.autoscaling_group_name``")
 
                     , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
