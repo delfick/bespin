@@ -49,7 +49,7 @@ class Stack(dictobj):
               Suspend Scheduled Actions for the stack before deploying, and resume Scheduled
               actions after finished deploying.
 
-              This uses the ``autoscaling_group_id`` attribute to determine what autoscaling group
+              This uses the ``auto_scaling_group_name`` attribute to determine what autoscaling group
               to suspend and resume
           """
         , "instance_count_limit": "The max number of instances the scale_instances action is allowed to scale to"
@@ -60,7 +60,7 @@ class Stack(dictobj):
         , "stack_json": "The path to a json file for the cloudformation stack definition"
         , "params_json": "The path to a json file for the parameters used by the cloudformation stack"
         , "params_yaml": "Either a dictionary of parameters to use in the stack, or path to a yaml file with the dictionary of parameters"
-        , "autoscaling_group_id": "The name of the auto scaling group used in the stack"
+        , "auto_scaling_group_name": "The name of the auto scaling group used in the stack"
 
         , "ssh": "Options for ssh'ing into instances"
         , "artifacts": "Options for building artifacts used by the stack"
@@ -78,8 +78,8 @@ class Stack(dictobj):
             environment = dict(env.pair for env in self.env)
             self.confirm_deployment.confirm(self, environment, start)
 
-    def physical_id_for(self, autoscaling_group_id):
-        return self.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
+    def physical_id_for(self, auto_scaling_group_id):
+        return self.cloudformation.map_logical_to_physical_resource_id(auto_scaling_group_id)
 
     def dependencies(self, stacks):
         for key_name in self.build_first:
@@ -151,8 +151,8 @@ class Stack(dictobj):
         return self.bespin.credentials.sqs
 
     @memoized_property
-    def autoscaling_group(self):
-        asg_physical_id = self.cloudformation.map_logical_to_physical_resource_id(self.autoscaling_group_id)
+    def auto_scaling_group(self):
+        asg_physical_id = self.cloudformation.map_logical_to_physical_resource_id(self.auto_scaling_group_name)
         return self.ec2.autoscale.get_all_groups(names=[asg_physical_id])[0]
 
     @memoized_property
@@ -288,7 +288,7 @@ class SSH(dictobj):
         , "bastion": "The bastion jumpbox to use to get to the instances"
         , "address": "The address to use to get into the single instance if ``instance`` is specified"
         , "instance": "The Logical id of the instance in the template to ssh into"
-        , "autoscaling_group_name": "The logical id of the auto scaling group that has the instances of interest"
+        , "auto_scaling_group_name": "The logical id of the auto scaling group that has the instances of interest"
 
         , "bastion_key_path": "The location on disk of the bastion ssh key"
         , "instance_key_path": "The location on disk of the instance ssh key"
@@ -297,19 +297,19 @@ class SSH(dictobj):
         }
 
     def find_instance_ids(self, stack):
-        if self.autoscaling_group_name is not NotSpecified:
+        if self.auto_scaling_group_name is not NotSpecified:
             instance = None
-            asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(self.autoscaling_group_name)
+            asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(self.auto_scaling_group_name)
         elif self.instance is not NotSpecified:
             instance = stack.cloudformation.map_logical_to_physical_resource_id(self.instance)
             asg_physical_id = None
         else:
-            raise BespinError("Please specify either ssh.instance or ssh.autoscaling_group_name", stack=stack)
+            raise BespinError("Please specify either ssh.instance or ssh.auto_scaling_group_name", stack=stack)
 
         log.info("Finding instances")
         instance_ids = []
         if asg_physical_id:
-            instance_ids = stack.ec2.instance_ids_in_autoscaling_group(asg_physical_id)
+            instance_ids = stack.ec2.instance_ids_in_auto_scaling_group(asg_physical_id)
         elif instance:
             instance_ids = [instance]
 

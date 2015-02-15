@@ -107,6 +107,7 @@ class BespinSpec(object):
             , validators.deprecated_key("url_checker", "Use ``confirm_deployment.url_checker1``")
             , validators.deprecated_key("deploys_s3_path", "Use ``confirm_deployment.deploys_s3_path``")
             , validators.deprecated_key("sns_confirmation", "Use ``confirm_deployment.sns_confirmation``")
+            , validators.deprecated_key("autoscaling_group_id", "Use ``auto_scaling_group_name``")
 
             , bespin = any_spec()
 
@@ -135,7 +136,7 @@ class BespinSpec(object):
             , skip_update_if_equivalent = listof(stack_specs.skipper_spec())
 
             , suspend_actions = defaulted(boolean(), False)
-            , autoscaling_group_id = optional_spec(string_spec())
+            , auto_scaling_group_name = optional_spec(string_spec())
 
             , artifact_retention_after_deployment = defaulted(boolean(), False)
 
@@ -156,6 +157,8 @@ class BespinSpec(object):
                 )))
 
             , ssh = optional_spec(create_spec(stack_objs.SSH
+                , validators.deprecated_key("autoscaling_group_id", "Use ``auto_scaling_group_name``")
+
                 , user = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , bastion = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , bastion_key_location = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
@@ -163,7 +166,7 @@ class BespinSpec(object):
 
                 , address = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , instance = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                , autoscaling_group_name = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , auto_scaling_group_name = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
                 , bastion_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/bastion_ssh_key.pem"), formatter=MergedOptionStringFormatter)
                 , instance_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/ssh_key.pem"), formatter=MergedOptionStringFormatter)
@@ -172,7 +175,7 @@ class BespinSpec(object):
             , confirm_deployment = optional_spec(create_spec(deployment_check.ConfirmDeployment
                 , deploys_s3_path = optional_spec(listof(stack_specs.s3_address()))
                 , zero_instances_is_ok = defaulted(boolean(), False)
-                , autoscaling_group_name = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , auto_scaling_group_name = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
                 , url_checker = optional_spec(create_spec(deployment_check.UrlChecker
                     , check_url = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
@@ -182,7 +185,7 @@ class BespinSpec(object):
                     ))
 
                 , sns_confirmation = optional_spec(create_spec(deployment_check.SNSConfirmation
-                    , validators.deprecated_key("autoscaling_group_id", "Use ``confirm_deployment.autoscaling_group_name``")
+                    , validators.deprecated_key("auto_scaling_group_id", "Use ``confirm_deployment.auto_scaling_group_name``")
 
                     , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
                     , timeout = defaulted(integer_spec(), 300)

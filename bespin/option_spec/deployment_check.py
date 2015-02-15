@@ -51,7 +51,6 @@ class SNSConfirmation(dictobj):
           "env": "Any environment variables necessary for formatting the version_message"
         , "version_message": "The expected version that indicates successful deployment"
         , "deployment_queue": "The sqs queue to check for messages"
-        , "autoscaling_group_id": "The autoscaling group that contains the instances we are expecting messages from"
         , ("timeout", 300): "Stop waiting after this amount of time"
         }
 
@@ -110,8 +109,8 @@ class ConfirmDeployment(dictobj):
         }
 
     def confirm(self, stack, environment, start=None):
-        autoscaling_group_name = self.autoscaling_group_name
-        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_name)
+        auto_scaling_group_name = self.auto_scaling_group_name
+        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(auto_scaling_group_name)
         instances = stack.ec2.get_instances_in_asg_by_lifecycle_state(asg_physical_id, lifecycle_state="InService")
 
         if len(instances) is 0:

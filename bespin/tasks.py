@@ -190,7 +190,7 @@ def command_on_instances(overview, configuration, stacks, stack, artifact, **kwa
 
 @a_task(needs_stack=True, needs_credentials=True, needs_artifact=True)
 def scale_instances(overview, configuration, stacks, stack, artifact, **kwargs):
-    """Change the number of instances in the stack's autoscaling_group"""
+    """Change the number of instances in the stack's auto_scaling_group"""
     if isinstance(artifact, int) or artifact.isdigit():
         artifact = int(artifact)
     else:
@@ -199,7 +199,7 @@ def scale_instances(overview, configuration, stacks, stack, artifact, **kwargs):
     if artifact > stack.instance_count_limit:
         raise BespinError("The instance_count_limit is smaller than the specified number of instances", limit=stack.instance_count_limit, wanted=artifact)
 
-    group = stack.autoscaling_group
+    group = stack.auto_scaling_group
     current_count = group.desired_capacity
     log.info("Changing the number of instances in the %s stack from %s to %s", stack.stack_name, current_count, artifact)
 
