@@ -47,7 +47,6 @@ class Stack(dictobj):
         , "build_first": "A list of stacks that should be built before this one is built"
         , "build_after": "A list of stacks that should be built after this one is buildt"
         , "ignore_deps": "Don't build any dependency stacks"
-        , "deploys_s3_path": "Check that the deployment creates one or more objects in S3"
         , "suspend_actions": """
               Suspend Scheduled Actions for the stack before deploying, and resume Scheduled
               actions after finished deploying.
@@ -67,33 +66,22 @@ class Stack(dictobj):
 
         , "ssh": "Options for ssh'ing into instances"
         , "artifacts": "Options for building artifacts used by the stack"
-        , "url_checker": "Options for using a public url to check the deployment deployed the correct version"
-        , "sns_confirmation": "Options for using SNS and SQS to check the deployment deployed the correct version"
 
         , "command": "Used by the ``command_on_instances`` task as the command to run on the instances"
+        , "confirm_deployment": "Options for confirming a deployment"
         }
 
     def __repr__(self):
         return "<Stack({0})>".format(self.name)
 
+    def confirm_the_deployment(self, start=None):
+        if self.confirm_deployment is not NotSpecified:
+            self.find_missing_env()
+            environment = dict(env.pair for env in self.env)
+            self.confirm_deployment.confirm(self, environment, start)
+
     def physical_id_for(self, autoscaling_group_id):
         return self.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
-
-    def check_url(self):
-        environment = dict(env.pair for env in self.env)
-        if self.url_checker is not NotSpecified:
-            self.url_checker.wait(environment)
-
-    def check_sns(self):
-        environment = dict(env.pair for env in self.env)
-        if self.sns_confirmation is not NotSpecified:
-            self.sns_confirmation.wait(environment, self.ec2, self.sqs, self.cloudformation)
-
-    def check_deployed_s3_paths(self, start):
-        environment = dict(env.pair for env in self.env)
-        if self.deploys_s3_path is not NotSpecified:
-            for path in self.deploys_s3_path:
-                self.s3.wait_for(path.bucket.format(**environment), path.key.format(**environment), path.timeout, start=start)
 
     def dependencies(self, stacks):
         for key_name in self.build_first:
@@ -448,11 +436,7 @@ class SNSConfirmation(dictobj):
         , ("timeout", 300): "Stop waiting after this amount of time"
         }
 
-    def wait(self, environment, ec2, sqs, cloudformation):
-        autoscaling_group_id = self.autoscaling_group_id
-        asg_physical_id = cloudformation.map_logical_to_physical_resource_id(autoscaling_group_id)
-        instances_to_check = ec2.get_instances_in_asg_by_lifecycle_state(asg_physical_id, lifecycle_state="InService")
-
+    def wait(self, instances, environment, sqs):
         version_message = self.version_message.format(**environment)
 
         failed = []
@@ -468,7 +452,7 @@ class SNSConfirmation(dictobj):
                 log.info("Message received %s", message['output'])
 
                 # Ignore the messages for instances outside this deployment
-                if message['instance_id'] in instances_to_check:
+                if message['instance_id'] in instances:
                     if fnmatch.fnmatch(message['output'], version_message):
                         log.info("Deployed instance %s", message['instance_id'])
                         success.append(message['instance_id'])
@@ -478,7 +462,7 @@ class SNSConfirmation(dictobj):
                         failed.append(message['instance_id'])
 
             # Stop trying if we have all the instances
-            if set(failed + success) == set(instances_to_check):
+            if set(failed + success) == set(instances):
                 break
 
             # Record the iteration of checking for a valid deployment
@@ -496,6 +480,43 @@ class SNSConfirmation(dictobj):
             raise BadDeployment("Failed to receive any messages")
 
         log.info("All instances have been confirmed to be deployed with version_message [%s]!", version_message)
+
+class ConfirmDeployment(dictobj):
+    fields = {
+          "deploys_s3_path": "A list of s3 paths that we expect to be created as part of the deployment"
+        , "zero_instances_is_ok": "Don't do deployment confirmation if the scaling group has no instances"
+        , "auto_scaling_group_name": "The name of the auto scaling group that has the instances to be checked"
+        , "url_checker": "Check an endpoint on our instances for a particular version message"
+        , "sns_confirmation": "Check an sqs queue for messages our Running instances produced"
+        }
+
+    def confirm(self, stack, environment, start=None):
+        autoscaling_group_name = self.autoscaling_group_name
+        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(autoscaling_group_name)
+        instances = stack.ec2.get_instances_in_asg_by_lifecycle_state(asg_physical_id, lifecycle_state="InService")
+
+        if len(instances) is 0:
+            if self.zero_instances_is_ok:
+                log.info("No instances to check, but config says that's ok!")
+                return
+            else:
+                raise BadDeployment("No instances are InService in the auto scaling group!", stack=stack.name, auto_scaling_group_name=self.auto_scaling_group_name)
+
+        for checker in (self.check_sns, self.check_url, self.check_deployed_s3_paths):
+            checker(stack, instances, environment, start)
+
+    def check_sns(self, stack, instances, environment, start=None):
+        if self.sns_confirmation is not NotSpecified:
+            self.sns_confirmation.wait(instances, environment, stack.sqs)
+
+    def check_url(self, stack, instances, environment, start=None):
+        if self.url_checker is not NotSpecified:
+            self.url_checker.wait(environment)
+
+    def check_deployed_s3_paths(self, stack, instances, environment, start=None):
+        if self.deploys_s3_path is not NotSpecified:
+            for path in self.deploys_s3_path:
+                stack.s3.wait_for(path.bucket.format(**environment), path.key.format(**environment), path.timeout, start=start)
 
 class S3Address(dictobj):
     fields = ["bucket", "key", "timeout"]

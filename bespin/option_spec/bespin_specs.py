@@ -104,6 +104,10 @@ class BespinSpec(object):
     def stack_spec(self):
         """Spec for each stack"""
         return create_spec(stack_objs.Stack
+            , validators.deprecated_key("url_checker", "Use ``confirm_deployment.url_checker1``")
+            , validators.deprecated_key("deploys_s3_path", "Use ``confirm_deployment.deploys_s3_path``")
+            , validators.deprecated_key("sns_confirmation", "Use ``confirm_deployment.sns_confirmation``")
+
             , bespin = any_spec()
 
             , name = formatted(defaulted(string_spec(), "{_key_name_1}"), formatter=MergedOptionStringFormatter)
@@ -139,16 +143,6 @@ class BespinSpec(object):
 
             , instance_count_limit = defaulted(integer_spec(), 10)
 
-            , deploys_s3_path = optional_spec(listof(stack_specs.s3_address()))
-
-            , sns_confirmation = optional_spec(create_spec(stack_objs.SNSConfirmation
-                , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
-                , timeout = defaulted(integer_spec(), 300)
-                , version_message = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                , autoscaling_group_id = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                , deployment_queue = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                ))
-
             , artifacts = container_spec(artifact_objs.ArtifactCollection, dictof(string_spec(), create_spec(artifact_objs.Artifact
                 , compression_type = string_choice_spec(["gz", "xz"])
                 , history_length = integer_spec()
@@ -175,11 +169,26 @@ class BespinSpec(object):
                 , instance_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/ssh_key.pem"), formatter=MergedOptionStringFormatter)
                 ))
 
-            , url_checker = optional_spec(create_spec(stack_objs.UrlChecker
-                , check_url = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                , endpoint = required(delayed(stack_specs.var_spec()))
-                , expect = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                , timeout_after = defaulted(integer_spec(), 600)
+            , confirm_deployment = optional_spec(create_spec(stack_objs.ConfirmDeployment
+                , deploys_s3_path = optional_spec(listof(stack_specs.s3_address()))
+                , zero_instances_is_ok = defaulted(boolean(), False)
+                , autoscaling_group_name = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+
+                , url_checker = optional_spec(create_spec(stack_objs.UrlChecker
+                    , check_url = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                    , endpoint = required(delayed(stack_specs.var_spec()))
+                    , expect = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                    , timeout_after = defaulted(integer_spec(), 600)
+                    ))
+
+                , sns_confirmation = optional_spec(create_spec(stack_objs.SNSConfirmation
+                    , validators.deprecated_key("autoscaling_group_id", "Use ``confirm_deployment.autoscaling_group_name``")
+
+                    , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
+                    , timeout = defaulted(integer_spec(), 300)
+                    , version_message = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                    , deployment_queue = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                    ))
                 ))
             )
 

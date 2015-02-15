@@ -76,10 +76,7 @@ class Deployer(object):
 
     def confirm_deployment(self, stack, start=None):
         """Confirm our deployment"""
-        stack.find_missing_env()
-        stack.check_sns()
-        stack.check_url()
-        stack.check_deployed_s3_paths(start=start)
+        stack.confirm_the_deployment(start=start)
 
     def suspend_cloudformation_actions(self, stack):
         """Suspend the ScheduledActions for an AutoScaling group in the stack"""
