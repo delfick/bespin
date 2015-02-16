@@ -44,7 +44,7 @@ class Deployer(object):
 
     def build_stack(self, stack):
         """Build a single stack"""
-        if stack.suspend_actions:
+        if stack.suspend_actions and stack.cloudformation.status.exists:
             self.suspend_cloudformation_actions(stack)
 
         print("Building - {0}".format(stack.stack_name))
