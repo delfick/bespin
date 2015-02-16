@@ -86,7 +86,7 @@ class Deployer(object):
 
     def resume_cloudformation_actions(self, stack):
         """Resume the ScheduledActions for an AutoScaling group in the stack"""
-        asg_physical_id = stack.physical_id_for(self.auto_scaling_group_name)
+        asg_physical_id = stack.physical_id_for(stack.auto_scaling_group_name)
         stack.ec2.resume_processes(asg_physical_id)
         log.info("Resumed Processes on AutoScaling Group %s", asg_physical_id)
 
