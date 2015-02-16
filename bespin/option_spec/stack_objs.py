@@ -216,6 +216,12 @@ class Stack(dictobj):
             raise BadStack("Need either params_json or params_yaml", looking_in=[self.params_json, self.params_yaml])
         if not any(isinstance(item, six.string_types) for item in (self.params_json, self.params_yaml)):
             raise BadStack("Please don't have both params_json and params_yaml")
+
+        # Hack for sanity check
+        for name, var in self.vars.items():
+            if hasattr(var, 'stack') and not isinstance(var.stack, six.string_types) and not var.stack.cloudformation.status.exists:
+                var._resolved = "YYY_RESOLVED_BY_MISSING_STACK_YYY"
+
         matches = re.findall("XXX_[A-Z_]+_XXX", json.dumps(self.params_json_obj))
         if matches:
             raise BadStack("Found placeholders in the generated params file", stack=self.name, found=matches)
@@ -236,6 +242,9 @@ class DynamicVariable(dictobj):
     fields = ["stack", "output", ("bespin", None), ("needs_credentials", True)]
 
     def resolve(self):
+        if hasattr(self, "_resolved"):
+            return self._resolved
+
         if isinstance(self.stack, six.string_types):
             cloudformation = self.bespin.credentials.cloudformation(self.stack)
             cloudformation.wait()
