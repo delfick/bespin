@@ -218,11 +218,15 @@ class Stack(dictobj):
             raise BadStack("Please don't have both params_json and params_yaml")
 
         # Hack for sanity check
-        for name, var in self.vars.items():
+        for var in self.vars.values():
             if hasattr(var, 'stack') and not isinstance(var.stack, six.string_types) and not var.stack.cloudformation.status.exists:
                 var._resolved = "YYY_RESOLVED_BY_MISSING_STACK_YYY"
 
         matches = re.findall("XXX_[A-Z_]+_XXX", json.dumps(self.params_json_obj))
+        for var in self.vars.values():
+            if hasattr(var, "_resolved"):
+                delattr(var, "_resolved")
+
         if matches:
             raise BadStack("Found placeholders in the generated params file", stack=self.name, found=matches)
         if self.cloudformation.status.failed:
