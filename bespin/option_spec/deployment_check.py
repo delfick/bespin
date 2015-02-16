@@ -48,8 +48,7 @@ class UrlChecker(dictobj):
 
 class SNSConfirmation(dictobj):
     fields = {
-          "env": "Any environment variables necessary for formatting the version_message"
-        , "version_message": "The expected version that indicates successful deployment"
+          "version_message": "The expected version that indicates successful deployment"
         , "deployment_queue": "The sqs queue to check for messages"
         , ("timeout", 300): "Stop waiting after this amount of time"
         }

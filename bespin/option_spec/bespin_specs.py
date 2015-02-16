@@ -186,8 +186,8 @@ class BespinSpec(object):
 
                 , sns_confirmation = optional_spec(create_spec(deployment_check.SNSConfirmation
                     , validators.deprecated_key("auto_scaling_group_id", "Use ``confirm_deployment.auto_scaling_group_name``")
+                    , validators.deprecated_key("env", "Use ``stack.<stack>.env`` instead``")
 
-                    , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
                     , timeout = defaulted(integer_spec(), 300)
                     , version_message = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                     , deployment_queue = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
