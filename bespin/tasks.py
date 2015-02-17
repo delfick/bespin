@@ -218,6 +218,8 @@ def become(overview, configuration, stacks, stack, artifact, **kwargs):
     """Print export statements for assuming an amazon iam role"""
     bespin = configuration['bespin']
     environment = bespin.environment
+    region = configuration['environments'][environment].region
+
     if not environment:
         raise BadOption("Please specify an environment")
 
@@ -229,7 +231,7 @@ def become(overview, configuration, stacks, stack, artifact, **kwargs):
     else:
         role = stack
 
-    credentials = Credentials(bespin.region, configuration["environments"][environment].account_id, role)
+    credentials = Credentials(region, configuration["environments"][environment].account_id, role)
     credentials.verify_creds()
 
     print("export AWS_ACCESS_KEY_ID={0}".format(os.environ['AWS_ACCESS_KEY_ID']))

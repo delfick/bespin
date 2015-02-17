@@ -61,7 +61,7 @@ class valid_stack_json(valid_params):
     params_spec = lambda k: stack_specs.stack_json_spec()
 
 class Environment(dictobj):
-    fields = ["account_id", "vars"]
+    fields = ["account_id", "vars", "region"]
 
 class other_options(dictobj):
     fields = ["run", "create", "build"]
@@ -96,6 +96,7 @@ class BespinSpec(object):
               string_spec()
             , create_spec(Environment
                 , account_id = required(or_spec(string_spec(), valid_string_spec(validators.regexed("\d+"))))
+                , region = defaulted(string_spec(), "ap-southeast-2")
                 , vars = dictionary_spec()
                 )
             )
@@ -202,6 +203,8 @@ class BespinSpec(object):
         formatted_boolean = formatted(boolean(), MergedOptionStringFormatter, expected_type=bool)
 
         return create_spec(Bespin
+            , validators.deprecated_key("region", "Please use ``environments.<env>.region``")
+
             , config = file_spec()
             , configuration = any_spec()
 
@@ -212,7 +215,6 @@ class BespinSpec(object):
             , environment = optional_spec(string_spec())
 
             , extra = defaulted(formatted_string, "")
-            , region = defaulted(string_spec(), "ap-southeast-2")
             , no_assume_role = defaulted(formatted_boolean, False)
 
             , chosen_task = defaulted(formatted_string, "list_tasks")
