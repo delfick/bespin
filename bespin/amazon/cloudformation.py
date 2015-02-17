@@ -70,6 +70,7 @@ class Cloudformation(AmazonMixin):
 
     @hp.memoized_property
     def conn(self):
+        log.info("Using region [%s] for cloudformation", self.region)
         return boto.cloudformation.connect_to_region(self.region)
 
     def reset(self):

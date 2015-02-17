@@ -15,6 +15,7 @@ class EC2(object):
 
     @memoized_property
     def conn(self):
+        log.info("Using region [%s] for ec2", self.region)
         return boto.ec2.connect_to_region(self.region)
 
     @memoized_property

@@ -28,6 +28,7 @@ class S3(object):
 
     @hp.memoized_property
     def conn(self):
+        log.info("Using region [%s] for s3", self.region)
         return boto.s3.connect_to_region(self.region)
 
     def s3_location(self, value):

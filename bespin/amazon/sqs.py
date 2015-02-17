@@ -15,6 +15,7 @@ class SQS(object):
 
     @memoized_property
     def conn(self):
+        log.info("Using region [%s] for sqs", self.region)
         return boto.sqs.connect_to_region(self.region)
 
     def get_all_deployment_messages(self, sqs_url, timeout=60, sleep=2):

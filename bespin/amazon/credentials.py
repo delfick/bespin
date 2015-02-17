@@ -102,6 +102,7 @@ class Credentials(object):
     @memoized_property
     def iam(self):
         self.verify_creds()
+        log.info("Using region [%s] for iam", self.region)
         return boto.iam.connect_to_region(self.region)
 
     def cloudformation(self, stack_name):
