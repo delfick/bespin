@@ -47,6 +47,7 @@ class Overview(object):
         )
 
         self.configuration.converters.activate()
+        self.configuration.update({"region": self.configuration["environments"][environment].region})
         bespin = self.configuration["bespin"]
 
         task_overrides = {}
