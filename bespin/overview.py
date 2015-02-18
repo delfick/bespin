@@ -36,18 +36,22 @@ class Overview(object):
             raise BadConfiguration("Didn't find any environments configuration")
 
         bespin = cli_args.pop("bespin")
+        environment = bespin.get("environment")
+
         self.configuration.update(
             { "$@": bespin.get("extra", "")
             , "bespin": bespin
             , "command": cli_args['command']
             , "config_root": self.configuration_folder
-            , "environment": bespin.get("environment")
+            , "environment": environment
             }
         , source = "<cli>"
         )
 
         self.configuration.converters.activate()
-        self.configuration.update({"region": self.configuration["environments"][bespin.get("environment")].region})
+        if environment in self.configuration["environments"]:
+            self.configuration.update({"region": self.configuration["environments"][environment].region})
+
         bespin = self.configuration["bespin"]
 
         task_overrides = {}
