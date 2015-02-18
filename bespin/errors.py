@@ -96,3 +96,6 @@ class Throttled(BespinError):
 class MissingSSHKey(BespinError):
     desc = "Couldn't find an ssh key"
 
+class MissingPlan(BespinError):
+    desc = "Couldn't find a plan"
+

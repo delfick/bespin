@@ -66,7 +66,7 @@ class Task(dictobj):
                 raise BadOption("No configuration found for specified environment", environment=environment)
 
             stacks = self.determine_stack(stack, overview, configuration, needs_stack=task_action.needs_stack)
-            if stack:
+            if stack and task_action.needs_stack:
                 stack = stacks[stack]
 
         bespin = configuration["bespin"]

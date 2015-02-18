@@ -172,6 +172,15 @@ class Overview(object):
         environments_converter = Converter(convert=convert_environments, convert_path=["environments"])
         configuration.add_converter(environments_converter)
 
+        def convert_plans(path, val):
+            log.info("Converting %s", path)
+            meta = Meta(path.configuration, [("plans", "")])
+            configuration.converters.started(path)
+            return bespin_spec.plans_spec.normalise(meta, val)
+
+        plans_converter = Converter(convert=convert_plans, convert_path=["plans"])
+        configuration.add_converter(plans_converter)
+
         if errors:
             raise BadConfiguration("Some of the configuration was broken", _errors=errors)
 
@@ -248,6 +257,7 @@ class Overview(object):
             , "bastion"
             , "instances"
             , "list_tasks"
+            , "deploy_plan"
             , "sanity_check"
             , "print_variable"
             , "scale_instances"

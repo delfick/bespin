@@ -90,6 +90,14 @@ class BespinSpec(object):
             )
 
     @memoized_property
+    def plans_spec(self):
+        """Spec for plans"""
+        return dictof(
+              string_spec()
+            , listof(string_spec())
+            )
+
+    @memoized_property
     def environments_spec(self):
         """Spec for each environment options"""
         return dictof(
