@@ -33,7 +33,7 @@ class Import(dictobj):
 
         try:
             module = imp.load_module(self.import_name, *args)
-        except SyntaxError:
+        except SyntaxError as error:
             raise BadImport(directory=self.directory, importing=self.import_name, error=error)
 
         if not hasattr(module, "__bespin__"):
