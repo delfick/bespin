@@ -11,7 +11,6 @@ import humanize
 import logging
 import boto.s3
 import boto
-import pytz
 import sys
 import os
 
@@ -75,10 +74,7 @@ class S3(object):
             last_modified = k.last_modified
             log.info("Found key in the bucket\tbucket=%s\tkey=%s\tlast_modified=%s", bucket_obj.name, key, last_modified)
 
-            gmt = pytz.timezone("GMT")
-            date = datetime.strptime(last_modified, "%a, %d-%b-%Y %H:%M:%S GMT")
-            date = gmt.localize(date).astimezone(pytz.timezone("UTC"))
-
+            date = datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT")
             if date > start:
                 log.info("Key is newer than our start time!")
             else:

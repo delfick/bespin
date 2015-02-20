@@ -1,5 +1,4 @@
-from bespin.errors import BadDeployment
-from bespin.errors import BadStack
+from bespin.errors import BadDeployment, BadStack, BadOption
 from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
@@ -108,16 +107,21 @@ class ConfirmDeployment(dictobj):
         }
 
     def confirm(self, stack, environment, start=None):
-        auto_scaling_group_name = self.auto_scaling_group_name
-        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(auto_scaling_group_name)
-        instances = stack.ec2.get_instances_in_asg_by_lifecycle_state(asg_physical_id, lifecycle_state="InService")
+        instances = []
+        if self.auto_scaling_group_name is not NotSpecified:
+            auto_scaling_group_name = self.auto_scaling_group_name
+            asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(auto_scaling_group_name)
+            instances = stack.ec2.get_instances_in_asg_by_lifecycle_state(asg_physical_id, lifecycle_state="InService")
 
-        if len(instances) is 0:
-            if self.zero_instances_is_ok:
-                log.info("No instances to check, but config says that's ok!")
-                return
-            else:
-                raise BadDeployment("No instances are InService in the auto scaling group!", stack=stack.name, auto_scaling_group_name=self.auto_scaling_group_name)
+            if len(instances) is 0:
+                if self.zero_instances_is_ok:
+                    log.info("No instances to check, but config says that's ok!")
+                    return
+                else:
+                    raise BadDeployment("No instances are InService in the auto scaling group!", stack=stack.name, auto_scaling_group_name=self.auto_scaling_group_name)
+        else:
+            if any(item is not NotSpecified for item in (self.sns_confirmation, self.url_checker)):
+                raise BadOption("Auto_scaling_group_name must be specified if sns_confirmation or url_checker are specified")
 
         for checker in (self.check_sns, self.check_url, self.check_deployed_s3_paths):
             checker(stack, instances, environment, start)

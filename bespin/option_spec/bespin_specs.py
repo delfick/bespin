@@ -184,7 +184,7 @@ class BespinSpec(object):
             , confirm_deployment = optional_spec(create_spec(deployment_check.ConfirmDeployment
                 , deploys_s3_path = optional_spec(listof(stack_specs.s3_address()))
                 , zero_instances_is_ok = defaulted(boolean(), False)
-                , auto_scaling_group_name = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , auto_scaling_group_name = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
                 , url_checker = optional_spec(create_spec(deployment_check.UrlChecker
                     , check_url = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
