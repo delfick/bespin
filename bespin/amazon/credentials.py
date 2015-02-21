@@ -22,6 +22,7 @@ class Credentials(object):
         self.region = region
         self.account_id = account_id
         self.assume_role = assume_role
+        self.clouds = {}
 
     def verify_creds(self):
         """Make sure our current credentials are for this account and set self.connection"""
@@ -107,5 +108,7 @@ class Credentials(object):
 
     def cloudformation(self, stack_name):
         self.verify_creds()
-        return Cloudformation(stack_name, self.region)
+        if stack_name not in self.clouds:
+            self.clouds[stack_name] = Cloudformation(stack_name, self.region)
+        return self.clouds[stack_name]
 

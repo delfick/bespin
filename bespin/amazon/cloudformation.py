@@ -70,7 +70,7 @@ class Cloudformation(AmazonMixin):
 
     @hp.memoized_property
     def conn(self):
-        log.info("Using region [%s] for cloudformation", self.region)
+        log.info("Using region [%s] for cloudformation (%s)", self.region, self.stack_name)
         return boto.cloudformation.connect_to_region(self.region)
 
     def reset(self):
@@ -145,6 +145,9 @@ class Cloudformation(AmazonMixin):
             raise BadStack("Stack is in a failed state, it must be deleted first", name=self.stack_name, status=status)
 
         for _ in hp.until(timeout, step=15):
+            if status.exists and status.complete:
+                break
+
             log.info("Waiting for %s - %s", self.stack_name, status.name)
             if status.exists and not status.complete:
                 status = self.status
