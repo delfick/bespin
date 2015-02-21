@@ -101,8 +101,18 @@ class Cloudformation(AmazonMixin):
 
     @property
     def status(self):
+        force = False
+        last_status = getattr(self, "_last_status", None)
+        if last_status is None:
+            self._last_status = datetime.datetime.now()
+            force = True
+        else:
+            if self._last_status + datetime.timedelta(seconds=3) < datetime.datetime.now():
+                force = True
+                self._last_status = None
+
         try:
-            description = self.description(force=True)
+            description = self.description(force=force)
             return Status.find(description.stack_status)
         except StackDoesntExist:
             return NONEXISTANT
