@@ -262,9 +262,10 @@ class Overview(object):
             , "print_variable"
             , "scale_instances"
             , "publish_artifacts"
+            , "sanity_check_plan"
             , "confirm_deployment"
-            , "command_on_instances"
             , "clean_old_artifacts"
+            , "command_on_instances"
             , "resume_cloudformation_actions"
             , "suspend_cloudformation_actions"
             ])

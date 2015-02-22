@@ -6,10 +6,11 @@ necessary to provide the task with the object containing all the stacks and/or
 one specific stack object.
 """
 
-from bespin.errors import BespinError, BadOption, MissingPlan
 from bespin.amazon.credentials import Credentials
+from bespin.errors import BespinError, BadOption
 from bespin.actions.deployer import Deployer
 from bespin.actions.builder import Builder
+from bespin.actions.plan import Plan
 from bespin.actions.ssh import SSH
 
 from input_algorithms.spec_base import NotSpecified
@@ -161,28 +162,23 @@ def outputs(overview, configuration, stacks, stack, **kwargs):
 @a_task(needs_credentials=True, needs_stacks=True)
 def deploy_plan(overview, configuration, stacks, stack, artifact, **kwargs):
     """Deploy a predefined list of stacks in order"""
-    if artifact:
-        plan = artifact
-    else:
-        plan = stack
-
-    if plan not in configuration["plans"]:
-        raise MissingPlan(wanted=plan, available=configuration["plans"].keys())
-
-    missing = []
-    deployer = Deployer()
-
-    for stack in configuration["plans"][plan]:
-        if stack not in stacks:
-            missing.append(stack)
-
-    if missing:
-        raise BadOption("Some stacks in the plan don't exist", missing=missing, available=stacks.keys())
-
+    plan = artifact if artifact else stack
     made = []
     checked = []
-    for stack in configuration["plans"][plan]:
+    deployer = Deployer()
+
+    for stack in Plan.find_stacks(configuration, stacks, plan):
         deployer.deploy_stack(stacks[stack], stacks, made=made, checked=checked)
+
+@a_task(needs_credentials=True, needs_stacks=True)
+def sanity_check_plan(overview, configuration, stacks, stack, artifact, **kwargs):
+    """sanity check a predefined list of stacks in order"""
+    plan = artifact if artifact else stack
+    checked = []
+    builder = Builder()
+
+    for stack in Plan.find_stacks(configuration, stacks, plan):
+        builder.sanity_check(stacks[stack], stacks, checked=checked)
 
 @a_task(needs_stack=True, needs_credentials=True)
 def command_on_instances(overview, configuration, stacks, stack, artifact, **kwargs):
