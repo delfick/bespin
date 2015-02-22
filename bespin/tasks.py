@@ -218,8 +218,8 @@ def scale_instances(overview, configuration, stacks, stack, artifact, **kwargs):
     else:
         raise BespinError("The number of instances must be an integer")
 
-    if artifact > stack.instance_count_limit:
-        raise BespinError("The instance_count_limit is smaller than the specified number of instances", limit=stack.instance_count_limit, wanted=artifact)
+    if artifact > stack.scaling_options.instance_count_limit:
+        raise BespinError("The instance_count_limit is smaller than the specified number of instances", limit=stack.scaling_options.instance_count_limit, wanted=artifact)
 
     group = stack.auto_scaling_group
     current_count = group.desired_capacity
@@ -231,6 +231,11 @@ def scale_instances(overview, configuration, stacks, stack, artifact, **kwargs):
     if group.max_size < artifact:
         log.info("Changing max_size from %s to %s", group.max_size, artifact)
         group.max_size = artifact
+
+    if group.min_size < artifact:
+        group.min_size = artifact
+        if group.min_size > stack.scaling_options.highest_min:
+            group.min_size = stack.scaling_options.highest_min
     group.update()
 
     group.set_capacity(artifact)

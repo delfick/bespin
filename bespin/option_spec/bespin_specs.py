@@ -66,6 +66,9 @@ class Environment(dictobj):
 class other_options(dictobj):
     fields = ["run", "create", "build"]
 
+class ScalingOptions(dictobj):
+    fields = ["highest_min", "instance_count_limit"]
+
 class BespinSpec(object):
     """Knows about bespin specific configuration"""
 
@@ -117,6 +120,7 @@ class BespinSpec(object):
             , validators.deprecated_key("deploys_s3_path", "Use ``confirm_deployment.deploys_s3_path``")
             , validators.deprecated_key("sns_confirmation", "Use ``confirm_deployment.sns_confirmation``")
             , validators.deprecated_key("autoscaling_group_id", "Use ``auto_scaling_group_name``")
+            , validators.deprecated_key("instance_count_limit", "Use ``scaling_options.instance_count_limit``")
 
             , bespin = any_spec()
 
@@ -151,7 +155,10 @@ class BespinSpec(object):
 
             , command = optional_spec(string_spec())
 
-            , instance_count_limit = defaulted(integer_spec(), 10)
+            , scaling_options = create_spec(ScalingOptions
+                , highest_min = defaulted(integer_spec(), 2)
+                , instance_count_limit = defaulted(integer_spec(), 10)
+                )
 
             , artifacts = container_spec(artifact_objs.ArtifactCollection, dictof(string_spec(), create_spec(artifact_objs.Artifact
                 , compression_type = string_choice_spec(["gz", "xz"])
