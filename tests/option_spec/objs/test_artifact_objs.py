@@ -1,13 +1,14 @@
 # coding: spec
 
-from bespin.option_spec.artifact_objs import Artifact, ArtifactPath, ArtifactFile
-from bespin.option_spec import stack_objs, stack_specs
-from bespin.errors import BadOption
+from bespin.option_spec.artifact_objs import Artifact, ArtifactPath, ArtifactFile, ArtifactCommand
+from bespin.option_spec import stack_specs
+from bespin.errors import MissingFile
 
 from tests.helpers import BespinCase
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp
 from input_algorithms import spec_base as sb
+from input_algorithms.meta import Meta
 import mock
 import os
 
@@ -100,4 +101,140 @@ describe BespinCase, "ArtifactFile":
             self.assertEqual(len(called), 1)
             self.assertEqual(called[0][1:], ("trees and dogs", path))
             assert not os.path.exists(called[0][0])
+
+describe BespinCase, "ArtifactCommand":
+    def make_artifact_command(self, **options):
+        return stack_specs.artifact_command_spec().normalise(Meta({}, []), options)
+
+    describe "add_to_tar":
+        it "does copy, modify, command, copy_into_tar":
+            tar = mock.Mock(name="tar")
+            called = []
+            environment = mock.Mock(name="environment")
+
+            def do_copy(root, env):
+                assert os.path.exists(root)
+                self.assertIs(env, environment)
+                called.append((1, root))
+            def do_modify(root, env):
+                assert os.path.exists(root)
+                self.assertIs(env, environment)
+                called.append((2, root))
+            def do_command(root, env):
+                assert os.path.exists(root)
+                self.assertIs(env, environment)
+                called.append((3, root))
+            def do_copy_into_tar(root, env, tr):
+                assert os.path.exists(root)
+                self.assertIs(tr, tar)
+                self.assertIs(env, environment)
+                called.append((4, root))
+
+            command = self.make_artifact_command()
+            with mock.patch.multiple(command, do_copy=do_copy, do_modify=do_modify, do_command=do_command, do_copy_into_tar=do_copy_into_tar):
+                command.add_to_tar(tar, environment)
+
+            self.assertEqual([c[0] for c in called], [1, 2, 3, 4])
+            self.assertEqual(len(set(c[1] for c in called)), 1, set(c[1] for c in called))
+            assert not os.path.exists(called[0][1])
+
+    describe "copy_into_tar":
+        it "adds in the full_path, tar_path from all the add_into_tar":
+            tar = mock.Mock(name="tar")
+            into = mock.Mock(name="into")
+            environment = mock.Mock(name="environment")
+
+            added = []
+
+            f1 = mock.Mock(name="f1")
+            f2 = mock.Mock(name="f2")
+            f3 = mock.Mock(name="f3")
+            f4 = mock.Mock(name="f4")
+            t1 = mock.Mock(name="t1")
+            t2 = mock.Mock(name="t2")
+            t3 = mock.Mock(name="t3")
+            t4 = mock.Mock(name="t4")
+
+            p1 = mock.Mock(name="p1")
+            p1.files.return_value = [(f1, t1)]
+
+            p2 = mock.Mock(name="p2")
+            p2.files.return_value = [(f2, t2), (f3, t3), (f4, t4)]
+
+            def add(full_path, tar_path):
+                added.append((full_path, tar_path))
+            tar.add.side_effect = add
+
+            ArtifactCommand(None, None, None, add_into_tar=[p1, p2]).do_copy_into_tar(into, environment, tar)
+            self.assertEqual(added, [(f1, t1), (f2, t2), (f3, t3), (f4, t4)])
+            p1.files.assert_called_with(environment, prefix_path=into)
+            p2.files.assert_called_with(environment, prefix_path=into)
+
+    describe "do_command":
+        it "formats the command with environment and runs it":
+            one = mock.Mock(name="one")
+            two = mock.Mock(name="two")
+            environment = {"one": one, "two": two}
+
+            root = mock.Mock(name="root")
+            timeout = mock.Mock(name="timeout")
+
+            cmd = mock.Mock(name="cmd")
+            formatted_cmd = mock.Mock(name="formatted_cmd")
+            cmd.format.return_value = formatted_cmd
+
+            command = ArtifactCommand(None, None, command=cmd, add_into_tar=None, timeout=timeout)
+
+            ret = mock.Mock(name="ret")
+            command_output = mock.Mock(name="command_output", return_value=ret)
+
+            with mock.patch("bespin.option_spec.artifact_objs.command_output", command_output):
+                self.assertIs(command.do_command(root, environment), ret)
+
+            cmd.format.assert_called_once_with(one=one, two=two)
+            command_output.assert_called_once_with(formatted_cmd, cwd=root, timeout=timeout, verbose=True)
+
+    describe "do_modify":
+        it "can append lines to a file":
+            modify = {"target": {"append": ["{{ONE}} blah", "yeap"]}}
+            command = self.make_artifact_command(modify=modify)
+            with self.a_temp_dir() as directory:
+                target = os.path.join(directory, 'target')
+                with open(target, 'w') as fle:
+                    fle.write("one!")
+
+                command.do_modify(directory, {"ONE": "HAHA"})
+                with open(target) as fle:
+                    self.assertEqual(fle.read(), "one!\nHAHA blah\nyeap\n")
+
+        it "complains if the target file doesn't exist":
+            modify = {"target": {"append": ["{{ONE}} blah", "yeap"]}}
+            command = self.make_artifact_command(modify=modify)
+            with self.a_temp_dir() as directory:
+                target = os.path.join(directory, 'target')
+                with self.fuzzyAssertRaisesError(MissingFile, "Expected a file to modify", path=target):
+                    assert not os.path.exists(target)
+                    command.do_modify(directory, {"ONE": "HAHA"})
+
+    describe "do_copy":
+        it "copies specified files into a temporary location":
+            root, original = self.setup_directory({"one": {"two": "three", "four": {"five": "six", "nine": {"ten": {"eleven": "twelve"} } } }, "seven": "eight"})
+            copy = [ArtifactPath(original["one"]["two"]["/file/"], "/yeap"), ArtifactPath(original["one"]["four"]["/folder/"], "/{ONE}")]
+            command = self.make_artifact_command(copy=copy)
+
+            with self.a_temp_dir() as into:
+                environment = {"ONE": "blah"}
+                command.do_copy(into, environment)
+                self.assertEqual(self.dict_from_directory(into)
+                    , { "yeap": "three"
+                      , "blah":
+                        { "five": "six"
+                        , "nine":
+                          { "ten":
+                            { "eleven": "twelve"
+                            }
+                          }
+                        }
+                      }
+                    )
 

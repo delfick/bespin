@@ -95,7 +95,7 @@ class ArtifactPath(dictobj):
         for root, dirs, files in os.walk(self.host_path):
             for f in files:
                 file_full_path = os.path.abspath(os.path.join(root, f))
-                file_tar_path = file_full_path.replace(os.path.normpath(self.host_path), self.artifact_path, 1)
+                file_tar_path = file_full_path.replace(os.path.normpath(self.host_path), artifact_path, 1)
                 yield file_full_path, file_tar_path
 
 class ArtifactFile(dictobj):
@@ -113,7 +113,7 @@ class ArtifactFile(dictobj):
             tar.add(f.name, self.path)
 
 class ArtifactCommand(dictobj):
-    fields = ["copy", "modify", "command", "add_into_tar"]
+    fields = ["copy", "modify", "command", "add_into_tar", ("timeout", 600)]
 
     def add_to_tar(self, tar, environment=None):
         if environment is None:
@@ -132,7 +132,7 @@ class ArtifactCommand(dictobj):
                 tar.add(full_path, tar_path)
 
     def do_command(self, root, environment):
-        command_output(self.command.format(**environment), cwd=root, timeout=600, verbose=True)
+        return command_output(self.command.format(**environment), cwd=root, timeout=self.timeout, verbose=True)
 
     def do_modify(self, into, environment):
         for key, options in self.modify.items():

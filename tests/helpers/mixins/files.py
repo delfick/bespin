@@ -171,6 +171,18 @@ class FilesAssertionsMixin:
 
         return root, record
 
+    def dict_from_directory(self, root):
+        """Get us a dictionary from a directory that can be used in setup_directory"""
+        start = {}
+        for thing in os.listdir(root):
+            location = os.path.join(root, thing)
+            if os.path.isdir(location):
+                start[thing] = self.dict_from_directory(location)
+            else:
+                with open(location) as fle:
+                    start[thing] = fle.read()
+        return start
+
     ########################
     ###   TAR FILES
     ########################

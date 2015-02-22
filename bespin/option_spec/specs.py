@@ -26,6 +26,7 @@ class many_item_formatted_spec(Spec):
     the determined/formatted/altered values.
     """
     specs = []
+    creates = None
     value_name = None
     seperators = ":"
     optional_specs = []
@@ -36,6 +37,10 @@ class many_item_formatted_spec(Spec):
 
     def normalise(self, meta, val):
         original_val = val
+        if self.creates is not None:
+            if isinstance(val, self.creates):
+                return val
+
         if isinstance(val, (list, tuple)):
             vals = val
             dividers = [':']

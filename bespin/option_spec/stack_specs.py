@@ -33,6 +33,7 @@ class var_spec(many_item_formatted_spec):
 class artifact_path_spec(many_item_formatted_spec):
     value_name = "Artifact Path"
     specs = [sb.string_spec(), sb.string_spec()]
+    creates = ArtifactPath
     formatter = MergedOptionStringFormatter
 
     def create_result(self, host_path, artifact_path, meta, val, dividers):
@@ -43,6 +44,7 @@ class env_spec(many_item_formatted_spec):
     seperators = [':', '=']
 
     specs = [sb.string_spec()]
+    creates = Environment
     optional_specs = [sb.string_or_int_as_string_spec()]
     formatter = MergedOptionStringFormatter
 
@@ -62,6 +64,7 @@ class env_spec(many_item_formatted_spec):
 class skipper_spec(many_item_formatted_spec):
     value_name = "Skip specification"
     spec = lambda: sb.delayed(var_spec())
+    creates = Skipper
     specs = [spec(), spec()]
 
     def create_result(self, var1, var2, meta, val, dividers):
@@ -71,6 +74,7 @@ class s3_address(many_item_formatted_spec):
     value_name = "s3 address"
     specs = [sb.string_spec()]
     optional_specs = [sb.integer_spec()]
+    creates = S3Address
     seperators = None
     formatter = MergedOptionStringFormatter
 
@@ -98,6 +102,7 @@ artifact_command_spec = lambda : sb.create_spec(ArtifactCommand
     , copy = sb.listof(artifact_path_spec())
     , modify = sb.dictof(sb.string_spec(), sb.set_options(append=sb.listof(formatted_string)))
     , command = formatted_string
+    , timeout = sb.defaulted(sb.integer_spec(), 600)
     , add_into_tar = sb.listof(artifact_path_spec())
     )
 
