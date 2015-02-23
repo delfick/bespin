@@ -236,9 +236,9 @@ def scale_instances(overview, configuration, stacks, stack, artifact, **kwargs):
         group.min_size = artifact
         if group.min_size > stack.scaling_options.highest_min:
             group.min_size = stack.scaling_options.highest_min
-    group.update()
 
-    group.set_capacity(artifact)
+    group.desired_capacity = artifact
+    group.update()
 
 @a_task()
 def become(overview, configuration, stacks, stack, artifact, **kwargs):
