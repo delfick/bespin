@@ -52,7 +52,7 @@ class Stack(dictobj):
               This uses the ``auto_scaling_group_name`` attribute to determine what autoscaling group
               to suspend and resume
           """
-        , "instance_count_limit": "The max number of instances the scale_instances action is allowed to scale to"
+        , "scaling_options": "Options for the scale_instances command"
         , "skip_update_if_equivalent": "A list of two variable definitions. If they resolve to the same value, then don't deploy"
         , "artifact_retention_after_deployment": "Delete old artifacts after this deployment is done"
 
