@@ -1,4 +1,4 @@
-from bespin.errors import BadS3Bucket
+from bespin.errors import BadS3Bucket, BespinError
 from bespin import helpers as hp
 
 from six.moves.urllib.parse import urlparse
@@ -47,6 +47,7 @@ class S3(object):
         if start is None:
             start = datetime.utcnow()
 
+        log.info("Looking for key with last_modified greater than %s", start)
         for _ in hp.until(timeout=timeout, step=5):
             try:
                 bucket_obj = self.get_bucket(bucket)
@@ -76,9 +77,12 @@ class S3(object):
 
             date = datetime.strptime(last_modified, "%a, %d %b %Y %H:%M:%S GMT")
             if date > start:
-                log.info("Key is newer than our start time!")
+                log.info("Found key and it's newer than our start time!")
+                return
             else:
                 log.info("Found key but it's older than our start time, hasn't been updated yet")
+
+        raise BespinError("Couldn't find the s3 key with a newer last modified")
 
     @contextmanager
     def a_multipart_upload(self, bucket, key):
