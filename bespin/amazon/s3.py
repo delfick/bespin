@@ -177,5 +177,5 @@ class S3(object):
         bucket = self.get_bucket(destination_file.bucket)
         key = Key(bucket)
         key.name = destination_file.key
-        key.set_contents_from_filename(source_filename, policy='authenticate-read')
+        key.set_contents_from_filename(source_filename, policy='authenticated-read')
         key.close()
