@@ -314,10 +314,10 @@ class SSH(dictobj):
 
     def find_instance_ids(self, stack):
         if self.auto_scaling_group_name is not NotSpecified:
-            instance = None
+            instances = None
             asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(self.auto_scaling_group_name)
         elif self.instance is not NotSpecified:
-            instance = stack.cloudformation.map_logical_to_physical_resource_id(self.instance)
+            instances = [stack.cloudformation.map_logical_to_physical_resource_id(inst) for inst in self.instance]
             asg_physical_id = None
         else:
             raise BespinError("Please specify either ssh.instance or ssh.auto_scaling_group_name", stack=stack)
@@ -326,8 +326,8 @@ class SSH(dictobj):
         instance_ids = []
         if asg_physical_id:
             instance_ids = stack.ec2.instance_ids_in_autoscaling_group(asg_physical_id)
-        elif instance:
-            instance_ids = [instance]
+        elif instances:
+            instance_ids = instances
 
         return instance_ids
 

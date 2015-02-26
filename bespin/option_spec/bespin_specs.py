@@ -181,7 +181,7 @@ class BespinSpec(object):
                 , instance_key_location = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
                 , address = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                , instance = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , instance = optional_spec(listof(formatted(string_spec(), formatter=MergedOptionStringFormatter)))
                 , auto_scaling_group_name = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
                 , bastion_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/bastion_ssh_key.pem"), formatter=MergedOptionStringFormatter)
