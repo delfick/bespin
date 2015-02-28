@@ -83,7 +83,11 @@ class Task(dictobj):
                 raise BadOption("Please specify a defined environment", available=list(configuration["environments"].keys()))
             region = configuration["environments"][environment].region
 
-            assume_role = NotSpecified if self.options.get("no_assume_role", False) or configuration["bespin"].no_assume_role else configuration["bespin"].assume_role
+            no_assume_role = configuration["bespin"].no_assume_role
+            if "no_assume_role" in self.options:
+                no_assume_role = self.options["no_assume_role"]
+            assume_role = NotSpecified if no_assume_role else configuration["bespin"].assume_role
+
             credentials = Credentials(
                   region
                 , configuration["environments"][environment].account_id
