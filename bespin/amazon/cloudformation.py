@@ -168,7 +168,8 @@ class Cloudformation(AmazonMixin):
             events = description.describe_events()
             for event in events:
                 if event.timestamp > last:
-                    log.info("%s - %s %s (%s) %s", self.stack_name, event.resource_type, event.logical_resource_id, event.resource_status, event.resource_status_reason)
+                    reason = event.resource_status_reason or ""
+                    log.info("%s - %s %s (%s) %s", self.stack_name, event.resource_type, event.logical_resource_id, event.resource_status, reason)
             last = datetime.datetime.utcnow()
 
         status = self.status
