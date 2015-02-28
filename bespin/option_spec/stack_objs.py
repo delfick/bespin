@@ -224,11 +224,7 @@ class Stack(dictobj):
 
         matches = re.findall("XXX_[A-Z_]+_XXX", json.dumps(self.params_json_obj))
         for var in self.vars.values():
-            try:
-                delattr(var, "_resolved")
-            except AttributeError:
-                # I did have an hasattr guard but it didn't seem to work
-                pass
+            var._resolved = None
 
         if matches:
             raise BadStack("Found placeholders in the generated params file", stack=self.name, found=matches)
@@ -249,7 +245,7 @@ class DynamicVariable(dictobj):
     fields = ["stack", "output", ("bespin", None), ("needs_credentials", True)]
 
     def resolve(self):
-        if hasattr(self, "_resolved"):
+        if getattr(self, "_resolved", None) is not None:
             return self._resolved
 
         if isinstance(self.stack, six.string_types):
