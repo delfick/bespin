@@ -11,6 +11,7 @@ from noseOfYeti.tokeniser.support import noy_sup_setUp
 from input_algorithms import spec_base as sb
 from input_algorithms.meta import Meta
 from boto.s3.key import Key
+import time
 import nose
 import boto
 import mock
@@ -70,6 +71,7 @@ describe BespinCase, "ArtifactCollection":
                 key = Key(bucket)
                 key.key = "stuff/{0}".format(k)
                 key.set_contents_from_string(k)
+                time.sleep(0.01)
 
             artifact = mock.Mock(name="artifact", upload_to="s3://blah/stuff/five.tar.gz", history_length=2)
             collection = ArtifactCollection({"main": artifact})
