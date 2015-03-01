@@ -1,15 +1,19 @@
 # coding: spec
 
-from bespin.option_spec.artifact_objs import Artifact, ArtifactPath, ArtifactFile, ArtifactCommand
+from bespin.option_spec.artifact_objs import Artifact, ArtifactPath, ArtifactFile, ArtifactCommand, ArtifactCollection
 from bespin.option_spec import stack_specs
 from bespin.errors import MissingFile
+from bespin.amazon.s3 import S3
 
 from tests.helpers import BespinCase
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp
 from input_algorithms import spec_base as sb
 from input_algorithms.meta import Meta
+from boto.s3.key import Key
+from moto import mock_s3
 import mock
+import boto
 import os
 
 optional_any = lambda: sb.optional_spec(sb.any_spec())
@@ -21,6 +25,67 @@ artifact_spec = sb.create_spec(Artifact
     , files = optional_any()
     , commands = optional_any()
     )
+
+describe BespinCase, "ArtifactCollection":
+    describe "clean_old_artifacts":
+        @mock_s3
+        it "does nothing if dry_run is True":
+            s3 = S3()
+            conn = s3.conn = boto.connect_s3()
+            environment = {}
+
+            bucket = conn.create_bucket("blah")
+            for k in ('one.tar.gz', 'two.tar.gz', 'three.tar.gz', 'four.tar.gz'):
+                key = Key(bucket)
+                key.key = "stuff/{0}".format(k)
+                key.set_contents_from_string(k)
+
+            artifact = mock.Mock(name="artifact", upload_to="s3://blah/stuff/five.tar.gz", history_length=2)
+            collection = ArtifactCollection({"main": artifact})
+            collection.clean_old_artifacts(s3, environment, dry_run=True)
+
+            self.assertEqual(
+                  sorted([k.key for k in conn.get_bucket("blah").list()])
+                , sorted(["stuff/one.tar.gz", "stuff/two.tar.gz", "stuff/three.tar.gz", "stuff/four.tar.gz"])
+                )
+
+        @mock_s3
+        it "Deletes the oldest such that only history_length is left":
+            s3 = S3()
+            conn = s3.conn = boto.connect_s3()
+            environment = {}
+
+            bucket = conn.create_bucket("blah")
+            for k in ('one.tar.gz', 'two.tar.gz', 'three.tar.gz', 'four.tar.gz'):
+                key = Key(bucket)
+                key.key = "stuff/{0}".format(k)
+                key.set_contents_from_string(k)
+
+            artifact = mock.Mock(name="artifact", upload_to="s3://blah/stuff/five.tar.gz", history_length=2)
+            collection = ArtifactCollection({"main": artifact})
+            collection.clean_old_artifacts(s3, environment, dry_run=False)
+
+            self.assertEqual(
+                  sorted([k.key for k in conn.get_bucket("blah").list()])
+                , sorted(["stuff/three.tar.gz", "stuff/four.tar.gz"])
+                )
+
+            # Do it again, it deletes nothing else
+            collection.clean_old_artifacts(s3, environment, dry_run=False)
+
+            self.assertEqual(
+                  sorted([k.key for k in conn.get_bucket("blah").list()])
+                , sorted(["stuff/three.tar.gz", "stuff/four.tar.gz"])
+                )
+
+            # Change to only 1 for history length and try again
+            artifact.history_length = 1
+            collection.clean_old_artifacts(s3, environment, dry_run=False)
+
+            self.assertEqual(
+                  sorted([k.key for k in conn.get_bucket("blah").list()])
+                , sorted(["stuff/four.tar.gz"])
+                )
 
 describe BespinCase, "ArtifactPath":
     describe "add_to_tar":

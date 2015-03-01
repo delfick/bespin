@@ -30,6 +30,11 @@ setup(
         [ "noseOfYeti>=1.5.0"
         , "nose"
         , "mock"
+        , "moto"
+
+        # Need to ensure httpretty is not 0.8.7
+        # To prevent an infinite loop in python3 tests
+        , "httpretty==0.8.6"
         ]
       }
 
