@@ -11,10 +11,20 @@ from noseOfYeti.tokeniser.support import noy_sup_setUp
 from input_algorithms import spec_base as sb
 from input_algorithms.meta import Meta
 from boto.s3.key import Key
-from moto import mock_s3
-import mock
+import nose
 import boto
+import mock
+import sys
 import os
+
+if sys.version_info[0] == 2 and sys.version_info[1] == 6:
+    # This can be removed when we can use latest Httpretty again
+    def mock_s3(func):
+        def wrapped(*args):
+            raise nose.SkipTest("No moto support for python2.6 atm")
+        return wrapped
+else:
+    from moto import mock_s3
 
 optional_any = lambda: sb.optional_spec(sb.any_spec())
 artifact_spec = sb.create_spec(Artifact
