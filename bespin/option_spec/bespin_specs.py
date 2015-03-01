@@ -122,6 +122,25 @@ class BespinSpec(object):
             )
 
     @memoized_property
+    def confirm_deployment_spec(self):
+        return create_spec(deployment_check.ConfirmDeployment
+            , deploys_s3_path = optional_spec(listof(stack_specs.s3_address()))
+            , zero_instances_is_ok = defaulted(boolean(), False)
+            , auto_scaling_group_name = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+
+            , url_checker = optional_spec(self.url_checker_spec)
+
+            , sns_confirmation = optional_spec(create_spec(deployment_check.SNSConfirmation
+                , validators.deprecated_key("auto_scaling_group_id", "Use ``confirm_deployment.auto_scaling_group_name``")
+                , validators.deprecated_key("env", "Use ``stack.<stack>.env`` instead``")
+
+                , timeout = defaulted(integer_spec(), 300)
+                , version_message = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , deployment_queue = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                ))
+            )
+
+    @memoized_property
     def stack_spec(self):
         """Spec for each stack"""
         return create_spec(stack_objs.Stack
@@ -197,22 +216,7 @@ class BespinSpec(object):
                 , instance_key_path = formatted(defaulted(string_spec(), "{config_root}/{environment}/ssh_key.pem"), formatter=MergedOptionStringFormatter)
                 ))
 
-            , confirm_deployment = optional_spec(create_spec(deployment_check.ConfirmDeployment
-                , deploys_s3_path = optional_spec(listof(stack_specs.s3_address()))
-                , zero_instances_is_ok = defaulted(boolean(), False)
-                , auto_scaling_group_name = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-
-                , url_checker = optional_spec(self.url_checker_spec)
-
-                , sns_confirmation = optional_spec(create_spec(deployment_check.SNSConfirmation
-                    , validators.deprecated_key("auto_scaling_group_id", "Use ``confirm_deployment.auto_scaling_group_name``")
-                    , validators.deprecated_key("env", "Use ``stack.<stack>.env`` instead``")
-
-                    , timeout = defaulted(integer_spec(), 300)
-                    , version_message = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                    , deployment_queue = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                    ))
-                ))
+            , confirm_deployment = optional_spec(self.confirm_deployment_spec)
             )
 
     @memoized_property

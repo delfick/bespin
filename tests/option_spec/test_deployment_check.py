@@ -1,12 +1,14 @@
 # coding: spec
 
 from bespin.option_spec.deployment_check import SNSConfirmation
+from bespin.errors import BadStack, BadDeployment, BadOption
 from bespin.option_spec.bespin_specs import BespinSpec
-from bespin.errors import BadStack, BadDeployment
 from bespin.amazon.sqs import Message
 
 from tests.helpers import BespinCase
 
+from noseOfYeti.tokeniser.support import noy_sup_setUp
+from input_algorithms.spec_base import NotSpecified
 from input_algorithms.meta import Meta
 import mock
 
@@ -155,3 +157,131 @@ describe BespinCase, "SNSConfirmation":
                     confirmation = SNSConfirmation(version_message="{VAR}*", deployment_queue=queue, timeout=0)
                     confirmation.wait(["i-1", "i-2", "i-3", "i-4"], {"VAR": "blah"}, sqs)
 
+describe BespinCase, "ConfirmDeployment":
+    before_each:
+        self.start = mock.Mock(name="start")
+        self.stack = mock.Mock(name="stack")
+        self.instances = mock.Mock(name="instances")
+        self.environment = mock.Mock(name="environment")
+
+        self.sqs = mock.Mock(name="sqs")
+        self.stack.sqs = self.sqs
+
+        self.s3 = mock.Mock(name="s3")
+        self.stack.s3 = self.s3
+
+    describe "check_sns":
+        it "does nothing if sns_confirmation is NotSpecified":
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {})
+            assert confirmation.sns_confirmation is NotSpecified
+            confirmation.check_sns(stack=None, instances=None, environment=None)
+            assert True
+
+        it "calls wait on sns_confirmation if it exists":
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {})
+            sns_confirmation = mock.Mock(name="sns_confirmation")
+            confirmation.sns_confirmation = sns_confirmation
+            confirmation.check_sns(stack=self.stack, instances=self.instances, environment=self.environment, start=self.start)
+            sns_confirmation.wait.assert_called_once_with(self.instances, self.environment, self.sqs)
+
+    describe "check_url":
+        it "does nothing if url_checker is NotSpecified":
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {})
+            assert confirmation.url_checker is NotSpecified
+            confirmation.check_url(stack=None, instances=None, environment=None)
+            assert True
+
+        it "calls wait on url_checker if it exists":
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {})
+            url_checker = mock.Mock(name="url_checker")
+            confirmation.url_checker = url_checker
+            confirmation.check_url(stack=self.stack, instances=self.instances, environment=self.environment, start=self.start)
+            url_checker.wait.assert_called_once_with(self.environment)
+
+    describe "check_deployed_s3_paths":
+        it "does nothing if there are no deploys_s3_path specified":
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {})
+            assert confirmation.deploys_s3_path is NotSpecified
+            confirmation.check_deployed_s3_paths(stack=None, instances=None, environment=None)
+            assert True
+
+        it "asks stack.s3 to wait for each defined path":
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {"deploys_s3_path":["s3://one/{{VAR}}/three.sql", "s3://two/four/five.tar.gz"]})
+            confirmation.check_deployed_s3_paths(stack=self.stack, instances=self.instances, environment={"VAR":"meh"}, start=self.start)
+            self.assertEqual(self.s3.wait_for.mock_calls,
+                [ mock.call("one", "/meh/three.sql", 600, start=self.start)
+                , mock.call("two", "/four/five.tar.gz", 600, start=self.start)
+                ]
+            )
+
+    describe "confirm":
+        it "complains if auto_scaling_group_name is not specified when it's needed":
+            sns_options = {"version_message": "whatever", "deployment_queue": "queue"}
+            url_options = {"check_url": "/blah", "expect": "whatever", "endpoint": "http://somewhere"}
+            for options in [{"sns_confirmation":sns_options}, {"url_checker":url_options}, {"url_checker": url_options, "sns_confirmation": sns_options}]:
+                with self.fuzzyAssertRaisesError(BadOption, "Auto_scaling_group_name must be specified if sns_confirmation or url_checker are specified"):
+                    confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), options)
+                    confirmation.confirm(self.stack, self.environment)
+
+        it "doesn't need an auto scaling group if we are only checking deploys_s3_path":
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {"deploys_s3_path":["s3://path/blah.sql"]})
+            check_deployed_s3_paths = mock.Mock(name="check_deployed_s3_paths")
+            with mock.patch("bespin.option_spec.deployment_check.ConfirmDeployment.check_deployed_s3_paths", check_deployed_s3_paths):
+                confirmation.confirm(self.stack, self.environment, start=self.start)
+            check_deployed_s3_paths.assert_called_once_with(self.stack, [], self.environment, self.start)
+
+        it "finds the instances and passes them into the checkers":
+            instances = mock.MagicMock(name="instances", __len__=lambda *args: 2)
+            check_sns = mock.Mock(name="check_sns")
+            check_url = mock.Mock(name="check_url")
+            check_deployed_s3_paths = mock.Mock(name="check_deployed_s3_paths")
+
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {"auto_scaling_group_name":"whatever"})
+            with mock.patch.multiple(confirmation, instances=(lambda *args: instances), check_sns=check_sns, check_url=check_url, check_deployed_s3_paths=check_deployed_s3_paths):
+                confirmation.confirm(self.stack, self.environment, start=self.start)
+
+            check_sns.assert_called_once_with(self.stack, instances, self.environment, self.start)
+            check_url.assert_called_once_with(self.stack, instances, self.environment, self.start)
+            check_deployed_s3_paths.assert_called_once_with(self.stack, instances, self.environment, self.start)
+
+        it "does nothing if there are no instances and zero_instances_is_ok":
+            instances = mock.MagicMock(name="instances", __len__=lambda *args: 0)
+            check_sns = mock.Mock(name="check_sns")
+            check_url = mock.Mock(name="check_url")
+            check_deployed_s3_paths = mock.Mock(name="check_deployed_s3_paths")
+
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {"auto_scaling_group_name":"whatever", "zero_instances_is_ok": True})
+            with mock.patch.multiple(confirmation, instances=(lambda *args: instances), check_sns=check_sns, check_url=check_url, check_deployed_s3_paths=check_deployed_s3_paths):
+                confirmation.confirm(self.stack, self.environment, start=self.start)
+
+            self.assertEqual(len(check_sns.mock_calls), 0)
+            self.assertEqual(len(check_url.mock_calls), 0)
+            self.assertEqual(len(check_deployed_s3_paths.mock_calls), 0)
+
+        it "complains if there are 0 instances and not zero_instances_is_ok":
+            instances = mock.MagicMock(name="instances", __len__=lambda *args: 0)
+            stack_name = mock.Mock(name="stack_name")
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {"auto_scaling_group_name":"whatever", "zero_instances_is_ok": False})
+            self.stack.name = stack_name
+            with self.fuzzyAssertRaisesError(BadDeployment, "No instances are InService in the auto scaling group!", stack=stack_name, auto_scaling_group_name="whatever"):
+                with mock.patch.object(confirmation, "instances", lambda *args: instances):
+                    confirmation.confirm(self.stack, self.environment, start=self.start)
+
+    describe "instances":
+        it "asks cloudformation for the logical id and ec2 for the InService instances":
+            ec2 = mock.Mock(name="ec2")
+            instances = mock.Mock(name="instances")
+            logical_id = mock.Mock(name="logical_id")
+            cloudformation = mock.Mock(name="cloudformation")
+
+            ec2.get_instances_in_asg_by_lifecycle_state.return_value = instances
+            cloudformation.map_logical_to_physical_resource_id.return_value = logical_id
+
+            self.stack.ec2 = ec2
+            self.stack.cloudformation = cloudformation
+
+            confirmation = BespinSpec().confirm_deployment_spec.normalise(Meta({}, []), {"auto_scaling_group_name":"whatever"})
+            self.assertIs(confirmation.instances(self.stack), instances)
+
+            cloudformation.map_logical_to_physical_resource_id.assert_called_once_with("whatever")
+            ec2.get_instances_in_asg_by_lifecycle_state.assert_called_once_with(logical_id, lifecycle_state="InService")

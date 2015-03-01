@@ -106,12 +106,15 @@ class ConfirmDeployment(dictobj):
         , "sns_confirmation": "Check an sqs queue for messages our Running instances produced"
         }
 
+    def instances(self, stack):
+        auto_scaling_group_name = self.auto_scaling_group_name
+        asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(auto_scaling_group_name)
+        return stack.ec2.get_instances_in_asg_by_lifecycle_state(asg_physical_id, lifecycle_state="InService")
+
     def confirm(self, stack, environment, start=None):
         instances = []
         if self.auto_scaling_group_name is not NotSpecified:
-            auto_scaling_group_name = self.auto_scaling_group_name
-            asg_physical_id = stack.cloudformation.map_logical_to_physical_resource_id(auto_scaling_group_name)
-            instances = stack.ec2.get_instances_in_asg_by_lifecycle_state(asg_physical_id, lifecycle_state="InService")
+            instances = self.instances(stack)
 
             if len(instances) is 0:
                 if self.zero_instances_is_ok:
