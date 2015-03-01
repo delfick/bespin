@@ -113,6 +113,15 @@ class BespinSpec(object):
             )
 
     @memoized_property
+    def url_checker_spec(self):
+        return create_spec(deployment_check.UrlChecker
+            , check_url = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+            , endpoint = required(delayed(stack_specs.var_spec()))
+            , expect = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+            , timeout_after = defaulted(integer_spec(), 600)
+            )
+
+    @memoized_property
     def stack_spec(self):
         """Spec for each stack"""
         return create_spec(stack_objs.Stack
@@ -193,12 +202,7 @@ class BespinSpec(object):
                 , zero_instances_is_ok = defaulted(boolean(), False)
                 , auto_scaling_group_name = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
-                , url_checker = optional_spec(create_spec(deployment_check.UrlChecker
-                    , check_url = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                    , endpoint = required(delayed(stack_specs.var_spec()))
-                    , expect = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-                    , timeout_after = defaulted(integer_spec(), 600)
-                    ))
+                , url_checker = optional_spec(self.url_checker_spec)
 
                 , sns_confirmation = optional_spec(create_spec(deployment_check.SNSConfirmation
                     , validators.deprecated_key("auto_scaling_group_id", "Use ``confirm_deployment.auto_scaling_group_name``")

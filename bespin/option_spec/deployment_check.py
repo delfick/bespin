@@ -65,17 +65,17 @@ class SNSConfirmation(dictobj):
 
             # Look for success and failure in the messages
             for message in messages:
-                log.info("Message received %s", message['output'])
+                log.info("Message received %s", message.output)
 
                 # Ignore the messages for instances outside this deployment
-                if message['instance_id'] in instances:
-                    if fnmatch.fnmatch(message['output'], version_message):
-                        log.info("Deployed instance %s", message['instance_id'])
-                        success.append(message['instance_id'])
+                if message.instance_id in instances:
+                    if fnmatch.fnmatch(message.output, version_message):
+                        log.info("Deployed instance %s", message.instance_id)
+                        success.append(message.instance_id)
                     else:
-                        log.info("Failed to deploy instance %s", message['instance_id'])
-                        log.info("Failure Message: %s", message['output'])
-                        failed.append(message['instance_id'])
+                        log.info("Failed to deploy instance %s", message.instance_id)
+                        log.info("Failure Message: %s", message.output)
+                        failed.append(message.instance_id)
 
             # Stop trying if we have all the instances
             if set(failed + success) == set(instances):

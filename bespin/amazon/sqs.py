@@ -3,11 +3,22 @@ from bespin.errors import BadSQSMessage
 
 import boto.sqs
 
+from collections import namedtuple
 import logging
 import json
 import time
 
 log = logging.getLogger("bespin.amazon.sqs")
+
+class Message(namedtuple("Message", ["result", "instance_id", "output"])):
+    @classmethod
+    def decode(kls, message):
+        """Takes a message that is : separated and maps it an instance of Message"""
+        if message.count(':') < 2:
+            raise BadSQSMessage("Less than two colons", msg=message)
+
+        result, instance_id, output = message.split(':', 2)
+        return kls(result=result, instance_id=instance_id, output=output)
 
 class SQS(object):
     def __init__(self, region="ap-southeast-2"):
@@ -33,7 +44,7 @@ class SQS(object):
 
                 q.delete_message(raw_message)
 
-                message = self.decode_message(encoded_message)
+                message = Message.decode(encoded_message)
 
                 if message is not None:
                     messages.append(message)
@@ -41,12 +52,4 @@ class SQS(object):
             time.sleep(sleep)
 
         return messages
-
-    def decode_message(self, encoded_message):
-        """Takes a message that is : separated and maps it to a Dict"""
-        if encoded_message.count(':') < 2:
-            raise BadSQSMessage("Less than two colons", msg=encoded_message)
-
-        result, instance_id, output = encoded_message.split(':', 2)
-        return {'result': result, 'instance_id': instance_id, 'output': output }
 
