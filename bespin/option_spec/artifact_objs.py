@@ -25,7 +25,7 @@ class ArtifactCollection(dictobj):
         for key, artifact in self.artifacts.items():
             log.info("Cleaning old artifacts\tartifact=%s", key)
             # Get contents of bucket
-            artifact_path = os.path.dirname(artifact.upload_to.format(**environment))
+            artifact_path = "{0}/".format(os.path.dirname(artifact.upload_to.format(**environment)))
             artifact_keys = list(s3.list_keys_from_s3_path(artifact_path))
 
             # Get all the time stamps and determine the files to delete
