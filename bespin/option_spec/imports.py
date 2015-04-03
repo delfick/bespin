@@ -1,4 +1,4 @@
-from bespin.option_spec.specs import many_item_formatted_spec
+from input_algorithms.many_item_spec import many_item_formatted_spec
 from bespin.formatter import MergedOptionStringFormatter
 from bespin.option_spec.task_objs import Task
 from bespin.errors import BadImport

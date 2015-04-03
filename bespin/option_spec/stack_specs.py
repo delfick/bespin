@@ -6,12 +6,12 @@ options.
 """
 
 from bespin.option_spec.stack_objs import StaticVariable, DynamicVariable, Environment, Skipper, S3Address
-from bespin.option_spec.specs import many_item_formatted_spec
 from bespin.option_spec.artifact_objs import ArtifactCommand
 from bespin.option_spec.artifact_objs import ArtifactPath
 from bespin.formatter import MergedOptionStringFormatter
 from bespin.errors import BadSpecValue
 
+from input_algorithms.many_item_spec import many_item_formatted_spec
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms import spec_base as sb
 from six.moves.urllib.parse import urlparse
