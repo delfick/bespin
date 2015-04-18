@@ -41,6 +41,10 @@ class Builder(object):
 
         # Iterate over each artifact we need to build
         for key, artifact in stack.artifacts.items():
+            # Skip artifacts that are created elsewhere
+            if artifact.not_created_here:
+                continue
+
             # Gather our environment variables
             environment = dict(env.pair for env in stack.build_env)
 

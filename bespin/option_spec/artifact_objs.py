@@ -54,6 +54,7 @@ class Artifact(dictobj):
           """
         , "commands": "Commands that need to be run to generate content for the artifact"
         , "upload_to": "S3 path to upload the artifact to"
+        , "not_created_here": "Boolean saying if this artifact is created elsewhere"
         , "history_length": """
               The number of artifacts to keep in s3
 

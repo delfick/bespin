@@ -189,6 +189,7 @@ class BespinSpec(object):
                 )
 
             , artifacts = container_spec(artifact_objs.ArtifactCollection, dictof(string_spec(), create_spec(artifact_objs.Artifact
+                , not_created_here = defaulted(boolean(), False)
                 , compression_type = string_choice_spec(["gz", "xz"])
                 , history_length = integer_spec()
                 , upload_to = formatted(string_spec(), formatter=MergedOptionStringFormatter)
