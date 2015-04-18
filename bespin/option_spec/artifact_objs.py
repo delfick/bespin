@@ -26,6 +26,8 @@ class ArtifactCollection(dictobj):
             log.info("Cleaning old artifacts\tartifact=%s", key)
             # Get contents of bucket
             artifact_path = "{0}/".format(os.path.dirname(artifact.upload_to.format(**environment)))
+            if artifact.cleanup_prefix is not NotSpecified:
+                artifact_path = "{0}{1}".format(artifact_path, artifact.cleanup_prefix)
             artifact_keys = list(s3.list_keys_from_s3_path(artifact_path))
 
             # Get all the time stamps and determine the files to delete
@@ -55,6 +57,7 @@ class Artifact(dictobj):
         , "commands": "Commands that need to be run to generate content for the artifact"
         , "upload_to": "S3 path to upload the artifact to"
         , "not_created_here": "Boolean saying if this artifact is created elsewhere"
+        , "cleanup_prefix": "The prefix to use when finding artifacts to clean up"
         , "history_length": """
               The number of artifacts to keep in s3
 
