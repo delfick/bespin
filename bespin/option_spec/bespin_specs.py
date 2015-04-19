@@ -8,7 +8,7 @@ The specifications are responsible for sanitation, validation and normalisation.
 from input_algorithms.spec_base import (
       formatted, defaulted, any_spec, dictionary_spec, dictof, listof, required, delayed
     , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec, or_spec, container_spec
-    , valid_string_spec, create_spec, string_choice_spec, Spec
+    , valid_string_spec, create_spec, string_choice_spec, Spec, always_same_spec
     )
 
 from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports, deployment_check
@@ -196,9 +196,11 @@ class BespinSpec(object):
                 , upload_to = formatted(string_spec(), formatter=MergedOptionStringFormatter)
                 , commands = listof(stack_specs.artifact_command_spec(), expect=artifact_objs.ArtifactCommand)
                 , paths = listof(stack_specs.artifact_path_spec(), expect=artifact_objs.ArtifactPath)
-                , files = listof(create_spec(artifact_objs.ArtifactFile
-                    , content = formatted(string_spec(), formatter=MergedOptionStringFormatter)
+                , files = listof(create_spec(artifact_objs.ArtifactFile, validators.has_either(["content", "task"])
+                    , content = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                    , task = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                     , path = formatted(string_spec(), formatter=MergedOptionStringFormatter)
+                    , task_runner = formatted(always_same_spec("{task_runner}"), formatter=MergedOptionStringFormatter)
                     ))
                 )))
 

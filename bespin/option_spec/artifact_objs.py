@@ -103,7 +103,7 @@ class ArtifactPath(dictobj):
                 yield file_full_path, file_tar_path
 
 class ArtifactFile(dictobj):
-    fields = ["content", "path"]
+    fields = ["content", "path", "task", "task_runner"]
 
     def add_to_tar(self, tar, environment=None):
         """Add this file to the tar"""
@@ -111,7 +111,11 @@ class ArtifactFile(dictobj):
             environment = {}
 
         with hp.a_temp_file() as f:
-            f.write(self.content.format(**environment).encode('utf-8'))
+            if self.content is not NotSpecified:
+                f.write(self.content.format(**environment).encode('utf-8'))
+            else:
+                self.task_runner(self.task, printer=f)
+
             f.close()
             print(self.path)
             tar.add(f.name, self.path)
