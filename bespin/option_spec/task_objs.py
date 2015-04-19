@@ -32,7 +32,7 @@ class Task(dictobj):
             if self.action in available_actions:
                 self.description = available_actions[self.action].__doc__
 
-    def run(self, overview, cli_args, stack, available_actions=None, tasks=None):
+    def run(self, overview, cli_args, stack, available_actions=None, tasks=None, **extras):
         """Run this task"""
         if available_actions is None:
             from bespin.tasks import available_tasks as available_actions
@@ -102,7 +102,7 @@ class Task(dictobj):
         if task_action.needs_artifact and not artifact:
                 raise BadOption("Please specify an artifact")
 
-        return task_action(overview, configuration, stacks=stacks, stack=stack, artifact=artifact, tasks=tasks)
+        return task_action(overview, configuration, stacks=stacks, stack=stack, artifact=artifact, tasks=tasks, **extras)
 
     def determine_stack(self, stack, overview, configuration, needs_stack=True):
         """Complain if we don't have an stack"""
