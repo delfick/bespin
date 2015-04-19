@@ -172,7 +172,7 @@ class BespinSpec(object):
             , build_after = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , ignore_deps = defaulted(boolean(), False)
 
-            , vars = dictof(string_spec(), stack_specs.var_spec())
+            , vars = dictof(string_spec(), stack_specs.var_spec(), nested=True)
 
             , skip_update_if_equivalent = listof(stack_specs.skipper_spec())
 
