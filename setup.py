@@ -9,8 +9,8 @@ setup(
 
     , install_requires =
       [ "delfick_error==1.6.1"
-      , "option_merge==0.9.2"
-      , "input_algorithms==0.4.4"
+      , "option_merge==0.9.3"
+      , "input_algorithms==0.4.4.1"
 
       , "six"
       , "pytz"
