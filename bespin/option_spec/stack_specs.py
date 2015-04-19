@@ -18,7 +18,7 @@ from six.moves.urllib.parse import urlparse
 
 class var_spec(many_item_formatted_spec):
     value_name = "Variable"
-    specs = [sb.string_or_int_as_string_spec()]
+    specs = [sb.or_spec(sb.string_or_int_as_string_spec(), sb.listof(sb.string_or_int_as_string_spec()))]
     optional_specs = [sb.string_or_int_as_string_spec()]
     formatter = MergedOptionStringFormatter
     seperators = "|"
