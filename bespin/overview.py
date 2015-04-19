@@ -38,12 +38,21 @@ class Overview(object):
         bespin = cli_args.pop("bespin")
         environment = bespin.get("environment")
 
+        info = {}
+        stack_finder = lambda task: getattr(info["tasks"][task], "stack", bespin["chosen_stack"])
+        def task_runner(task, **kwargs):
+            if task not in tasks:
+                raise BadTask("Unknown task", task=task, available=tasks.keys())
+            info["tasks"][task].run(self, cli_args, stack_finder(task), available_actions=available_tasks, tasks=info["tasks"], **kwargs)
+
         self.configuration.update(
             { "$@": bespin.get("extra", "")
             , "bespin": bespin
             , "command": cli_args['command']
             , "config_root": self.configuration_folder
             , "environment": environment
+            , "task_runner": task_runner
+            , "stack_finder": stack_finder
             }
         , source = "<cli>"
         )
@@ -60,11 +69,8 @@ class Overview(object):
         tasks = self.find_tasks(overrides=task_overrides)
 
         task = bespin["chosen_task"]
-        if task not in tasks:
-            raise BadTask("Unknown task", task=task, available=tasks.keys())
-        stack = getattr(tasks[task], "stack", bespin["chosen_stack"])
-
-        tasks[task].run(self, cli_args, stack, available_actions=available_tasks, tasks=tasks)
+        info["tasks"] = tasks
+        task_runner(task)
 
     ########################
     ###   THEME
