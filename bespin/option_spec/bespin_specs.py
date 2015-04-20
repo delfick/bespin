@@ -209,6 +209,7 @@ class BespinSpec(object):
 
                 , user = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , bastion = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , bastion_user = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , bastion_key_location = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , instance_key_location = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 

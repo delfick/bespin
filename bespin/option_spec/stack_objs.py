@@ -316,6 +316,7 @@ class SSH(dictobj):
         , "instance": "The Logical id of the instance in the template to ssh into"
         , "auto_scaling_group_name": "The logical id of the auto scaling group that has the instances of interest"
 
+        , "bastion_user": "The user to ssh into the bastion as"
         , "bastion_key_path": "The location on disk of the bastion ssh key"
         , "instance_key_path": "The location on disk of the instance ssh key"
         , "bastion_key_location": "The place where the bastion key may be downloaded from"
@@ -350,13 +351,13 @@ class SSH(dictobj):
 
     def proxy_options(self, bastion_key_path):
         if self.bastion is not NotSpecified:
-            return '-o ProxyCommand="ssh {0}@{1} -W %h:%p -i {2} -o IdentitiesOnly=true"'.format(self.user, self.bastion, bastion_key_path)
+            return '-o ProxyCommand="ssh {0}@{1} -W %h:%p -i {2} -o IdentitiesOnly=true"'.format(self.bastion_user, self.bastion, bastion_key_path)
         else:
             return ""
 
     def ssh_into_bastion(self, extra_args):
         self.chmod_bastion_key_path()
-        command = "ssh {0}@{1} -i {2} -o IdentitiesOnly=true".format(self.user, self.bastion, self.bastion_key_path)
+        command = "ssh {0}@{1} -i {2} -o IdentitiesOnly=true".format(self.bastion_user, self.bastion, self.bastion_key_path)
         parts = shlex.split(command)
         os.execvp(parts[0], parts)
 
