@@ -72,6 +72,18 @@ class Stack(dictobj):
     def __repr__(self):
         return "<Stack({0})>".format(self.name)
 
+    def nested_var_items(self):
+        for key, var in self.vars.items():
+            if type(var) is dict:
+                for k, v in self.vars.items():
+                    yield k, v
+            else:
+                yield key, var
+
+    def nested_vars(self):
+        for _, var in self.nested_var_items():
+            yield var
+
     def confirm_the_deployment(self, start=None):
         if self.confirm_deployment is not NotSpecified:
             self.find_missing_env()
@@ -85,7 +97,7 @@ class Stack(dictobj):
         for key_name in self.build_first:
             yield key_name
 
-        for value in self.vars.values():
+        for value in self.nested_vars():
             if hasattr(value, "stack") and not isinstance(value.stack, six.string_types):
                 yield value.stack.key_name
 
@@ -172,10 +184,11 @@ class Stack(dictobj):
 
         environment = dict([env.pair for env in self.env])
 
-        if any(var.needs_credentials for var in self.vars.values()):
-            self.bespin.set_credentials()
+        for var in self.nested_vars():
+            if hasattr(var, "needs_credentials") and var.needs_credentials:
+                self.bespin.set_credentials()
 
-        for thing in (self.vars.items(), [env.pair for env in self.env]):
+        for thing in (self.nested_var_items(), [env.pair for env in self.env]):
             for var, value in thing:
                 key = "XXX_{0}_XXX".format(var.upper())
                 if key in params:
@@ -218,22 +231,14 @@ class Stack(dictobj):
             raise BadStack("Please don't have both params_json and params_yaml")
 
         # Hack for sanity check
-        def resolve_vars(vrs):
-            for var in vrs.values():
-                if hasattr(var, 'stack') and not isinstance(var.stack, six.string_types) and not var.stack.cloudformation.status.exists:
-                    var._resolved = "YYY_RESOLVED_BY_MISSING_STACK_YYY"
-                elif isinstance(var, dict):
-                    resolve_vars(var)
-        resolve_vars(self.vars)
+        for var in self.nested_vars():
+            if hasattr(var, 'stack') and not isinstance(var.stack, six.string_types) and not var.stack.cloudformation.status.exists:
+                var._resolved = "YYY_RESOLVED_BY_MISSING_STACK_YYY"
 
         matches = re.findall("XXX_[A-Z_]+_XXX", json.dumps(self.params_json_obj))
-        def reset_vars(vrs):
-            for var in vrs.values():
-                if hasattr(var, "_resolved"):
-                    var._resolved = None
-                elif isinstance(var, dict):
-                    reset_vars(var)
-        reset_vars(self.vars)
+        for var in self.nested_vars():
+            if hasattr(var, "_resolved"):
+                var._resolved = None
 
         if matches:
             raise BadStack("Found placeholders in the generated params file", stack=self.name, found=matches)
