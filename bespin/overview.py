@@ -5,7 +5,7 @@ The overview object is responsible for collecting configuration, knowing default
 tasks, and for starting the chosen task.
 """
 
-from bespin.errors import BadConfiguration, BadTask, BadYaml
+from bespin.errors import BadConfiguration, BadTask, BadYaml, BespinError
 from bespin.option_spec.bespin_specs import BespinSpec
 from bespin.option_spec.task_objs import Task
 from bespin.tasks import available_tasks
@@ -201,6 +201,9 @@ class Overview(object):
 
             config_as_dict = configuration.as_dict(ignore=["stacks"])
             val_as_dict = val.as_dict(ignore=["stacks"])
+            if not environment:
+                raise BespinError("No environment was provided", available=list(configuration["environments"].keys()))
+
             environment_as_dict = configuration[["environments", environment]].as_dict()
             stack_environment_as_dict = {}
             if ["stacks", stack, environment] in configuration:
