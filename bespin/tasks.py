@@ -206,7 +206,7 @@ def command_on_instances(overview, configuration, stacks, stack, artifact, **kwa
     proxy = stack.ssh.proxy_options(bastion_key_path)
     extra_kwargs = {}
     if proxy:
-        extra_kwargs = {"proxy": stack.ssh.bastion, "proxy_ssh_key": bastion_key_path, "proxy_ssh_user": stack.ssh.bastion_user}
+        extra_kwargs = {"proxy": stack.ssh.bastion, "proxy_ssh_key": bastion_key_path, "proxy_ssh_user": stack.ssh.user}
 
     SSH(ips, command, stack.ssh.user, instance_key_path, **extra_kwargs).run()
 
