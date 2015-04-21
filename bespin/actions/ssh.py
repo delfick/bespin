@@ -27,7 +27,7 @@ def fingerprint(key):
     return insert_char_every_n_chars(binascii.hexlify(key.get_fingerprint()).decode('utf-8'), ':', 2)
 
 class SSH(object):
-    def __init__(self, ips, command, ssh_user, ssh_key, proxy=None, proxy_ssh_key=None, proxy_ssh_user=None):
+    def __init__(self, ips, command, ssh_user, ssh_key=None, proxy=None, proxy_ssh_key=None, proxy_ssh_user=None):
         self.ips = ips
         self.proxy = proxy
         self.command = command
@@ -42,16 +42,19 @@ class SSH(object):
         defaults['hostkey.verify'] = 'ignore'
 
         with hp.a_temp_file() as fle:
-            if self.proxy:
+            if self.proxy and self.proxy_ssh_key:
                 fle.write("keyfile|{0}|{1}\n".format(self.proxy, self.proxy_ssh_key).encode('utf-8'))
-            fle.write("keyfile|*|{0}\n".format(self.ssh_key).encode('utf-8'))
+            if self.ssh_key:
+                fle.write("keyfile|*|{0}\n".format(self.ssh_key).encode('utf-8'))
             fle.close()
+
+            auth_file = fle.name if (self.ssh_key or self.proxy_ssh_key) else None
 
             if self.proxy:
                 jb = plugins.load_plugin(jumpbox.__file__)
-                jb.init(auth=AuthManager(self.proxy_ssh_user, auth_file=fle.name), defaults=defaults)
+                jb.init(auth=AuthManager(self.proxy_ssh_user, auth_file=auth_file), defaults=defaults)
 
-            login = AuthManager(self.ssh_user, auth_file=fle.name)
+            login = AuthManager(self.ssh_user, auth_file=auth_file)
 
         console = RadSSHConsole()
         connections = [(ip, None) for ip in self.ips]
