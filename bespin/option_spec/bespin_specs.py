@@ -60,6 +60,17 @@ class valid_stack_json(valid_params):
     filetype = json
     params_spec = lambda k: stack_specs.stack_json_spec()
 
+class valid_alerting_system(Spec):
+    def normalise_filled(self, meta, val):
+        if meta.everything.get("alerting_systems", NotSpecified) is NotSpecified:
+            raise BadConfiguration("No alerting systems have been specified")
+
+        available = list(meta.everything["alerting_systems"].keys())
+        if val not in available:
+            raise BadConfiguration("Unknown alerting system, please define it under {alerting_systems}", name=val, available=available)
+
+        return val
+
 class Environment(dictobj):
     fields = ["account_id", "vars", "region"]
 
@@ -141,6 +152,15 @@ class BespinSpec(object):
             )
 
     @memoized_property
+    def alerting_system_spec(self):
+        return create_spec(stack_objs.AlertingSystem
+            , name = formatted(overridden("{_key_name_1}"), formatter=MergedOptionStringFormatter)
+            , type = string_choice_spec(["nagios"])
+            , endpoint = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+            , verify_ssl = defaulted(boolean(), True)
+            )
+
+    @memoized_property
     def stack_spec(self):
         """Spec for each stack"""
         return create_spec(stack_objs.Stack
@@ -203,6 +223,14 @@ class BespinSpec(object):
                     , task_runner = formatted(always_same_spec("{task_runner}"), formatter=MergedOptionStringFormatter)
                     ))
                 )))
+
+            , downtimer_options = optional_spec(dictof(valid_string_spec(valid_alerting_system())
+                , create_spec(stack_objs.DowntimerOptions
+                    , hosts = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                    )
+                ))
+
+            , alerting_systems = optional_spec(dictof(string_spec(), self.alerting_system_spec))
 
             , ssh = optional_spec(create_spec(stack_objs.SSH
                 , validators.deprecated_key("autoscaling_group_id", "Use ``auto_scaling_group_name``")

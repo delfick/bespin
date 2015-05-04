@@ -99,3 +99,12 @@ class MissingSSHKey(BespinError):
 class MissingPlan(BespinError):
     desc = "Couldn't find a plan"
 
+class UnknownDowntimerSystem(BespinError):
+    desc = "Don't know how to handle downtiming this alerting system"
+
+class FailedAlertingSystem(BespinError):
+    desc = "Something failed about this alerting system"
+
+class FailedAlertingSystems(BespinError):
+    desc = "Something failed about our interaction with alerting systems"
+

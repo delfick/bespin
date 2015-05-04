@@ -68,6 +68,9 @@ class Stack(dictobj):
 
         , "command": "Used by the ``command_on_instances`` task as the command to run on the instances"
         , "confirm_deployment": "Options for confirming a deployment"
+
+        , "alerting_systems": "Configuration about alerting systems for downtime_options"
+        , "downtimer_options": "Downtime options for the downtime and undowntime tasks"
         }
 
     def __repr__(self):
@@ -249,6 +252,19 @@ class Stack(dictobj):
         with hp.a_temp_file() as fle:
             json.dump(self.stack_json_obj, open(fle.name, "w"))
             self.cloudformation.validate_template(fle.name)
+
+class DowntimerOptions(dictobj):
+    fields = {
+          "hosts": "A list of globs of hosts to downtime"
+        }
+
+class AlertingSystem(dictobj):
+    fields = {
+          "name": "The name of this system"
+        , "type": "The type of this system"
+        , "endpoint": "Endpoint of the system"
+        , "verify_ssl": "Boolean saying whether to verify ssl"
+        }
 
 class StaticVariable(dictobj):
     fields = ["value", ("needs_credentials", False)]

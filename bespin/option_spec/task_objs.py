@@ -61,7 +61,7 @@ class Task(dictobj):
         if task_action.needs_stacks:
             environment = configuration["bespin"].environment
             if not environment:
-                raise BadOption("Please specify an environment")
+                raise BadOption("Please specify an environment", available=list(configuration.get("environments", {}).keys()))
             if configuration["environments"].get(environment) is None:
                 raise BadOption("No configuration found for specified environment", environment=environment, available=list(configuration["environments"].keys()))
 

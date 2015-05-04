@@ -6,15 +6,20 @@ necessary to provide the task with the object containing all the stacks and/or
 one specific stack object.
 """
 
+from bespin.option_spec.stack_specs import env_spec
 from bespin.amazon.credentials import Credentials
 from bespin.errors import BespinError, BadOption
+from bespin.actions.downtimer import Downtimer
 from bespin.actions.deployer import Deployer
 from bespin.actions.builder import Builder
 from bespin.actions.plan import Plan
 from bespin.actions.ssh import SSH
 
 from input_algorithms.spec_base import NotSpecified
+from input_algorithms import spec_base as sb
+from input_algorithms.meta import Meta
 from textwrap import dedent
+from getpass import getpass
 import itertools
 import logging
 import shlex
@@ -266,3 +271,30 @@ def become(overview, configuration, stacks, stack, artifact, **kwargs):
     print("export AWS_SECURITY_TOKEN={0}".format(os.environ['AWS_SECURITY_TOKEN']))
     print("export AWS_SESSION_TOKEN={0}".format(os.environ['AWS_SESSION_TOKEN']))
 
+@a_task(needs_stack=True)
+def downtime(overview, configuration, stacks, stack, method="downtime", **kwargs):
+    """Downtime this stack in alerting systems"""
+    if stack.downtimer_options is NotSpecified:
+        raise BespinError("Nothing to downtime!")
+
+    env = sb.listof(env_spec()).normalise(Meta({}, []), ["USER", "DURATION", "COMMENT"])
+    missing = [e.env_name for e in env if e.missing]
+    if missing:
+        raise BespinError("Missing environment variables", missing=missing)
+    provided_env = dict(e.pair for e in env)
+
+    author = provided_env["USER"]
+    comment = provided_env["COMMENT"]
+    duration = provided_env["DURATION"]
+
+    downtimer = Downtimer(stack.downtimer_options, dry_run=configuration["bespin"].dry_run)
+    for system, options in stack.alerting_systems.items():
+        downtimer.register_system(system, options)
+
+    getattr(downtimer, method)(duration, author, comment)
+
+@a_task(needs_stack=True)
+def undowntime(overview, configuration, **kwargs):
+    """UnDowntime this stack in alerting systems"""
+    kwargs["method"] = "undowntime"
+    downtime(overview, configuration, **kwargs)
