@@ -62,8 +62,14 @@ class SSH(object):
             keys = {}
             for key in login.agent_connection.get_keys():
                 ident = str(uuid.uuid1())
-                keys[ident] = key
-                login.deferred_keys[ident] = key
+                identity = type("Identity", (object, ), {
+                      "__str__": lambda s: ident
+                    , "get_name": lambda s: key.get_name()
+                    , "asbytes": lambda s: key.asbytes()
+                    , "sign_ssh_data": lambda s, *args, **kwargs: key.sign_ssh_data(*args, **kwargs)
+                    })()
+                keys[identity] = key
+                login.deferred_keys[identity] = key
 
             # Diry dirty hack
             # Waiting for https://github.com/radssh/radssh/pull/10
