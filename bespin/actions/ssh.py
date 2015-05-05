@@ -27,7 +27,7 @@ def fingerprint(key):
     return insert_char_every_n_chars(binascii.hexlify(key.get_fingerprint()).decode('utf-8'), ':', 2)
 
 class SSH(object):
-    def __init__(self, ips, command, ssh_user, ssh_key=None, proxy=None, proxy_ssh_key=None, proxy_ssh_user=None):
+    def __init__(self, ips, command, ssh_user, ssh_key=None, proxy=None, proxy_ssh_key=None, proxy_ssh_user=None, acceptable_return_codes=None):
         self.ips = ips
         self.proxy = proxy
         self.command = command
@@ -35,6 +35,9 @@ class SSH(object):
         self.ssh_user = ssh_user
         self.proxy_ssh_key = proxy_ssh_key
         self.proxy_ssh_user = proxy_ssh_user
+        self.acceptable_return_codes = acceptable_return_codes
+        if self.acceptable_return_codes is None:
+            self.acceptable_return_codes = [0]
 
     def run(self):
         jb = None
@@ -72,7 +75,7 @@ class SSH(object):
 
             error = False
             for host, job in cluster.last_result.items():
-                if not job.completed or job.result.return_code != 0:
+                if not job.completed or job.result.return_code not in self.acceptable_return_codes:
                     print(host, cluster.connections[host])
                     print(job, job.result.status, job.result.stderr)
 
