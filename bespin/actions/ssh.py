@@ -14,6 +14,7 @@ import requests
 import paramiko
 import logging
 import getpass
+import uuid
 import json
 import sys
 import os
@@ -57,7 +58,16 @@ class SSH(object):
                 jb = plugins.load_plugin(jumpbox.__file__)
                 jb.init(auth=AuthManager(self.proxy_ssh_user, auth_file=auth_file), defaults=defaults)
 
-            login = AuthManager(self.ssh_user, auth_file=auth_file)
+            login = AuthManager(self.ssh_user, auth_file=auth_file, include_agent=True)
+            keys = {}
+            for key in login.agent_connection.get_keys():
+                ident = str(uuid.uuid1())
+                keys[ident] = key
+                login.deferred_keys[ident] = key
+
+            # Diry dirty hack
+            # Waiting for https://github.com/radssh/radssh/pull/10
+            paramiko.Agent = type("AgentConnection", (object, ), {"get_keys": lambda *args: keys.keys()})
 
         console = RadSSHConsole()
         connections = [(ip, None) for ip in self.ips]
