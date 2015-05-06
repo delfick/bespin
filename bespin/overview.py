@@ -236,6 +236,44 @@ class Overview(object):
         converter = Converter(convert=convert_stack, convert_path=["stacks", stack])
         configuration.add_converter(converter)
 
+        def convert_passwords(path, val):
+            log.info("Converting %s", path)
+            password = str(path)[len("passwords."):]
+            for key in reversed(sorted(configuration["passwords"].keys())):
+                if key == password:
+                    break
+                elif password.startswith("{0}.".format(key)):
+                    password = key
+            configuration.converters.started(path)
+            environment = configuration['bespin'].environment
+
+            val_as_dict = configuration["passwords"][password].as_dict()
+            if not environment:
+                raise BespinError("No environment was provided", available=list(configuration["environments"].keys()))
+
+            password_environment_as_dict = {}
+            if ["passwords", password, environment] in configuration:
+                password_environment_as_dict = configuration["passwords", password, environment].as_dict()
+
+            base = MergedOptions(dont_prefix=path.configuration.dont_prefix, converters=path.configuration.converters)
+            everything = path.configuration.root().wrapped()
+
+            base.update(val_as_dict)
+            everything[path] = val_as_dict
+
+            base.update(password_environment_as_dict)
+            everything[path].update(password_environment_as_dict)
+
+            for thing in (base, everything):
+                thing["__password__"] = val
+                thing["__environment__"] = configuration["environments"][environment]
+
+            meta = Meta(everything, [("passwords", ""), (password, "")])
+            return bespin_spec.password_spec.normalise(meta, base)
+
+        converter = Converter(convert=convert_passwords, convert_path=["passwords", "*"])
+        configuration.add_converter(converter)
+
         def convert_tasks(path, val):
             spec = bespin_spec.tasks_spec(available_tasks)
             meta = Meta(path.configuration.root(), [('stacks', ""), (stack, ""), ('tasks', "")])
@@ -272,6 +310,7 @@ class Overview(object):
             , "sanity_check"
             , "print_variable"
             , "scale_instances"
+            , "encrypt_password"
             , "publish_artifacts"
             , "sanity_check_plan"
             , "confirm_deployment"

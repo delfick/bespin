@@ -6,6 +6,7 @@ necessary to provide the task with the object containing all the stacks and/or
 one specific stack object.
 """
 
+from bespin.option_spec.bespin_specs import valid_password_key
 from bespin.option_spec.stack_specs import env_spec
 from bespin.amazon.credentials import Credentials
 from bespin.errors import BespinError, BadOption
@@ -22,6 +23,7 @@ from textwrap import dedent
 from getpass import getpass
 import itertools
 import logging
+import base64
 import shlex
 import json
 import os
@@ -298,3 +300,22 @@ def undowntime(overview, configuration, **kwargs):
     """UnDowntime this stack in alerting systems"""
     kwargs["method"] = "undowntime"
     downtime(overview, configuration, **kwargs)
+
+@a_task(needs_credentials=True)
+def encrypt_password(overview, configuration, stack, artifact, **kwargs):
+    """Convert plain text password into crypto text"""
+    if artifact is None:
+        key = stack
+    else:
+        key = artifact
+
+    key = valid_password_key().normalise(Meta(configuration, []), key)
+    password_options = configuration["passwords"][key]
+
+    log.info("Generating a crypto_text for the %s password using %s as the KMS key id", key, password_options.KMSMasterKey)
+    plain_text = getpass("Specify the password: ").encode('utf-8')
+
+    res = configuration["bespin"].credentials.kms.encrypt(password_options.KMSMasterKey, plain_text, password_options.encryption_context, password_options.grant_tokens)
+    log.info("Generated crypto text for %s", key)
+    print(base64.b64encode(res["CiphertextBlob"]).decode('utf-8'))
+

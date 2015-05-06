@@ -13,9 +13,9 @@ from input_algorithms.spec_base import (
 
 from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports, deployment_check
 from bespin.formatter import MergedOptionStringFormatter
+from bespin.errors import BadFile, BadConfiguration
 from bespin.option_spec.bespin_obj import Bespin
 from bespin.helpers import memoized_property
-from bespin.errors import BadFile
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
@@ -68,6 +68,17 @@ class valid_alerting_system(Spec):
         available = list(meta.everything["alerting_systems"].keys())
         if val not in available:
             raise BadConfiguration("Unknown alerting system, please define it under {alerting_systems}", name=val, available=available)
+
+        return val
+
+class valid_password_key(Spec):
+    def normalise_filled(self, meta, val):
+        if meta.everything.get("passwords", NotSpecified) is NotSpecified:
+            raise BadConfiguration("No password options have been specified")
+
+        available = list(meta.everything["passwords"].keys())
+        if val not in available:
+            raise BadConfiguration("Unknown password, please define it under {passwords}", name=val, available=available)
 
         return val
 
@@ -158,6 +169,19 @@ class BespinSpec(object):
             , type = string_choice_spec(["nagios"])
             , endpoint = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , verify_ssl = defaulted(boolean(), True)
+            )
+
+    @memoized_property
+    def password_spec(self):
+        formatted_string = formatted(string_spec(), formatter=MergedOptionStringFormatter)
+        return create_spec(stack_objs.Password
+            , name = formatted(overridden("{_key_name_1}"), formatter=MergedOptionStringFormatter)
+            , bespin = formatted(overridden("{bespin}"), formatter=MergedOptionStringFormatter)
+
+            , KMSMasterKey = required(formatted_string)
+            , encryption_context = optional_spec(dictionary_spec())
+            , grant_tokens = optional_spec(listof(formatted_string))
+            , crypto_text = required(formatted_string)
             )
 
     @memoized_property

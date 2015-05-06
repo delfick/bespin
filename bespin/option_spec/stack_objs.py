@@ -6,7 +6,9 @@ from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
+import binascii
 import logging
+import base64
 import shlex
 import json
 import stat
@@ -165,6 +167,10 @@ class Stack(dictobj):
     @memoized_property
     def sqs(self):
         return self.bespin.credentials.sqs
+
+    @memoized_property
+    def kms(self):
+        return self.bespin.credentials.kms
 
     @memoized_property
     def auto_scaling_group(self):
@@ -450,4 +456,27 @@ class SSH(dictobj):
 
 class S3Address(dictobj):
     fields = ["bucket", "key", "timeout"]
+
+class Password(dictobj):
+    fields = {
+          "bespin": "The bespin object"
+        , "name": "The name of the password"
+        , "grant_tokens": "List of any grant tokens"
+        , "crypto_text": "The encrypted version of the password"
+        , "KMSMasterKey": "The kms master key id"
+        , "encryption_context": "Any encryption context"
+        }
+
+    def setup(self, *args, **kwargs):
+        super(Password, self).setup(*args, **kwargs)
+        self["decrypted"] = self.decrypt
+
+    def decrypt(self):
+        """Decrypt the crypto text"""
+        log.info("Decrypting %s password", self.name)
+        try:
+            crypto_text = base64.b64decode(self.crypto_text)
+        except binascii.Error as error:
+            raise BadOption("Failed to base64 decode crypto_text", crypto_text=self.crypto_text, error=error)
+        return self.bespin.credentials.kms.decrypt(crypto_text, self.encryption_context, self.grant_tokens)["Plaintext"].decode("utf-8")
 

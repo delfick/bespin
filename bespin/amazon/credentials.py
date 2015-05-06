@@ -3,6 +3,7 @@ from bespin.helpers import memoized_property
 from bespin.errors import BespinError
 from bespin.amazon.ec2 import EC2
 from bespin.amazon.sqs import SQS
+from bespin.amazon.kms import KMS
 from bespin.amazon.s3 import S3
 
 import boto.sts
@@ -99,6 +100,11 @@ class Credentials(object):
     def sqs(self):
         self.verify_creds()
         return SQS(self.region)
+
+    @memoized_property
+    def kms(self):
+        self.verify_creds()
+        return KMS(self.region)
 
     @memoized_property
     def iam(self):
