@@ -165,8 +165,8 @@ describe BespinCase, "generate_tar_file":
 
     it "Creates a file with the files given a file list to add":
         with a_temp_file() as temp_tar_file:
-            file1 = ArtifactFile("watermelon", "/app/file1")
-            file2 = ArtifactFile("banana", "/app/file2")
+            file1 = ArtifactFile("watermelon", "/app/file1", "task", mock.Mock(name="task_runner"))
+            file2 = ArtifactFile("banana", "/app/file2", "task", mock.Mock(name="task_runner"))
 
             generate_tar_file(temp_tar_file, [file1, file2])
 
@@ -174,8 +174,8 @@ describe BespinCase, "generate_tar_file":
 
     it "formats environment into the files":
         with a_temp_file() as temp_tar_file:
-            file1 = ArtifactFile("watermelon {ONE}", "/app/file1")
-            file2 = ArtifactFile("ban{TWO}ana", "/app/file2")
+            file1 = ArtifactFile("watermelon {ONE}", "/app/file1", "task", mock.Mock(name="task_runner"))
+            file2 = ArtifactFile("ban{TWO}ana", "/app/file2", "task", mock.Mock(name="task_runner"))
 
             generate_tar_file(temp_tar_file, [file1, file2], {"ONE": "one", "TWO": "two"})
 
@@ -183,8 +183,8 @@ describe BespinCase, "generate_tar_file":
 
     it "works with gz compression":
         with a_temp_file() as temp_tar_file:
-            file1 = ArtifactFile("watermelon {ONE}", "/app/file1")
-            file2 = ArtifactFile("ban{TWO}ana", "/app/file2")
+            file1 = ArtifactFile("watermelon {ONE}", "/app/file1", "task", mock.Mock(name="task_runner"))
+            file2 = ArtifactFile("ban{TWO}ana", "/app/file2", "task", mock.Mock(name="task_runner"))
 
             generate_tar_file(temp_tar_file, [file1, file2], {"ONE": "one", "TWO": "two"}, compression="gz")
             self.assertTarFileContent(temp_tar_file.name, {"app/file1": "watermelon one", "app/file2": "bantwoana"}, "gz")
@@ -192,8 +192,8 @@ describe BespinCase, "generate_tar_file":
     it "works with xz compression":
         if six.PY2: raise nose.SkipTest()
         with a_temp_file() as temp_tar_file:
-            file1 = ArtifactFile("watermelon {ONE}", "/app/file1")
-            file2 = ArtifactFile("ban{TWO}ana", "/app/file2")
+            file1 = ArtifactFile("watermelon {ONE}", "/app/file1", "task", mock.Mock(name="task_runner"))
+            file2 = ArtifactFile("ban{TWO}ana", "/app/file2", "task", mock.Mock(name="task_runner"))
 
             generate_tar_file(temp_tar_file, [file1, file2], {"ONE": "one", "TWO": "two"}, compression="xz")
             self.assertTarFileContent(temp_tar_file.name, {"app/file1": "watermelon one", "app/file2": "bantwoana"}, "xz")

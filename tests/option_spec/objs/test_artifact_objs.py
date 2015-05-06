@@ -51,7 +51,7 @@ describe BespinCase, "ArtifactCollection":
                 key.key = "stuff/{0}".format(k)
                 key.set_contents_from_string(k)
 
-            artifact = mock.Mock(name="artifact", upload_to="s3://blah/stuff/five.tar.gz", history_length=2)
+            artifact = mock.Mock(name="artifact", upload_to="s3://blah/stuff/five.tar.gz", history_length=2, cleanup_prefix="")
             collection = ArtifactCollection({"main": artifact})
             collection.clean_old_artifacts(s3, environment, dry_run=True)
 
@@ -73,7 +73,7 @@ describe BespinCase, "ArtifactCollection":
                 key.set_contents_from_string(k)
                 time.sleep(0.01)
 
-            artifact = mock.Mock(name="artifact", upload_to="s3://blah/stuff/five.tar.gz", history_length=2)
+            artifact = mock.Mock(name="artifact", upload_to="s3://blah/stuff/five.tar.gz", history_length=2, cleanup_prefix="")
             collection = ArtifactCollection({"main": artifact})
             collection.clean_old_artifacts(s3, environment, dry_run=False)
 
@@ -157,7 +157,7 @@ describe BespinCase, "ArtifactFile":
             tar = mock.Mock(name="tar")
             tar.add.side_effect = lambda name, path: called.append((name, open(name).read(), path))
 
-            fle = ArtifactFile(content, path)
+            fle = ArtifactFile(content, path, "task", mock.Mock(name="task_runner"))
             fle.add_to_tar(tar)
 
             self.assertEqual(len(called), 1)
@@ -172,7 +172,7 @@ describe BespinCase, "ArtifactFile":
             tar = mock.Mock(name="tar")
             tar.add.side_effect = lambda name, path: called.append((name, open(name).read(), path))
 
-            fle = ArtifactFile(content, path)
+            fle = ArtifactFile(content, path, "task", mock.Mock(name="task_runner"))
             fle.add_to_tar(tar, {"BLAH": "trees", "STUFF": "dogs"})
 
             self.assertEqual(len(called), 1)
