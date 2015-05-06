@@ -239,11 +239,6 @@ class Overview(object):
         def convert_passwords(path, val):
             log.info("Converting %s", path)
             password = str(path)[len("passwords."):]
-            for key in reversed(sorted(configuration["passwords"].keys())):
-                if key == password:
-                    break
-                elif password.startswith("{0}.".format(key)):
-                    password = key
             configuration.converters.started(path)
             environment = configuration['bespin'].environment
 
@@ -271,8 +266,9 @@ class Overview(object):
             meta = Meta(everything, [("passwords", ""), (password, "")])
             return bespin_spec.password_spec.normalise(meta, base)
 
-        converter = Converter(convert=convert_passwords, convert_path=["passwords", "*"])
-        configuration.add_converter(converter)
+        for key in configuration["passwords"].keys():
+            converter = Converter(convert=convert_passwords, convert_path=["passwords", key])
+            configuration.add_converter(converter)
 
         def convert_tasks(path, val):
             spec = bespin_spec.tasks_spec(available_tasks)
