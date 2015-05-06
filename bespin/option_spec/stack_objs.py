@@ -461,6 +461,8 @@ class Password(dictobj):
     fields = {
           "bespin": "The bespin object"
         , "name": "The name of the password"
+
+        , "vars": "Extra variables"
         , "grant_tokens": "List of any grant tokens"
         , "crypto_text": "The encrypted version of the password"
         , "KMSMasterKey": "The kms master key id"

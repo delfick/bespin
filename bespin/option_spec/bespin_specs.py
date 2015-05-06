@@ -182,6 +182,8 @@ class BespinSpec(object):
             , encryption_context = optional_spec(dictionary_spec())
             , grant_tokens = optional_spec(listof(formatted_string))
             , crypto_text = required(formatted_string)
+
+            , vars = dictof(string_spec(), stack_specs.var_spec(), nested=True)
             )
 
     @memoized_property
