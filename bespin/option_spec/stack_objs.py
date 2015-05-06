@@ -1,4 +1,4 @@
-from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError
+from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError, BadNetScaler
 from bespin.errors import StackDoesntExist, MissingSSHKey
 from bespin.helpers import memoized_property
 from bespin.actions.ssh import RatticSSHKeys
@@ -6,6 +6,7 @@ from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
+import requests
 import binascii
 import logging
 import base64
@@ -73,6 +74,8 @@ class Stack(dictobj):
 
         , "alerting_systems": "Configuration about alerting systems for downtime_options"
         , "downtimer_options": "Downtime options for the downtime and undowntime tasks"
+
+        , "netscaler": "Netscaler declaration"
         }
 
     def __repr__(self):
@@ -481,4 +484,84 @@ class Password(dictobj):
         except binascii.Error as error:
             raise BadOption("Failed to base64 decode crypto_text", crypto_text=self.crypto_text, error=error)
         return self.bespin.credentials.kms.decrypt(crypto_text, self.encryption_context, self.grant_tokens)["Plaintext"].decode("utf-8")
+
+class NetScaler(dictobj):
+    fields = {
+          "host": "The address of the netscaler"
+        , "username": "The username"
+        , "password": "The password"
+        , "verify_ssl": "Whether to verify ssl connections"
+        , ("nitro_api_version", "v1"): "Defaults to v1"
+        }
+
+    @property
+    def sessionid(self):
+        return getattr(self, "_sessionid", "")
+
+    @sessionid.setter
+    def sessionid(self, val):
+        self._sessionid = val
+
+    def __enter__(self):
+        self.login()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.logout()
+
+    def url(self, part):
+        return "{0}/nitro/{1}/config/{2}".format(self.host, self.nitro_api_version, part)
+
+    @property
+    def headers(self):
+        headers = {"Cookie": "sessionid=", "ContentType": "application/x-www-form-urlencoded"}
+        if self.sessionid:
+            headers["Cookie"] = "sessionid={0}".format(self.sessionid)
+            headers["Set-Cookie"] = "NITRO_AUTH_TOKEN={0}".format(self.sessionid)
+        return headers
+
+    def login(self):
+        """Log into the netscaler and set self.sessionid"""
+        password = self.password
+        while callable(password):
+            password = password()
+        log.info("Logging into the netscaler")
+        res = self.post("/login", {"login": {"username": self.username, "password": password}})
+        self.sessionid = res["sessionid"]
+
+    def logout(self):
+        """Log out of the netscaler and reset self.sessionid"""
+        try:
+            log.info("Logging out of the netscaler")
+            self.post("/logout", {"logout": {}})
+        except BadNetScaler as error:
+            log.error("Failed to logout of the netscaler: %s", error)
+        self.sessionid = ""
+
+    def enable_server(self, server):
+        """Enable a particular server in the netscaler"""
+        log.info("Enabling %s in netscaler", server)
+        return self.post("/server", {"server": {"name": server}, "params": {"action": "enable"}})
+
+    def disable_server(self, server):
+        """Disable a particular server in the netscaler"""
+        log.info("Disabling %s in netscaler", server)
+        return self.post("/server", {"server": {"name": server}, "params": {"action": "disable"}})
+
+    def post(self, url, payload):
+        """Post a message to the netscaler"""
+        try:
+            res = requests.post(self.url(url), {"object": json.dumps(payload)}, headers=self.headers, verify=self.verify_ssl)
+        except requests.exceptions.HTTPError as error:
+            raise BadNetScaler("Failed to talk to the netscaler", error=error, status_code=getattr(error, "status_code", ""))
+
+        try:
+            content = json.loads(res.content.decode('utf-8'))
+        except (ValueError, TypeError) as error:
+            raise BadNetScaler("Failed to parse netscaler response", error=error)
+
+        if content["errorcode"] != 0:
+            raise BadNetScaler("Netscaler says no", msg=content["message"], errorcode=content["errorcode"])
+
+        return content
 

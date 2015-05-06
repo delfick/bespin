@@ -187,6 +187,16 @@ class BespinSpec(object):
             )
 
     @memoized_property
+    def netscaler_spec(self):
+        return create_spec(stack_objs.NetScaler
+            , host = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+            , username = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+            , password = delayed(required(formatted(string_spec(), formatter=MergedOptionStringFormatter)))
+            , verify_ssl = defaulted(boolean(), True)
+            , nitro_api_version = defaulted(formatted(string_spec(), formatter=MergedOptionStringFormatter), "v1")
+            )
+
+    @memoized_property
     def stack_spec(self):
         """Spec for each stack"""
         return create_spec(stack_objs.Stack
@@ -228,6 +238,8 @@ class BespinSpec(object):
             , artifact_retention_after_deployment = defaulted(boolean(), False)
 
             , command = optional_spec(string_spec())
+
+            , netscaler = optional_spec(self.netscaler_spec)
 
             , scaling_options = create_spec(ScalingOptions
                 , highest_min = defaulted(integer_spec(), 2)

@@ -6,10 +6,10 @@ necessary to provide the task with the object containing all the stacks and/or
 one specific stack object.
 """
 
+from bespin.errors import BespinError, BadOption, ProgrammerError
 from bespin.option_spec.bespin_specs import valid_password_key
 from bespin.option_spec.stack_specs import env_spec
 from bespin.amazon.credentials import Credentials
-from bespin.errors import BespinError, BadOption
 from bespin.actions.downtimer import Downtimer
 from bespin.actions.deployer import Deployer
 from bespin.actions.builder import Builder
@@ -318,4 +318,28 @@ def encrypt_password(overview, configuration, stack, artifact, **kwargs):
     res = configuration["bespin"].credentials.kms.encrypt(password_options.KMSMasterKey, plain_text, password_options.encryption_context, password_options.grant_tokens)
     log.info("Generated crypto text for %s", key)
     print(base64.b64encode(res["CiphertextBlob"]).decode('utf-8'))
+
+def action_server_in_netscaler(overview, configuration, stack, artifact, server=NotSpecified, action=NotSpecified, **kwargs):
+    if action is NotSpecified:
+        raise ProgrammerError("Action needs to be specified")
+    if action not in ("enable", "disable"):
+        raise ProgrammerError("Action needs to be 'enable' or 'disable'")
+
+    if server is NotSpecified:
+        if artifact is None:
+            server = stack
+        else:
+            server = artifact
+
+    getattr(configuration["netscaler"], "{0}_server")(server)
+
+@a_task(needs_credentials=True)
+def enable_server_in_netscaler(*args, **kwargs):
+    kwargs["action"] = "enable"
+    return action_server_in_netscaler(*args, **kwargs)
+
+@a_task(needs_credentials=True)
+def disable_server_in_netscaler(*args, **kwargs):
+    kwargs["action"] = "enable"
+    return action_server_in_netscaler(*args, **kwargs)
 

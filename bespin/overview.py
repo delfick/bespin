@@ -187,6 +187,15 @@ class Overview(object):
         plans_converter = Converter(convert=convert_plans, convert_path=["plans"])
         configuration.add_converter(plans_converter)
 
+        def convert_netscaler(path, val):
+            log.info("Converting %s", path)
+            meta = Meta(path.configuration, [("netscaler", "")])
+            configuration.converters.started(path)
+            return bespin_spec.netscaler_spec.normalise(meta, val)
+
+        converter = Converter(convert=convert_netscaler, convert_path=["netscaler"])
+        configuration.add_converter(converter)
+
         if errors:
             raise BadConfiguration("Some of the configuration was broken", _errors=errors)
 
@@ -283,13 +292,13 @@ class Overview(object):
     ###   TASKS
     ########################
 
-    def default_tasks(self):
+    def default_tasks(self, has_netscaler=False):
         """Return default tasks"""
         def t(name, description=None, action=None, **options):
             if not action:
                 action = name
             return (name, Task(action, description=description, options=options, label="Bespin"))
-        return dict(t(name) for name in [
+        base = dict(t(name) for name in [
               "tail"
             , "show"
             , "params"
@@ -315,13 +324,17 @@ class Overview(object):
             , "resume_cloudformation_actions"
             , "suspend_cloudformation_actions"
             ])
+        if has_netscaler:
+            for name, task in (t("enable_server_in_netscaler"), t("disable_server_in_netscaler")):
+                base[name] = task
+        return base
 
     def find_tasks(self, configuration=None, overrides=None):
         """Find the custom tasks and record the associated stack with each task"""
         if configuration is None:
             configuration = self.configuration
 
-        tasks = self.default_tasks()
+        tasks = self.default_tasks(has_netscaler="netscaler" in configuration)
         for stack in list(configuration["stacks"]):
             path = configuration.path(["stacks", stack, "tasks"], joined="stacks.{0}.tasks".format(stack))
             nxt = configuration.get(path, {})

@@ -108,3 +108,6 @@ class FailedAlertingSystem(BespinError):
 class FailedAlertingSystems(BespinError):
     desc = "Something failed about our interaction with alerting systems"
 
+class BadNetScaler(BespinError):
+    desc = "Something went wrong with the netscaler"
+
