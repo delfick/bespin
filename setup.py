@@ -14,6 +14,7 @@ setup(
 
       , "six"
       , "pytz"
+      , "slacker"
       , "humanize"
       , "argparse"
       , "requests"
