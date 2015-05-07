@@ -45,6 +45,7 @@ class SSH(object):
         defaults = config.load_default_settings()
         defaults['hostkey.verify'] = 'ignore'
 
+        original_paramiko_agent = paramiko.Agent
         with hp.a_temp_file() as fle:
             if self.proxy and self.proxy_ssh_key:
                 fle.write("keyfile|{0}|{1}\n".format(self.proxy, self.proxy_ssh_key).encode('utf-8'))
@@ -75,35 +76,38 @@ class SSH(object):
             # Waiting for https://github.com/radssh/radssh/pull/10
             paramiko.Agent = type("AgentConnection", (object, ), {"get_keys": lambda *args: keys.keys()})
 
-        console = RadSSHConsole()
-        connections = [(ip, None) for ip in self.ips]
-        if jb:
-            jb.add_jumpbox(self.proxy)
-            connections = list((ip, socket) for _, ip, socket in jb.do_jumpbox_connections(self.proxy, self.ips))
-
-        cluster = None
         try:
-            log.info("Connecting")
-            cluster = Cluster(connections, login, console=console, defaults=defaults)
-            for host, status in cluster.status():
-                print('{0:14s} : {1}'.format(str(host), status))
-            cluster.run_command(self.command)
+            console = RadSSHConsole()
+            connections = [(ip, None) for ip in self.ips]
+            if jb:
+                jb.add_jumpbox(self.proxy)
+                connections = list((ip, socket) for _, ip, socket in jb.do_jumpbox_connections(self.proxy, self.ips))
 
-            error = False
-            for host, job in cluster.last_result.items():
-                if not job.completed or job.result.return_code not in self.acceptable_return_codes:
-                    print(host, cluster.connections[host])
-                    print(job, job.result.status, job.result.stderr)
+            cluster = None
+            try:
+                log.info("Connecting")
+                cluster = Cluster(connections, login, console=console, defaults=defaults)
+                for host, status in cluster.status():
+                    print('{0:14s} : {1}'.format(str(host), status))
+                cluster.run_command(self.command)
 
-                    log.error('%s -%s', host, cluster.connections[host])
-                    log.error('%s, %s, %s', job, job.result.status, job.result.stderr)
-                    error = True
+                error = False
+                for host, job in cluster.last_result.items():
+                    if not job.completed or job.result.return_code not in self.acceptable_return_codes:
+                        print(host, cluster.connections[host])
+                        print(job, job.result.status, job.result.stderr)
 
-            if error:
-                raise BespinError("Failed to run the commands")
+                        log.error('%s -%s', host, cluster.connections[host])
+                        log.error('%s, %s, %s', job, job.result.status, job.result.stderr)
+                        error = True
+
+                if error:
+                    raise BespinError("Failed to run the commands")
+            finally:
+                if cluster:
+                    cluster.close_connections()
         finally:
-            if cluster:
-                cluster.close_connections()
+            paramiko.Agent = original_paramiko_agent
 
 class RatticSSHKeys(object):
     def __init__(self, host, bastion_location, bastion_path, instance_location, instance_path):
