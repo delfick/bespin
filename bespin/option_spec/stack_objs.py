@@ -6,6 +6,7 @@ from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
+from pyrelic import Client as NewrelicClient
 import requests
 import binascii
 import logging
@@ -75,6 +76,7 @@ class Stack(dictobj):
         , "alerting_systems": "Configuration about alerting systems for downtime_options"
         , "downtimer_options": "Downtime options for the downtime and undowntime tasks"
 
+        , "newrelic": "Newrelic declaration"
         , "netscaler": "Netscaler declaration"
         }
 
@@ -152,6 +154,10 @@ class Stack(dictobj):
         missing = [e.env_name for e in getattr(self, key) if e.missing]
         if missing:
             raise BadOption("Some environment variables aren't in the current environment", missing=missing)
+
+        if key == "env" and self.newrelic is not NotSpecified:
+            missing = [e.env_name for e in self.newrelic.env if e.missing]
+            raise BadOption("Some newrelic environment variables aren't in the current environment", missing=missing)
 
     def find_missing_build_env(self):
         self.find_missing_env("build_env")
@@ -564,4 +570,34 @@ class NetScaler(dictobj):
             raise BadNetScaler("Netscaler says no", msg=content["message"], errorcode=content["errorcode"])
 
         return content
+
+class NewRelic(dictobj):
+    fields = {
+          "api_key": "The api key to newrelic"
+        , "account_id": "The account id"
+        , "application_id": "The application id"
+
+        , "env": "Required environment variables"
+        , "deployed_version": "Deployed version"
+        }
+
+    @property
+    def client(self):
+        if getattr(self, "_client", None) is None:
+            api_key = self.api_key
+            if callable(api_key):
+                api_key = api_key()
+            self._client = NewrelicClient(account_id=self.account_id, api_key=api_key)
+        return self._client
+
+    def note_deployment(self):
+        """Note a deployment"""
+        provided_env = dict(e.pair for e in self.env)
+        version = self.deployed_version.format(**provided_env)
+        self.client.notify_deployment(application_id=self.application_id, description="Deployed {0}".format(version), revision=version)
+
+    def throughput(self):
+        """Get the current throughput"""
+        vals = self.client.get_threshold_values(self.application_id)
+        return int([t.metric_value for t in vals if t.name == 'Throughput'][0])
 

@@ -262,6 +262,15 @@ class BespinSpec(object):
                     ))
                 )))
 
+            , newrelic = optional_spec(create_spec(stack_objs.NewRelic
+                , api_key = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , account_id = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , application_id = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+
+                , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
+                , deployed_version = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                ))
+
             , downtimer_options = optional_spec(dictof(valid_string_spec(valid_alerting_system())
                 , create_spec(stack_objs.DowntimerOptions
                     , hosts = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))
