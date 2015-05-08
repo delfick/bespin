@@ -4,6 +4,7 @@ from bespin.helpers import memoized_property
 from bespin.actions.ssh import RatticSSHKeys
 from bespin import helpers as hp
 
+from ultra_rest_client import RestApiClient as UltraRestApiClient
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
 from pyrelic import Client as NewrelicClient
@@ -13,6 +14,7 @@ import logging
 import base64
 import shlex
 import json
+import time
 import stat
 import six
 import os
@@ -76,6 +78,7 @@ class Stack(dictobj):
         , "alerting_systems": "Configuration about alerting systems for downtime_options"
         , "downtimer_options": "Downtime options for the downtime and undowntime tasks"
 
+        , "dns": "Dns options"
         , "newrelic": "Newrelic declaration"
         , "netscaler": "Netscaler declaration"
         }
@@ -600,4 +603,75 @@ class NewRelic(dictobj):
         """Get the current throughput"""
         vals = self.client.get_threshold_values(self.application_id)
         return int([t.metric_value for t in vals if t.name == 'Throughput'][0])
+
+class DNS(dictobj):
+    fields = {
+          "vars": "arbitrary variables"
+        , "providers": "Options for dns providers"
+        , "sites": "The sites we change dns for"
+        }
+
+class UltraDNSProvider(dictobj):
+    fields = {
+          "username": "The username"
+        , "password": "The password"
+        , ("provider_type", "ultradns"): "The type of provider"
+        }
+
+    @property
+    def client(self):
+        if getattr(self, "_client", None) is None:
+            password = self.password
+            if callable(password):
+                password = password()
+            self._client = UltraRestApiClient(self.username, password, False, "restapi.ultradns.com")
+        return self._client
+
+class UltraDNSSite(dictobj):
+    fields = {
+          "name": "The name of the site"
+        , "provider": "A DNS provider object"
+        , "record_type": "The type of record to edit"
+        , "zone": "The dns zone to edit"
+        , "domain": "The domain to edit"
+        , "environments": "The different values for our environments"
+        }
+
+    def __lt__(self, other):
+        return self.domain < other.domain
+
+    @property
+    def rrset(self):
+        """Get rrset information"""
+        rrset = self.provider().client.get_rrsets(self.zone, {"owner": self.domain})
+        if rrset.get("errorMessage"):
+            raise BespinError("Failed to get record set", error=rrset["errorMessage"], error_code=rrset["errorCode"])
+
+        found = rrset["rrSets"]
+        if len(found) > 1:
+            found = []
+            for record in rrset["rrSets"]:
+                if record["ownerName"] == self.domain and record["rrtype"].startswith("{0} ".format(self.record_type)):
+                    found.append(record)
+
+        if len(found) > 1:
+            raise BespinError("Got multiple record sets", domain=self.domain, got=found)
+        return found[0]
+
+    @property
+    def current_value(self):
+        """Get the current value"""
+        rrset = self.rrset
+        rrtype = rrset["rrtype"]
+        rrtype = rrtype[:rrtype.find("(")].strip()
+        return rrtype, rrset["rdata"]
+
+    def switch_to(self, environment):
+        """Switch to this environment"""
+        provider = self.provider()
+        rdata = self.environments[environment]
+        if len(rdata) is 1:
+            rdata = rdata[0]
+        log.info("Switching %s to %s via %s", self.domain, rdata, provider.provider_type)
+        provider.client.edit_rrset_rdata(self.zone, self.record_type, self.domain, rdata)
 

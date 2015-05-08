@@ -238,6 +238,7 @@ class Overview(object):
                 thing["environment"] = environment
                 thing["configuration"] = configuration
                 thing["__stack__"] = val
+                thing["__stack_name__"] = stack
 
             meta = Meta(everything, [("stacks", ""), (stack, "")])
             return bespin_spec.stack_spec.normalise(meta, base)
@@ -321,6 +322,7 @@ class Overview(object):
             , "confirm_deployment"
             , "clean_old_artifacts"
             , "command_on_instances"
+            , "switch_dns_traffic_to"
             , "resume_cloudformation_actions"
             , "suspend_cloudformation_actions"
             ])

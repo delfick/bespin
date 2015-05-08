@@ -335,11 +335,56 @@ def action_server_in_netscaler(overview, configuration, stack, artifact, server=
 
 @a_task(needs_credentials=True)
 def enable_server_in_netscaler(*args, **kwargs):
+    """Disable a server in the netscaler"""
     kwargs["action"] = "enable"
     return action_server_in_netscaler(*args, **kwargs)
 
 @a_task(needs_credentials=True)
 def disable_server_in_netscaler(*args, **kwargs):
+    """Enable a server in the netscaler"""
     kwargs["action"] = "enable"
     return action_server_in_netscaler(*args, **kwargs)
+
+@a_task(needs_credentials=True, needs_stack=True)
+def switch_dns_traffic_to(overview, configuration, stacks, stack, artifact, site=NotSpecified, **kwargs):
+    """Switch dns traffic to some environment"""
+    if stack.dns is NotSpecified:
+        raise BespinError("No dns options are specified!")
+
+    if site is NotSpecified and artifact not in ("", None, NotSpecified):
+        site = artifact
+    if site is NotSpecified or not site:
+        site = None
+
+    available = list(stack.dns.sites.keys())
+    if site:
+        if site not in available:
+            raise BespinError("Have no dns options for specified site", available=available, wanted=site)
+        sites = [site]
+    else:
+        sites = available
+    sites = [stack.dns.sites[s] for s in sites]
+
+    environment = configuration["bespin"].environment
+    errors = []
+    for site in sorted(sites):
+        if environment not in site.environments:
+            errors.append(BespinError("Site doesn't have specified environment", site=site.name, wanted=environment, available=list(stack.environments.keys())))
+
+        try:
+            rtype, rdata = site.current_value
+            if rtype != site.record_type:
+                errors.append(BespinError("Site is a different record type!", recorded_as=rtype, wanted=site.record_type))
+
+            log.info("%s is currently %s (%s)", site.domain, rdata, rtype)
+        except BespinError as error:
+            errors.append(error)
+            continue
+
+    if errors:
+        raise BespinError("Prechecks failed", errors=errors)
+
+    log.info("Switching traffic to %s\tsites=%s", environment, [site.domain for site in sites])
+    for site in sorted(sites):
+        site.switch_to(configuration["bespin"].environment)
 

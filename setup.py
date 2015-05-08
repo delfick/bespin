@@ -26,6 +26,7 @@ setup(
       , "pyrelic==0.7.3"
       , "boto==2.38.0"
       , "pyYaml==3.10"
+      , "ultra_rest_client==0.1.2"
       , "rainbow_logging_handler==2.2.2"
       , "FileChunkIO==1.6"
       ]

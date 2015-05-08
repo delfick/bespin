@@ -5,14 +5,18 @@ The idea is that these understand the conditions around representation of the
 options.
 """
 
-from bespin.option_spec.stack_objs import StaticVariable, DynamicVariable, Environment, Skipper, S3Address
+from bespin.option_spec.stack_objs import (
+      StaticVariable, DynamicVariable, Environment, Skipper, S3Address
+    , UltraDNSSite, UltraDNSProvider
+    )
 from bespin.option_spec.artifact_objs import ArtifactCommand
 from bespin.option_spec.artifact_objs import ArtifactPath
 from bespin.formatter import MergedOptionStringFormatter
-from bespin.errors import BadSpecValue
+from bespin.errors import BadSpecValue, BadConfiguration
+from bespin.helpers import memoized_property
 
 from input_algorithms.many_item_spec import many_item_formatted_spec
-from input_algorithms.spec_base import NotSpecified
+from input_algorithms.spec_base import NotSpecified, Spec
 from input_algorithms import spec_base as sb
 from six.moves.urllib.parse import urlparse
 
@@ -95,6 +99,59 @@ class s3_address(many_item_formatted_spec):
         if not path.startswith('/'):
             path  = '/'
         return S3Address(domain, path, timeout)
+
+class dns_site_spec(Spec):
+    def normalise_filled(self, meta, val):
+        val = sb.dictionary_spec().normalise(meta, val)
+        provider = val["provider"]
+        available = meta.everything["__stack__"]["dns"]["providers"]
+        if provider not in available.keys():
+            raise BadConfiguration("Specified provider isn't defined in {dns.providers}", available=list(available.keys()), wanted=provider, meta=meta)
+
+        val["provider"] = lambda: meta.everything["stacks"][meta.everything["__stack_name__"]]["dns"]["providers"][provider]
+        if available[provider]["provider_type"] == "ultradns":
+            return self.ultradns_site_spec(val).normalise(meta, val)
+        else:
+            raise BadConfiguration("Unknown dns provider type", available=["ultradns"], wanted=val["provider"].provider_type, meta=meta)
+
+    def ultradns_site_spec(self, this):
+        formatted_string = sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)
+        return sb.create_spec(UltraDNSSite
+            , name = sb.formatted(sb.overridden("{_key_name_1}"), formatter=MergedOptionStringFormatter)
+            , provider = sb.any_spec()
+            , record_type = sb.required(formatted_string)
+            , zone = sb.required(formatted_string)
+            , domain = sb.required(formatted_string)
+            , environments = sb.required(self.dns_environment_spec(this))
+            )
+
+    def dns_environment_spec(self, this):
+        formatted_string = sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)
+        class spec(Spec):
+            def normalise_filled(s, meta, val):
+                meta.everything = meta.everything.wrapped()
+                meta.everything["__site__"] = this
+                return sb.dictof(sb.string_spec(), sb.listof(formatted_string)).normalise(meta, val)
+        return spec()
+
+class dns_provider_spec(Spec):
+    def normalise_filled(self, meta, val):
+        val = sb.dictionary_spec().normalise(meta, val)
+        provider_type = val["provider_type"]
+        available = ["ultradns"]
+        if provider_type not in available:
+            raise BadConfiguration("Specified provider type isn't supported", supported=available, wanted=provider_type, meta=meta)
+
+        if provider_type == "ultradns":
+            return self.ultradns_provider_spec.normalise(meta, val)
+
+    @memoized_property
+    def ultradns_provider_spec(self):
+        return sb.create_spec(UltraDNSProvider
+            , provider_type = sb.required(sb.string_spec())
+            , username = sb.required(formatted_string)
+            , password = sb.required(formatted_string)
+            )
 
 formatted_string = sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)
 
