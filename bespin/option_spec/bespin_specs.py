@@ -8,7 +8,7 @@ The specifications are responsible for sanitation, validation and normalisation.
 from input_algorithms.spec_base import (
       formatted, defaulted, any_spec, dictionary_spec, dictof, listof, required, delayed
     , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec, or_spec, container_spec
-    , valid_string_spec, create_spec, string_choice_spec, Spec, always_same_spec
+    , valid_string_spec, create_spec, string_choice_spec, Spec, always_same_spec, match_spec
     )
 
 from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports, deployment_check
@@ -82,6 +82,14 @@ class valid_password_key(Spec):
 
         return val
 
+class copy_environment_spec(Spec):
+    def normalise_filled(self, meta, val):
+        available = list(meta.everything["environments"].keys())
+        if val not in available:
+            raise BadConfiguration("Trying to copy an environment that doesn't exist", available=available, wanted=val)
+
+        return BespinSpec().environment_spec.normalise(meta, meta.everything["environments"].as_dict()[val])
+
 class Environment(dictobj):
     fields = ["account_id", "vars", "region"]
 
@@ -127,11 +135,16 @@ class BespinSpec(object):
         """Spec for each environment options"""
         return dictof(
               string_spec()
-            , create_spec(Environment
-                , account_id = required(or_spec(string_spec(), valid_string_spec(validators.regexed("\d+"))))
-                , region = defaulted(string_spec(), "ap-southeast-2")
-                , vars = dictionary_spec()
-                )
+            , match_spec((str, copy_environment_spec()), (dict, self.environment_spec))
+            )
+
+    @memoized_property
+    def environment_spec(self):
+        """Spec for each environment"""
+        return create_spec(Environment
+            , account_id = required(or_spec(string_spec(), valid_string_spec(validators.regexed("\d+"))))
+            , region = defaulted(string_spec(), "ap-southeast-2")
+            , vars = dictionary_spec()
             )
 
     @memoized_property
