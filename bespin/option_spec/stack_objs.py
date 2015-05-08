@@ -14,7 +14,6 @@ import logging
 import base64
 import shlex
 import json
-import time
 import stat
 import six
 import os
@@ -656,6 +655,8 @@ class UltraDNSSite(dictobj):
 
         if len(found) > 1:
             raise BespinError("Got multiple record sets", domain=self.domain, got=found)
+        if not found:
+            raise BespinError("Found no record sets", domain=self.domain)
         return found[0]
 
     @property
@@ -666,12 +667,13 @@ class UltraDNSSite(dictobj):
         rrtype = rrtype[:rrtype.find("(")].strip()
         return rrtype, rrset["rdata"]
 
-    def switch_to(self, environment):
+    def switch_to(self, environment, dry_run=False):
         """Switch to this environment"""
         provider = self.provider()
         rdata = self.environments[environment]
         if len(rdata) is 1:
             rdata = rdata[0]
-        log.info("Switching %s to %s via %s", self.domain, rdata, provider.provider_type)
-        provider.client.edit_rrset_rdata(self.zone, self.record_type, self.domain, rdata)
+        log.info("%sSwitching %s to %s via %s", "DRYRUN: " if dry_run else "", self.domain, rdata, provider.provider_type)
+        if not dry_run:
+            provider.client.edit_rrset_rdata(self.zone, self.record_type, self.domain, rdata)
 

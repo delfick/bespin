@@ -382,9 +382,9 @@ def switch_dns_traffic_to(overview, configuration, stacks, stack, artifact, site
             continue
 
     if errors:
-        raise BespinError("Prechecks failed", errors=errors)
+        raise BespinError("Prechecks failed", _errors=errors)
 
     log.info("Switching traffic to %s\tsites=%s", environment, [site.domain for site in sites])
     for site in sorted(sites):
-        site.switch_to(configuration["bespin"].environment)
+        site.switch_to(configuration["bespin"].environment, dry_run=configuration["bespin"].dry_run)
 
