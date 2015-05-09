@@ -533,7 +533,7 @@ class NetScaler(dictobj):
         password = self.password
         while callable(password):
             password = password()
-        log.info("Logging into the netscaler")
+        log.info("Logging into the netscaler at %s", self.host)
         res = self.post("/login", {"login": {"username": self.username, "password": password}})
         self.sessionid = res["sessionid"]
 
@@ -556,10 +556,35 @@ class NetScaler(dictobj):
         log.info("Disabling %s in netscaler", server)
         return self.post("/server", {"server": {"name": server}, "params": {"action": "disable"}})
 
+    def bind_policy(self, policy, vserver, weight):
+        """Bind a policy to a vserver"""
+        log.info("Binding %s to %s with weight %s", policy, vserver, weight)
+        return self.put("/lbvserver_service_binding", {"lbvserver_service_binding": {"servicename": policy, "name": vserver, "weight": weight}, "params": {"action": "bind"}})
+
+    def block_policy(self, policy, vserver):
+        """Block a policy to a service group"""
+        return self.put("/lbvserver_service_binding", {"lbvserver_service_binding": {"servicename": policy, "name": vserver}, "params": {"action": "block"}})
+
+    def policies(self, vserver):
+        """Return information about policies attached to the vserver"""
+        return self.get("/lbvserver_service_binding/{0}".format(vserver))
+
     def post(self, url, payload):
-        """Post a message to the netscaler"""
+        return self.interact("post", url, payload)
+
+    def put(self, url, payload):
+        return self.interact("post", url, payload)
+
+    def put(self, url):
+        return self.interact("get", url)
+
+    def interact(self, method, url, payload=None):
+        """interact with the netscaler"""
         try:
-            res = requests.post(self.url(url), {"object": json.dumps(payload)}, headers=self.headers, verify=self.verify_ssl)
+            data = None
+            if payload:
+                data = {"object": json.dumps(payload)}
+            res = getattr(requests, method)(self.url(url), data=data, headers=self.headers, verify=self.verify_ssl)
         except requests.exceptions.HTTPError as error:
             raise BadNetScaler("Failed to talk to the netscaler", error=error, status_code=getattr(error, "status_code", ""))
 
