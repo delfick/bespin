@@ -10,6 +10,7 @@ from bespin.option_spec.bespin_specs import BespinSpec
 from bespin.option_spec.task_objs import Task
 from bespin.tasks import available_tasks
 
+from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
 from option_merge import MergedOptions
 from input_algorithms.meta import Meta
@@ -25,10 +26,29 @@ class Overview(object):
         self.logging_handler = logging_handler
 
         self.configuration = self.collect_configuration(configuration_file)
+        self.configuration_file = configuration_file
         self.configuration_folder = os.path.dirname(os.path.abspath(configuration_file))
         self.setup_logging_theme()
 
-    def start(self, cli_args, available_tasks=None):
+    def clone(self, new_bespin_options=None):
+        new_bespin = self.configuration["bespin"].clone()
+        if new_bespin_options:
+            new_bespin.update(new_bespin_options)
+
+        class NewOverview(Overview):
+            def __init__(s):
+                s.logging_handler = self.logging_handler
+                s.configuration = self.collect_configuration(self.configuration_file)
+                s.configuration_file = self.configuration_file
+                s.configuration_folder = self.configuration_folder
+
+        new_overview = NewOverview()
+        new_cli_args = dict(self.configuration["cli_args"].items())
+        new_cli_args["bespin"] = new_bespin
+        new_overview.prepare(new_cli_args)
+        return new_overview
+
+    def prepare(self, cli_args, available_tasks=None):
         """Do the bespin stuff"""
         if "stacks" not in self.configuration:
             raise BadConfiguration("Didn't find any stacks in the configuration")
@@ -48,6 +68,8 @@ class Overview(object):
         self.configuration.update(
             { "$@": bespin.get("extra", "")
             , "bespin": bespin
+            , "overview": self
+            , "cli_args": cli_args
             , "command": cli_args['command']
             , "config_root": self.configuration_folder
             , "environment": environment
@@ -67,10 +89,12 @@ class Overview(object):
         for importer in bespin.extra_imports:
             importer.do_import(bespin, task_overrides)
         tasks = self.find_tasks(overrides=task_overrides)
-
-        task = bespin["chosen_task"]
         info["tasks"] = tasks
-        task_runner(task)
+
+    def start(self, task=NotSpecified):
+        """Start the chosen task"""
+        task = self.configuration["bespin"].chosen_task if task is NotSpecified else task
+        self.configuration["task_runner"](task)
 
     ########################
     ###   THEME

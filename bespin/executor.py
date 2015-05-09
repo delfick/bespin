@@ -221,7 +221,9 @@ def main(argv=None):
             args, cli_args = CliParser().interpret_args(argv)
             handler = setup_logging(verbose=args.verbose, silent=args.silent, debug=args.debug)
             set_boto_useragent()
-            Overview(configuration_file=args.bespin_config.name, logging_handler=handler).start(cli_args)
+            overview = Overview(configuration_file=args.bespin_config.name, logging_handler=handler)
+            overview.prepare(cli_args)
+            overview.start()
         except KeyboardInterrupt:
             if CliParser().parse_args(argv)[0].debug:
                 raise
