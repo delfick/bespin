@@ -35,6 +35,10 @@ class Overview(object):
         if new_bespin_options:
             new_bespin.update(new_bespin_options)
 
+        new_bespin.set_credentials = self.configuration["bespin"].set_credentials
+        if hasattr(self.configuration["bespin"], "credentials"):
+            new_bespin.credentials = self.configuration["bespin"].credentials
+
         class NewOverview(Overview):
             def __init__(s):
                 s.logging_handler = self.logging_handler
