@@ -257,7 +257,7 @@ class BespinSpec(object):
             , dns = optional_spec(stack_specs.dns_spec(create_spec(stack_objs.DNS
                 , vars = dictof(string_spec(), formatted(string_spec(), formatter=MergedOptionStringFormatter), nested=True)
                 , providers = dictof(string_spec(), stack_specs.dns_provider_spec())
-                , sites = dictof(string_spec(), stack_specs.dns_site_spec())
+                , sites = delayed(dictof(string_spec(), stack_specs.dns_site_spec()))
                 )))
 
             , scaling_options = create_spec(ScalingOptions

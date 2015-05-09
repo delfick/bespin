@@ -356,7 +356,7 @@ def switch_dns_traffic_to(overview, configuration, stacks, stack, artifact, site
     if site is NotSpecified or not site:
         site = None
 
-    available = list(stack.dns.sites.keys())
+    available = list(stack.dns.sites().keys())
     if site:
         if site not in available:
             raise BespinError("Have no dns options for specified site", available=available, wanted=site)
