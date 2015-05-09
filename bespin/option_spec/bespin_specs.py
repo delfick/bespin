@@ -254,11 +254,11 @@ class BespinSpec(object):
 
             , netscaler = optional_spec(self.netscaler_spec)
 
-            , dns = optional_spec(create_spec(stack_objs.DNS
+            , dns = optional_spec(stack_specs.dns_spec(create_spec(stack_objs.DNS
                 , vars = dictof(string_spec(), formatted(string_spec(), formatter=MergedOptionStringFormatter), nested=True)
                 , providers = dictof(string_spec(), stack_specs.dns_provider_spec())
                 , sites = dictof(string_spec(), stack_specs.dns_site_spec())
-                ))
+                )))
 
             , scaling_options = create_spec(ScalingOptions
                 , highest_min = defaulted(integer_spec(), 2)

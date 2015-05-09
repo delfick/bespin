@@ -19,6 +19,9 @@ from input_algorithms.many_item_spec import many_item_formatted_spec
 from input_algorithms.spec_base import NotSpecified, Spec
 from input_algorithms import spec_base as sb
 from six.moves.urllib.parse import urlparse
+import logging
+
+log = logging.getLogger("bespin.option_spec.stack_specs")
 
 class var_spec(many_item_formatted_spec):
     value_name = "Variable"
@@ -100,8 +103,18 @@ class s3_address(many_item_formatted_spec):
             path  = '/'
         return S3Address(domain, path, timeout)
 
+class dns_spec(Spec):
+    def setup(self, spec):
+        self.spec = spec
+
+    def normalise_filled(self, meta, val):
+        meta.everything = meta.everything.wrapped()
+        meta.everything["__dns_vars__"] = val["vars"].as_dict()
+        return self.spec.normalise(meta, val)
+
 class dns_site_spec(Spec):
     def normalise_filled(self, meta, val):
+        log.info("Normalising dns site %s", meta.path)
         val = sb.dictionary_spec().normalise(meta, val)
         provider = val["provider"]
         available = meta.everything["__stack__"]["dns"]["providers"]
@@ -130,8 +143,9 @@ class dns_site_spec(Spec):
         class spec(Spec):
             def normalise_filled(s, meta, val):
                 meta.everything = meta.everything.wrapped()
-                meta.everything["__site__"] = this
-                return sb.dictof(sb.string_spec(), sb.listof(formatted_string)).normalise(meta, val)
+                meta.everything["__site_environments__"] = this["environments"].as_dict()
+                spec = sb.dictof(sb.string_spec(), sb.listof(formatted_string))
+                return spec.normalise(meta, val.as_dict())
         return spec()
 
 class dns_provider_spec(Spec):
