@@ -1,4 +1,4 @@
-from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError, BadNetScaler
+from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError, BadNetScaler, BadDnsSwitch
 from bespin.errors import StackDoesntExist, MissingSSHKey
 from bespin.helpers import memoized_property
 from bespin.actions.ssh import RatticSSHKeys
@@ -637,7 +637,8 @@ class DNS(dictobj):
 
 class UltraDNSProvider(dictobj):
     fields = {
-          "username": "The username"
+          "name": "The name of the provider"
+        , "username": "The username"
         , "password": "The password"
         , ("provider_type", "ultradns"): "The type of provider"
         }
@@ -654,6 +655,7 @@ class UltraDNSProvider(dictobj):
 class UltraDNSSite(dictobj):
     fields = {
           "name": "The name of the site"
+        , "ttl": "The ttl for the rcord"
         , "provider": "A DNS provider object"
         , "record_type": "The type of record to edit"
         , "zone": "The dns zone to edit"
@@ -690,15 +692,23 @@ class UltraDNSSite(dictobj):
         rrset = self.rrset
         rrtype = rrset["rrtype"]
         rrtype = rrtype[:rrtype.find("(")].strip()
-        return rrtype, rrset["rdata"]
+        return rrtype, rrset.get("rdata", [])
 
     def switch_to(self, environment, dry_run=False):
         """Switch to this environment"""
         provider = self.provider()
         rdata = self.environments[environment]
-        if len(rdata) is 1:
-            rdata = rdata[0]
         log.info("%sSwitching %s to %s via %s", "DRYRUN: " if dry_run else "", self.domain, rdata, provider.provider_type)
         if not dry_run:
-            provider.client.edit_rrset_rdata(self.zone, self.record_type, self.domain, rdata)
+            rrset = self.rrset
+            if 'profile' in rrset:
+                uri = "/v1/zones/" + self.zone + "/rrsets/" + self.record_type + "/" + self.domain
+                rrset = {"profile": rrset["profile"], "rdata": rdata}
+                if self.ttl is not NotSpecified:
+                    rrset["ttl"] = self.ttl
+                res = provider.client.rest_api_connection.put(uri, json.dumps(rrset))
+            else:
+                res = provider.client.edit_rrset_rdata(self.zone, self.record_type, self.domain, rdata)
+            if res.get("message") != "Successful":
+                raise BadDnsSwitch("Didn't switch record", zone=self.zone, domain=self.domain, rdata=rdata, result=res)
 

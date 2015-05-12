@@ -111,3 +111,6 @@ class FailedAlertingSystems(BespinError):
 class BadNetScaler(BespinError):
     desc = "Something went wrong with the netscaler"
 
+class BadDnsSwitch(BespinError):
+    desc = "Something failed about switching dns traffic"
+

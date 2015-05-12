@@ -131,6 +131,7 @@ class dns_site_spec(Spec):
         formatted_string = sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)
         return sb.create_spec(UltraDNSSite
             , name = sb.formatted(sb.overridden("{_key_name_1}"), formatter=MergedOptionStringFormatter)
+            , ttl = sb.optional_spec(sb.integer_spec())
             , provider = sb.any_spec()
             , record_type = sb.required(formatted_string)
             , zone = sb.required(formatted_string)
@@ -162,6 +163,7 @@ class dns_provider_spec(Spec):
     @memoized_property
     def ultradns_provider_spec(self):
         return sb.create_spec(UltraDNSProvider
+            , name = sb.formatted(sb.overridden("{_key_name_1}"), formatter=MergedOptionStringFormatter)
             , provider_type = sb.required(sb.string_spec())
             , username = sb.required(formatted_string)
             , password = sb.required(formatted_string)
