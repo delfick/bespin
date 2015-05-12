@@ -4,6 +4,7 @@ from six.moves.urllib.parse import urlencode
 from getpass import getpass
 import requests
 import logging
+import json
 
 log = logging.getLogger("bespin.action.downtimer")
 
@@ -54,7 +55,7 @@ class Downtimer(object):
                 errors.append(error)
 
         if errors:
-            raise FailedAlertingSystems("Failed to {0}".format(method), errors=errors)
+            raise FailedAlertingSystems("Failed to {0}".format(method), _errors=errors)
 
 class NagiosDowntimer(object):
     """Downtimer that knows about nagios"""
@@ -84,8 +85,19 @@ class NagiosDowntimer(object):
                 else:
                     url = "{0}/cancel_downtime".format(self.endpoint)
 
-                res = requests.post(url, urlencode(data), verify=self.verify_ssl, auth=(creds['username'], creds.get('password', '')))
+                log.debug("Posting %s to %s", data, url)
+                headers = {"Content-Type": "application/json"}
+                res = requests.post(url, json.dumps(data).encode('utf-8'), verify=self.verify_ssl, auth=(creds['username'], creds.get('password', '')), headers=headers)
+                succeeded = False
                 if res.status_code == 200:
+                    try:
+                        content = json.loads(res.content.decode('utf-8'))
+                        if content.get("success") == True:
+                            succeeded = True
+                    except (ValueError, TypeError) as error:
+                        log.error("Failed to parse json from nagios\tgot=%s\terror=%s", res.content, error)
+
+                if succeeded:
                     log.info("%s: %s: ok", method, desc)
                 else:
                     log.error("%s :%s: FAILED %s", method, desc, res.content)
