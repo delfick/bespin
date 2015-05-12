@@ -17,6 +17,7 @@ from input_algorithms.meta import Meta
 from option_merge import Converter
 import logging
 import yaml
+import six
 import os
 
 log = logging.getLogger("bespin.executor")
@@ -241,7 +242,12 @@ class Overview(object):
             if not environment:
                 raise BespinError("No environment was provided", available=list(configuration["environments"].keys()))
 
-            environment_as_dict = configuration[["environments", environment]].as_dict()
+            env = configuration[["environments", environment]]
+            if isinstance(env, six.string_types):
+                environment_as_dict = configuration[["environments", env]].as_dict()
+            else:
+                environment_as_dict = configuration[["environments", environment]].as_dict()
+
             stack_environment_as_dict = {}
             if ["stacks", stack, environment] in configuration:
                 stack_environment_as_dict = configuration["stacks", stack, environment].as_dict()
