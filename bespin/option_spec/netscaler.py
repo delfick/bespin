@@ -208,6 +208,8 @@ class NetScaler(dictobj):
                 else:
                     raise
 
+        return bound
+
     def _is_bound(self, binding_to_typ, binding_to, bound_typ, bound):
         """Determine if something is bound to something else"""
         typ, _, name_str = self.combined_typ(binding_to_typ, bound_typ)
