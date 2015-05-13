@@ -203,6 +203,7 @@ class BespinSpec(object):
     def netscaler_spec(self):
         return create_spec(netscaler_specs.NetScaler
             , host = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+            , dry_run = formatted(overridden("{bespin.dry_run}"), formatter=MergedOptionStringFormatter)
 
             , username = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , configuration_username = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
