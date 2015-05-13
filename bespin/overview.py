@@ -159,8 +159,6 @@ class Overview(object):
         """Return us a MergedOptions with this configuration and any collected configurations"""
         errors = []
 
-        result = self.read_yaml(configuration_file)
-
         bespin_spec = BespinSpec()
         configuration = MergedOptions(dont_prefix=[dictobj])
         configuration["config_root"] = self.configuration_folder
