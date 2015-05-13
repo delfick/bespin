@@ -21,14 +21,23 @@ class netscaler_config_spec(Spec):
         kls = special.get(typ, GenericNetscalerConfig)
 
         formatted_string = formatted(string_spec(), formatter=MergedOptionStringFormatter)
-        as_dict = set_options(typ=overridden(typ), name=overridden(name), bindings=dictof(string_spec(), netscaler_binding_spec()), tags=listof(string_spec()), options=dictof(string_spec(), match_spec((six.string_types, formatted_string), fallback=any_spec()))).normalise(meta, val)
+        formatted_options = dictof(string_spec(), match_spec((six.string_types, formatted_string), fallback=any_spec()))
+        as_dict = set_options(
+              typ=overridden(typ)
+            , name=overridden(name)
+            , bindings=dictof(string_spec()
+            , netscaler_binding_spec())
+            , tags=listof(string_spec())
+            , options=formatted_options
+            , binding_options=formatted_options
+            ).normalise(meta, val)
 
-        return kls(**dict((name, as_dict[name]) for name in ("typ", "name", "bindings", "tags", "options")))
+        return kls(**dict((name, as_dict[name]) for name in ("typ", "name", "bindings", "tags", "options", "binding_options")))
 
 configuration_spec = lambda: dictof(string_spec(), dictof(string_spec(), netscaler_config_spec()))
 
 class GenericNetscalerConfig(dictobj):
-    fields = {"typ", "name", "bindings", "tags", "options"}
+    fields = {"typ", "name", "bindings", "tags", "options", "binding_options"}
 
     def dependencies(self, configuration):
         """Get the bindings dependencies for this configuration item"""
@@ -176,15 +185,46 @@ class NetScaler(dictobj):
         log.info("Unbinding %s from %s", policy, vserver)
         return self.delete("/lbvserver_responderpolicy_binding/{0}?args=policyname:{1}".format(vserver, policy), content_type=self.content_type("lbvserver_responderpolicy_binding"))
 
-    def is_policy_bound(self, vserver, policy):
-        """Return information about policies attached to the vserver"""
-        policies = self.get("/lbvserver_responderpolicy_binding/{0}".format(vserver), content_type=self.content_type("lbvserver_responderpolicy_binding"))
-        if policies["errorcode"] != 0:
-            raise BadNetScaler("Failed to get policies", vserver=vserver, policy=policy, msg=policies.get("msg"), error_code=policies["errorcode"])
-        if "lbvserver_responderpolicy_binding" not in policies:
+    def is_bound(self, typ_one, thing_one, typ_two, thing_two):
+        """Determine if something is bound to something else"""
+        try:
+            bound = self._is_bound(typ_one, thing_one, typ_two, thing_two)
+        except BadNetScaler as error:
+            # sigh, some combinations aren't done both ways
+            if error.kwargs["errorcode"] == 1232:
+                bound = self._is_bound(typ_two, thing_two, typ_one, thing_one)
+            elif error.kwargs["errorcode"] == 1088:
+                bound = False
+            else:
+                raise
+        else:
+            try:
+                if not bound:
+                    # Some combinations aren't the same both ways
+                    bound = self._is_bound(typ_two, thing_two, typ_one, thing_one)
+            except BadNetScaler as error:
+                if error.kwargs["errorcode"] == 1088:
+                    bound = False
+                else:
+                    raise
+
+    def _is_bound(self, binding_to_typ, binding_to, bound_typ, bound):
+        """Determine if something is bound to something else"""
+        typ, _, name_str = self.combined_typ(binding_to_typ, bound_typ)
+        found = self.get("/{0}/{1}".format(typ, binding_to), content_type=self.content_type(typ))
+        if found["errorcode"] != 0:
+            raise BadNetScaler("Failed to get", binding_to=binding_to, bound=bound, msg=found.get("msg"), error_code=found["errorcode"], typ=typ)
+
+        if typ not in found:
+            log.debug("typ not in found\tfound=%s\ttyp=%s", found, typ)
             return False
         else:
-            return policies["lbvserver_responderpolicy_binding"][0]["policyname"] == policy
+            if name_str == "monitorName":
+                name_str = "monitor_name"
+            elif name_str == "serviceGroupName":
+                name_str = "servicegroupname"
+            log.debug("Looking for %s in first\tfirst=%s", name_str, found[typ][0])
+            return found[typ][0][name_str] == bound
 
     def post(self, url, payload, content_type=None):
         return self.interact("post", url, payload, content_type=content_type)
@@ -224,6 +264,42 @@ class NetScaler(dictobj):
                 log.info("No changes required")
             else:
                 self.put(url, payload, content_type=content_type)
+
+        for typ, bindings in config.bindings.items():
+            self.add_bindings(config, typ, bindings)
+
+    def add_bindings(self, bind_to, typ, bindings):
+        """Add bindings to bind_to of type 'typ'"""
+        url = "/{0}_{1}_binding".format(bind_to.typ, typ)
+        wanted = list(bindings.wanted(self.configuration[typ].values()))
+        log.info("Binding <%s>(%s) to %s", typ, ', '.join(wanted), bind_to.long_name)
+        for thing in wanted:
+            bound = self.is_bound(typ, thing, bind_to.typ, bind_to.name)
+
+            if not bound:
+                combined_typ, binding_name_str, name_str = self.combined_typ(bind_to.typ, typ)
+                payload = {binding_name_str: bind_to.name, name_str: thing}
+                payload.update(self.configuration[typ][thing].binding_options)
+                self.post(url, {combined_typ: payload, "params": {"action": "bind"}}, content_type=self.content_type(combined_typ))
+            else:
+                log.info("Already bound")
+
+    def combined_typ(self, typ_one, typ_two):
+        """Return (combined_typ, one_name_str, two_name_str) for these two types"""
+        combined_typ = "{0}_{1}_binding".format(typ_one, typ_two)
+
+        names = {"one": "name", "two": "name"}
+        for num, val in (("one", typ_one), ("two", typ_two)):
+            if val.endswith("policy"):
+                names[num] = "policyName"
+            elif val.endswith("service"):
+                names[num] = "serviceName"
+            elif val.endswith("monitor"):
+                names[num] = "monitorName"
+            elif val.endswith("servicegroup"):
+                names[num] = "serviceGroupName"
+
+        return combined_typ, names["one"], names["two"]
 
     def interact(self, method, url, payload=None, content_type=None):
         """interact with the netscaler"""

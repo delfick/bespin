@@ -201,9 +201,25 @@ class BespinSpec(object):
 
     @memoized_property
     def netscaler_spec(self):
+        class to_boolean(Spec):
+            def setup(self, spec):
+                self.spec = spec
+
+            def normalise_either(self, meta, val):
+                val = self.spec.normalise(meta, val)
+
+                if type(val) is bool:
+                    return val
+
+                if val == 'False':
+                    return False
+                elif val == 'True':
+                    return True
+                raise BadConfiguration("Expected a boolean", got=val, meta=meta)
+
         return create_spec(netscaler_specs.NetScaler
             , host = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
-            , dry_run = formatted(overridden("{bespin.dry_run}"), formatter=MergedOptionStringFormatter)
+            , dry_run = to_boolean(formatted(overridden("{bespin.dry_run}"), formatter=MergedOptionStringFormatter))
 
             , username = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , configuration_username = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))

@@ -409,5 +409,5 @@ def sync_netscaler_config(overview, configuration, stacks, stack, **kwargs):
     with stack.netscaler as netscaler:
         for layer in layers.layered:
             for _, thing in layer:
-                netscaler.sync(thing, configuration["bespin"].dry_run)
+                netscaler.sync(thing)
 
