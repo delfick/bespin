@@ -15,12 +15,14 @@ from bespin.actions.deployer import Deployer
 from bespin.actions.builder import Builder
 from bespin.actions.plan import Plan
 from bespin.actions.ssh import SSH
+from bespin.layers import Layers
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms import spec_base as sb
 from input_algorithms.meta import Meta
 from textwrap import dedent
 from getpass import getpass
+from itertools import chain
 import itertools
 import logging
 import base64
@@ -388,4 +390,24 @@ def switch_dns_traffic_to(overview, configuration, stacks, stack, artifact, site
     log.info("Switching traffic to %s\tsites=%s", environment, [site.domain for site in sites])
     for site in sorted(sites):
         site.switch_to(configuration["bespin"].environment, dry_run=configuration["bespin"].dry_run)
+
+@a_task(needs_stack=True, needs_credentials=True)
+def sync_netscaler_config(overview, configuration, stacks, stack, **kwargs):
+    """Sync netscaler configuration with the specified netscaler"""
+    if stack.netscaler is NotSpecified or stack.netscaler.configuration is NotSpecified:
+        raise BespinError("Please configure {netscaler.configuration}")
+
+    all_configuration = dict(stack.netscaler.configuration)
+    for value in list(all_configuration.values()):
+        for thing in value.values():
+            all_configuration[thing.long_name] = thing
+
+    layers = Layers(list(chain.from_iterable([thing.long_name for thing in things.values()] for things  in stack.netscaler.configuration.values())), all_stacks=all_configuration)
+    layers.add_all_to_layers()
+
+    stack.netscaler.syncing_configuration = True
+    with stack.netscaler as netscaler:
+        for layer in layers.layered:
+            for _, thing in layer:
+                netscaler.sync(thing, configuration["bespin"].dry_run)
 

@@ -372,6 +372,7 @@ class Overview(object):
             , "confirm_deployment"
             , "clean_old_artifacts"
             , "command_on_instances"
+            , "sync_netscaler_config"
             , "switch_dns_traffic_to"
             , "resume_cloudformation_actions"
             , "suspend_cloudformation_actions"

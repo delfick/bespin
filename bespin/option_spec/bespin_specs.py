@@ -11,7 +11,7 @@ from input_algorithms.spec_base import (
     , valid_string_spec, create_spec, string_choice_spec, Spec, always_same_spec, match_spec
     )
 
-from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports, deployment_check
+from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports, deployment_check, netscaler as netscaler_specs
 from bespin.formatter import MergedOptionStringFormatter
 from bespin.errors import BadFile, BadConfiguration
 from bespin.option_spec.bespin_obj import Bespin
@@ -201,12 +201,18 @@ class BespinSpec(object):
 
     @memoized_property
     def netscaler_spec(self):
-        return create_spec(stack_objs.NetScaler
+        return create_spec(netscaler_specs.NetScaler
             , host = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+
             , username = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+            , configuration_username = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+
             , password = delayed(required(formatted(string_spec(), formatter=MergedOptionStringFormatter)))
+            , configuration_password = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+
             , verify_ssl = defaulted(boolean(), True)
             , nitro_api_version = defaulted(formatted(string_spec(), formatter=MergedOptionStringFormatter), "v1")
+            , configuration = optional_spec(netscaler_specs.configuration_spec())
             )
 
     @memoized_property
