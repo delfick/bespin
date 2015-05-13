@@ -60,12 +60,13 @@ class SNSConfirmation(dictobj):
         attempt = 0
 
         log.info("Checking sqs for %s", version_message)
+        log.info("Checking for message for instances [%s]", ",".join(instances))
         for _ in hp.until(timeout=self.timeout, step=5, action="Checking for valid deployment actions"):
             messages = sqs.get_all_deployment_messages(self.deployment_queue)
 
             # Look for success and failure in the messages
             for message in messages:
-                log.info("Message received %s", message.output)
+                log.info("Message received for instance %s with content [%s]", message.instance_id, message.output)
 
                 # Ignore the messages for instances outside this deployment
                 if message.instance_id in instances:

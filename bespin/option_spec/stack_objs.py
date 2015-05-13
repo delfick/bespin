@@ -159,7 +159,8 @@ class Stack(dictobj):
 
         if key == "env" and self.newrelic is not NotSpecified:
             missing = [e.env_name for e in self.newrelic.env if e.missing]
-            raise BadOption("Some newrelic environment variables aren't in the current environment", missing=missing)
+            if missing:
+                raise BadOption("Some newrelic environment variables aren't in the current environment", missing=missing)
 
     def find_missing_build_env(self):
         self.find_missing_env("build_env")
