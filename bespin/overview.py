@@ -6,15 +6,18 @@ tasks, and for starting the chosen task.
 """
 
 from bespin.errors import BadConfiguration, BadTask, BadYaml, BespinError
+from bespin.formatter import MergedOptionStringFormatter
 from bespin.option_spec.bespin_specs import BespinSpec
 from bespin.option_spec.task_objs import Task
 from bespin.tasks import available_tasks
 
 from input_algorithms.spec_base import NotSpecified
+from input_algorithms import spec_base as sb
 from input_algorithms.dictobj import dictobj
 from option_merge import MergedOptions
 from input_algorithms.meta import Meta
 from option_merge import Converter
+from getpass import getpass
 import logging
 import yaml
 import six
@@ -26,9 +29,10 @@ class Overview(object):
     def __init__(self, configuration_file, logging_handler=None):
         self.logging_handler = logging_handler
 
-        self.configuration = self.collect_configuration(configuration_file)
         self.configuration_file = configuration_file
         self.configuration_folder = os.path.dirname(os.path.abspath(configuration_file))
+
+        self.configuration = self.collect_configuration(configuration_file)
         self.setup_logging_theme()
 
     def clone(self, new_bespin_options=None):
@@ -73,6 +77,7 @@ class Overview(object):
         self.configuration.update(
             { "$@": bespin.get("extra", "")
             , "bespin": bespin
+            , "getpass": getpass
             , "overview": self
             , "cli_args": cli_args
             , "command": cli_args['command']
@@ -158,35 +163,46 @@ class Overview(object):
 
         bespin_spec = BespinSpec()
         configuration = MergedOptions(dont_prefix=[dictobj])
+        configuration["config_root"] = self.configuration_folder
 
         home_dir_configuration = self.home_dir_configuration_location()
         sources = [home_dir_configuration, configuration_file]
 
-        for source in sources:
-            if source is None or not os.path.exists(source):
-                continue
+        done = set()
+        def add_configuration(src):
+            log.info("Adding configuration from %s", os.path.abspath(src))
+            if os.path.abspath(src) in done:
+                return
+            else:
+                done.add(os.path.abspath(src))
+
+            if src is None or not os.path.exists(src):
+                return
 
             try:
-                result = self.read_yaml(source)
+                result = self.read_yaml(src)
             except BadYaml as error:
                 errors.append(error)
-                continue
+                return
 
             if not result:
-                continue
+                return
 
-            if "stacks" in result:
-                stacks = result.pop("stacks")
-                stacks = dict(
-                      (stack, MergedOptions.using(configuration.root(), val, converters=configuration.converters, source=source))
-                      for stack, val in stacks.items()
-                    )
-                result["stacks"] = stacks
+            configuration.update(result, dont_prefix=[dictobj], source=src)
 
-            configuration.update(result, dont_prefix=[dictobj], source=source)
+            if "bespin" in configuration:
+                if "extra_files" in configuration["bespin"]:
+                    for extra in sb.listof(sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)).normalise(Meta(configuration, [("bespin", ""), ("extra_files", "")]), configuration["bespin"]["extra_files"]):
+                        if os.path.abspath(extra) not in done:
+                            if not os.path.exists(extra):
+                                raise BadConfiguration("Specified extra file doesn't exist", extra=extra, source=src)
+                            add_configuration(extra)
 
-            for stack in result.get('stacks', {}).keys():
-                self.make_stack_converters(stack, configuration, bespin_spec)
+        for source in sources:
+            add_configuration(source)
+
+        for stack in configuration.get('stacks', {}).keys():
+            self.make_stack_converters(stack, configuration, bespin_spec)
 
         def convert_bespin(path, val):
             log.info("Converting %s", path)
