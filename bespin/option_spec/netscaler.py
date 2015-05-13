@@ -260,10 +260,10 @@ class NetScaler(dictobj):
             self.post(url, config.payload(), content_type=content_type)
         else:
             current = current[config.typ][0]
-            log.info("Updating resource\tcurrent=%s", current)
             payload = config.payload(dict(current))
+            log.debug("Updating\tcurrent=%s", current)
             if not payload:
-                log.info("No changes required")
+                log.debug("No changes required")
             else:
                 self.put(url, payload, content_type=content_type)
 
@@ -274,17 +274,17 @@ class NetScaler(dictobj):
         """Add bindings to bind_to of type 'typ'"""
         url = "/{0}_{1}_binding".format(bind_to.typ, typ)
         wanted = list(bindings.wanted(self.configuration[typ].values()))
-        log.info("Binding <%s>(%s) to %s", typ, ', '.join(wanted), bind_to.long_name)
         for thing in wanted:
             bound = self.is_bound(typ, thing, bind_to.typ, bind_to.name)
 
             if not bound:
+                log.info("Binding <%s>(%s) to %s", typ, ', '.join(wanted), bind_to.long_name)
                 combined_typ, binding_name_str, name_str = self.combined_typ(bind_to.typ, typ)
                 payload = {binding_name_str: bind_to.name, name_str: thing}
                 payload.update(self.configuration[typ][thing].binding_options)
                 self.post(url, {combined_typ: payload, "params": {"action": "bind"}}, content_type=self.content_type(combined_typ))
             else:
-                log.info("Already bound")
+                log.debug("<%s(%s) already bound to %s", typ, ', '.join(wanted), bind_to.long_name)
 
     def combined_typ(self, typ_one, typ_two):
         """Return (combined_typ, one_name_str, two_name_str) for these two types"""
