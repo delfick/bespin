@@ -35,12 +35,15 @@ class Builder(object):
         layers.add_all_to_layers()
         return layers.layered
 
-    def publish_artifacts(self, stack):
+    def publish_artifacts(self, stack, artifacts=None):
         """Make and publish all the artifacts for a single stack"""
         stack.find_missing_build_env()
 
+        if artifacts is None:
+            artifacts = stack.artifacts.items()
+
         # Iterate over each artifact we need to build
-        for key, artifact in stack.artifacts.items():
+        for key, artifact in artifacts:
             # Skip artifacts that are created elsewhere
             if artifact.not_created_here:
                 continue
