@@ -225,8 +225,8 @@ class NetScaler(dictobj):
                 name_str = "monitor_name"
             elif name_str == "serviceGroupName":
                 name_str = "servicegroupname"
-            log.debug("Looking for %s in first\tfirst=%s", name_str, found[typ][0])
-            return found[typ][0][name_str] == bound
+            log.debug("Looking for %s in first\tfirst=%s\twant=%s", name_str, found[typ], bound)
+            return any(f.get(name_str) == bound or f.get(name_str.lower()) == bound for f in found[typ])
 
     def post(self, url, payload, content_type=None):
         return self.interact("post", url, payload, content_type=content_type)
@@ -251,6 +251,8 @@ class NetScaler(dictobj):
         except BadNetScaler as error:
             msg = error.kwargs.get("msg", "")
             if msg.startswith("No such resource") or re.match("^No such [^ ]+ exists", msg):
+                current = None
+            elif config.typ == "systemcmdpolicy" and msg.startswith("Invalid argument"):
                 current = None
             else:
                 raise
@@ -278,13 +280,13 @@ class NetScaler(dictobj):
             bound = self.is_bound(typ, thing, bind_to.typ, bind_to.name)
 
             if not bound:
-                log.info("Binding <%s>(%s) to %s", typ, ', '.join(wanted), bind_to.long_name)
+                log.info("Binding <%s>(%s) to %s", typ, thing, bind_to.long_name)
                 combined_typ, binding_name_str, name_str = self.combined_typ(bind_to.typ, typ)
                 payload = {binding_name_str: bind_to.name, name_str: thing}
                 payload.update(self.configuration[typ][thing].binding_options)
                 self.post(url, {combined_typ: payload, "params": {"action": "bind"}}, content_type=self.content_type(combined_typ))
             else:
-                log.debug("<%s(%s) already bound to %s", typ, ', '.join(wanted), bind_to.long_name)
+                log.debug("<%s(%s) already bound to %s", typ, thing, bind_to.long_name)
 
     def combined_typ(self, typ_one, typ_two):
         """Return (combined_typ, one_name_str, two_name_str) for these two types"""
@@ -300,6 +302,8 @@ class NetScaler(dictobj):
                 names[num] = "monitorName"
             elif val.endswith("servicegroup"):
                 names[num] = "serviceGroupName"
+            elif val.endswith("user"):
+                names[num] = "userName"
 
         return combined_typ, names["one"], names["two"]
 
