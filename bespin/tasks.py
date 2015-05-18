@@ -22,7 +22,6 @@ from input_algorithms import spec_base as sb
 from input_algorithms.meta import Meta
 from textwrap import dedent
 from getpass import getpass
-from itertools import chain
 import itertools
 import logging
 import base64
@@ -394,20 +393,33 @@ def switch_dns_traffic_to(overview, configuration, stacks, stack, artifact, site
 @a_task(needs_stack=True, needs_credentials=True)
 def sync_netscaler_config(overview, configuration, stacks, stack, **kwargs):
     """Sync netscaler configuration with the specified netscaler"""
+    logging.captureWarnings(True)
+    logging.getLogger("py.warnings").setLevel(logging.ERROR)
+
     if stack.netscaler is NotSpecified or stack.netscaler.configuration is NotSpecified:
         raise BespinError("Please configure {netscaler.configuration}")
 
-    all_configuration = dict(stack.netscaler.configuration)
-    for value in list(all_configuration.values()):
-        for thing in value.values():
-            all_configuration[thing.long_name] = thing
+    if stack.netscaler.syncable_environments is not NotSpecified:
+        if configuration["environment"] not in stack.netscaler.syncable_environments:
+            raise BespinError("Sorry, can only sync netscaler config for particular environments", wanted=configuration["environment"], available=list(stack.netscaler.syncable_environments))
 
-    layers = Layers(list(chain.from_iterable([thing.long_name for thing in things.values()] for things  in stack.netscaler.configuration.values())), all_stacks=all_configuration)
+    for_layers = []
+    all_configuration = {}
+    for vkey, value in stack.netscaler.configuration.items():
+        for key, thing in value.items():
+            if thing.environments is NotSpecified or configuration["environment"] in thing.environments:
+                for_layers.append(thing.long_name)
+                all_configuration[thing.long_name] = thing
+                if vkey not in all_configuration:
+                    all_configuration[vkey] = {}
+                all_configuration[vkey][key] = thing
+
+    layers = Layers(for_layers, all_stacks=all_configuration)
     layers.add_all_to_layers()
 
     stack.netscaler.syncing_configuration = True
     with stack.netscaler as netscaler:
         for layer in layers.layered:
             for _, thing in layer:
-                netscaler.sync(thing)
+                netscaler.sync(all_configuration, configuration["environment"], thing)
 

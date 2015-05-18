@@ -1,7 +1,7 @@
 from bespin.formatter import MergedOptionStringFormatter
 from bespin.errors import BadNetScaler
 
-from input_algorithms.spec_base import Spec, dictof, listof, string_spec, container_spec, match_spec, overridden, formatted, set_options, any_spec
+from input_algorithms.spec_base import Spec, dictof, listof, string_spec, container_spec, match_spec, overridden, formatted, set_options, any_spec, optional_spec
 from input_algorithms.dictobj import dictobj
 import requests
 import logging
@@ -12,6 +12,18 @@ import re
 log = logging.getLogger("bespin.option_spec.netscaler")
 
 netscaler_binding_spec = lambda: container_spec(NetscalerBinding, match_spec(((list, ) + six.string_types, listof(string_spec())), (dict, set_options(tagged=listof(string_spec())))))
+
+class valid_environment_spec(Spec):
+    def normalise_filled(self, meta, val):
+        if "environments" not in meta.everything:
+            raise BespinError("Please specify {environments}")
+
+        val = string_spec().normalise(meta, val)
+        available = list(meta.everything["environments"].keys())
+        if val not in available:
+            raise BespinError("Please choose a valid environment", meta=meta, wanted=val, available=available)
+
+        return val
 
 class netscaler_config_spec(Spec):
     def normalise_filled(self, meta, val):
@@ -29,15 +41,17 @@ class netscaler_config_spec(Spec):
             , netscaler_binding_spec())
             , tags=listof(string_spec())
             , options=formatted_options
+            , overrides=formatted_options
             , binding_options=formatted_options
+            , environments=optional_spec(listof(valid_environment_spec()))
             ).normalise(meta, val)
 
-        return kls(**dict((name, as_dict[name]) for name in ("typ", "name", "bindings", "tags", "options", "binding_options")))
+        return kls(**dict((name, as_dict[name]) for name in ("typ", "name", "bindings", "tags", "options", "binding_options", "environments", "overrides")))
 
 configuration_spec = lambda: dictof(string_spec(), dictof(string_spec(), netscaler_config_spec()))
 
 class GenericNetscalerConfig(dictobj):
-    fields = {"typ", "name", "bindings", "tags", "options", "binding_options"}
+    fields = {"typ", "name", "bindings", "tags", "options", "binding_options", "environments", "overrides"}
 
     def dependencies(self, configuration):
         """Get the bindings dependencies for this configuration item"""
@@ -47,12 +61,20 @@ class GenericNetscalerConfig(dictobj):
                     if item in configuration[typ]:
                         yield configuration[typ][item].long_name
 
-    def payload(self, current=None):
+    def payload(self, environment, current=None):
         """Create payload for creating/updating the config"""
         if hasattr(self.options, "as_dict"):
             options = self.options.as_dict()
         else:
             options = dict(self.options)
+
+        if environment in self.overrides:
+            overrides = self.overrides[environment]
+            if hasattr(overrides, "as_dict"):
+                overrides = overrides.as_dict()
+            else:
+                overrides = dict(overrides)
+            options.update(overrides)
 
         if current:
             changes = {}
@@ -62,12 +84,14 @@ class GenericNetscalerConfig(dictobj):
 
             if changes:
                 log.info("changes=%s", changes)
-                return {self.typ: options}
+                ret = {self.typ: options}
             else:
                 return
         else:
             log.info("new=%s", options)
-            return {self.typ: options}
+            ret = {self.typ: options}
+
+        return ret
 
     def __str__(self):
         return "{0} -- {1}".format(" ".join(self.typ.split("_")), self.name)
@@ -108,6 +132,7 @@ class NetScaler(dictobj):
 
         , "verify_ssl": "Whether to verify ssl connections"
         , "configuration": "Configuration to put into the netscaler"
+        , "syncable_environments": "List of environments that may be synced"
         , ("nitro_api_version", "v1"): "Defaults to v1"
         }
 
@@ -191,19 +216,17 @@ class NetScaler(dictobj):
             bound = self._is_bound(typ_one, thing_one, typ_two, thing_two)
         except BadNetScaler as error:
             # sigh, some combinations aren't done both ways
-            if error.kwargs["errorcode"] == 1232:
-                bound = self._is_bound(typ_two, thing_two, typ_one, thing_one)
-            elif error.kwargs["errorcode"] == 1088:
+            if error.kwargs["errorcode"] in (1088, 1232):
                 bound = False
             else:
                 raise
-        else:
+
+        if not bound:
             try:
-                if not bound:
-                    # Some combinations aren't the same both ways
-                    bound = self._is_bound(typ_two, thing_two, typ_one, thing_one)
+                # Some combinations aren't the same both ways
+                bound = self._is_bound(typ_two, thing_two, typ_one, thing_one)
             except BadNetScaler as error:
-                if error.kwargs["errorcode"] == 1088:
+                if error.kwargs["errorcode"] in (1088, 1232):
                     bound = False
                 else:
                     raise
@@ -240,29 +263,38 @@ class NetScaler(dictobj):
     def delete(self, url, content_type=None):
         return self.interact("delete", url, content_type=content_type)
 
-    def sync(self, config):
+    def get_current(self, config):
+        """Get back (exists, current) for this config"""
+        try:
+            url = "/{0}/{1}".format(config.typ, config.name)
+            content_type = self.content_type(config.typ)
+            current = self.get(url, content_type=content_type)
+            return True, current
+        except BadNetScaler as error:
+            msg = error.kwargs.get("msg", "")
+            if msg.startswith("No such resource") or re.match("^No such [^ ]+ exists", msg):
+                pass
+            elif config.typ == "systemcmdpolicy" and msg.startswith("Invalid argument"):
+                pass
+            elif config.typ == "sslcertkey" and msg.startswith("Certificate does not exist"):
+                pass
+            else:
+                raise
+        return False, None
+
+    def sync(self, configuration, environment, config):
         log.info("Syncing %s", str(config))
 
         url = "/{0}/{1}".format(config.typ, config.name)
         content_type = self.content_type(config.typ)
-
-        try:
-            current = self.get(url, content_type=content_type)
-        except BadNetScaler as error:
-            msg = error.kwargs.get("msg", "")
-            if msg.startswith("No such resource") or re.match("^No such [^ ]+ exists", msg):
-                current = None
-            elif config.typ == "systemcmdpolicy" and msg.startswith("Invalid argument"):
-                current = None
-            else:
-                raise
+        exists, current = self.get_current(config)
 
         if current is None:
             log.info("Resource doesn't exist, creating new one")
-            self.post(url, config.payload(), content_type=content_type)
+            self.post(url, config.payload(environment), content_type=content_type)
         else:
             current = current[config.typ][0]
-            payload = config.payload(dict(current))
+            payload = config.payload(environment, dict(current))
             log.debug("Updating\tcurrent=%s", current)
             if not payload:
                 log.debug("No changes required")
@@ -270,12 +302,16 @@ class NetScaler(dictobj):
                 self.put(url, payload, content_type=content_type)
 
         for typ, bindings in config.bindings.items():
-            self.add_bindings(config, typ, bindings)
+            self.add_bindings(configuration, config, typ, bindings)
 
-    def add_bindings(self, bind_to, typ, bindings):
+    def add_bindings(self, configuration, bind_to, typ, bindings):
         """Add bindings to bind_to of type 'typ'"""
         url = "/{0}_{1}_binding".format(bind_to.typ, typ)
-        wanted = list(bindings.wanted(self.configuration[typ].values()))
+        wanted = list(bindings.wanted(configuration[typ].values()))
+        if not self.get_current(bind_to)[0]:
+            log.info("Would bind <%s>(%s) to %s", typ, ', '.join(wanted), bind_to.long_name)
+            return
+
         for thing in wanted:
             bound = self.is_bound(typ, thing, bind_to.typ, bind_to.name)
 
@@ -283,7 +319,7 @@ class NetScaler(dictobj):
                 log.info("Binding <%s>(%s) to %s", typ, thing, bind_to.long_name)
                 combined_typ, binding_name_str, name_str = self.combined_typ(bind_to.typ, typ)
                 payload = {binding_name_str: bind_to.name, name_str: thing}
-                payload.update(self.configuration[typ][thing].binding_options)
+                payload.update(configuration[typ][thing].binding_options)
                 self.post(url, {combined_typ: payload, "params": {"action": "bind"}}, content_type=self.content_type(combined_typ))
             else:
                 log.debug("<%s(%s) already bound to %s", typ, thing, bind_to.long_name)
@@ -302,6 +338,8 @@ class NetScaler(dictobj):
                 names[num] = "monitorName"
             elif val.endswith("servicegroup"):
                 names[num] = "serviceGroupName"
+            elif val.endswith("certkey"):
+                names[num] = "certkey"
             elif val.endswith("user"):
                 names[num] = "userName"
 

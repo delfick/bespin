@@ -12,6 +12,7 @@ from input_algorithms.spec_base import (
     )
 
 from bespin.option_spec import task_objs, stack_objs, stack_specs, artifact_objs, imports, deployment_check, netscaler as netscaler_specs
+from bespin.option_spec.netscaler import valid_environment_spec
 from bespin.formatter import MergedOptionStringFormatter
 from bespin.errors import BadFile, BadConfiguration
 from bespin.option_spec.bespin_obj import Bespin
@@ -230,6 +231,7 @@ class BespinSpec(object):
             , verify_ssl = defaulted(boolean(), True)
             , nitro_api_version = defaulted(formatted(string_spec(), formatter=MergedOptionStringFormatter), "v1")
             , configuration = optional_spec(netscaler_specs.configuration_spec())
+            , syncable_environments = optional_spec(listof(valid_environment_spec()))
             )
 
     @memoized_property
