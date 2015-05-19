@@ -306,7 +306,6 @@ class NetScaler(dictobj):
 
     def add_bindings(self, configuration, bind_to, typ, bindings):
         """Add bindings to bind_to of type 'typ'"""
-        url = "/{0}_{1}_binding".format(bind_to.typ, typ)
         wanted = list(bindings.wanted(configuration[typ].values()))
         if not self.get_current(bind_to)[0]:
             log.info("Would bind <%s>(%s) to %s", typ, ', '.join(wanted), bind_to.long_name)
@@ -320,7 +319,7 @@ class NetScaler(dictobj):
                 combined_typ, binding_name_str, name_str = self.combined_typ(bind_to.typ, typ)
                 payload = {binding_name_str: bind_to.name, name_str: thing}
                 payload.update(configuration[typ][thing].binding_options)
-                self.post(url, {combined_typ: payload, "params": {"action": "bind"}}, content_type=self.content_type(combined_typ))
+                self.post(combined_typ, {combined_typ: payload, "params": {"action": "bind"}}, content_type=self.content_type(combined_typ))
             else:
                 log.debug("<%s(%s) already bound to %s", typ, thing, bind_to.long_name)
 
@@ -342,6 +341,11 @@ class NetScaler(dictobj):
                 names[num] = "certkey"
             elif val.endswith("user"):
                 names[num] = "userName"
+
+        if typ_one == "lbvserver" and typ_two == "sslcertkey":
+            combined_typ = "sslvserver_sslcertkey_binding"
+            names["one"] = "vservername"
+            names["two"] = "certkeyname"
 
         return combined_typ, names["one"], names["two"]
 
