@@ -2,6 +2,7 @@ from bespin.formatter import MergedOptionStringFormatter
 from bespin.errors import BadNetScaler
 
 from input_algorithms.spec_base import Spec, dictof, listof, string_spec, container_spec, match_spec, overridden, formatted, set_options, any_spec, optional_spec
+from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
 import requests
 import logging
@@ -34,7 +35,8 @@ class netscaler_config_spec(Spec):
 
         formatted_string = formatted(string_spec(), formatter=MergedOptionStringFormatter)
         formatted_options = dictof(string_spec(), match_spec((six.string_types, formatted_string), fallback=any_spec()))
-        as_dict = set_options(
+
+        options = dict(
               typ=overridden(typ)
             , name=overridden(name)
             , bindings=dictof(string_spec()
@@ -44,14 +46,17 @@ class netscaler_config_spec(Spec):
             , overrides=formatted_options
             , binding_options=formatted_options
             , environments=optional_spec(listof(valid_environment_spec()))
-            ).normalise(meta, val)
+            )
 
-        return kls(**dict((name, as_dict[name]) for name in ("typ", "name", "bindings", "tags", "options", "binding_options", "environments", "overrides")))
+        if typ == "sslcertkey":
+            options["link"] = listof(string_spec())
+        as_dict = set_options(**options).normalise(meta, val)
+        return kls(**dict((name, as_dict[name]) for name in options))
 
 configuration_spec = lambda: dictof(string_spec(), dictof(string_spec(), netscaler_config_spec()))
 
 class GenericNetscalerConfig(dictobj):
-    fields = {"typ", "name", "bindings", "tags", "options", "binding_options", "environments", "overrides"}
+    fields = {"typ", "name", "bindings", "tags", "options", "binding_options", "environments", "overrides", ("link", NotSpecified)}
 
     def dependencies(self, configuration):
         """Get the bindings dependencies for this configuration item"""
@@ -304,6 +309,9 @@ class NetScaler(dictobj):
         for typ, bindings in config.bindings.items():
             self.add_bindings(configuration, config, typ, bindings)
 
+        if config.typ == "sslcertkey" and config.link is not NotSpecified:
+            self.link_certs(config)
+
     def add_bindings(self, configuration, bind_to, typ, bindings):
         """Add bindings to bind_to of type 'typ'"""
         wanted = list(bindings.wanted(configuration[typ].values()))
@@ -348,6 +356,36 @@ class NetScaler(dictobj):
             names["two"] = "certkeyname"
 
         return combined_typ, names["one"], names["two"]
+
+    def link_certs(self, sslcertkey):
+        """Link the certs defined for this certkey"""
+        for link in sslcertkey.link:
+            if not self.is_linked(sslcertkey.name, link):
+                log.info("Link %s to %s", link, sslcertkey.name)
+                self.link_cert(sslcertkey.name, link)
+
+    def is_linked(self, link_into, being_linked):
+        """Is <being_linked> linked to <link_into>?"""
+        try:
+            ret = self.get("sslcertkey/{0}".format(link_into))
+        except BadNetScaler as error:
+            msg = error.kwargs.get("msg", "")
+            if msg.startswith("Invalid argument"):
+                return False
+            else:
+                raise
+
+        if 'sslcertkey' not in ret:
+            return False
+
+        if 'linkcertkeyname' not in ret['sslcertkey'][0]:
+            return False
+
+        return ret['sslcertkey'][0]['linkcertkeyname'] == being_linked
+
+    def link_cert(self, link_into, being_linked):
+        """Link <being_linked> to <link_into>"""
+        self.post("sslcertlink/{0}".format(link_into), {"params": {"action": "link"}, "sslcertlink": {"certkeyname": being_linked}}, content_type=self.content_type("sslcertlink"))
 
     def interact(self, method, url, payload=None, content_type=None):
         """interact with the netscaler"""
