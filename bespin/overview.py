@@ -324,7 +324,7 @@ class Overview(object):
             meta = Meta(everything, [("passwords", ""), (password, "")])
             return bespin_spec.password_spec.normalise(meta, base)
 
-        for key in configuration["passwords"].keys():
+        for key in configuration.get("passwords", {}):
             converter = Converter(convert=convert_passwords, convert_path=["passwords", key])
             configuration.add_converter(converter)
 
