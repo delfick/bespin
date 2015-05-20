@@ -112,7 +112,10 @@ class ArtifactFile(dictobj):
 
         with hp.a_temp_file() as f:
             if self.content is not NotSpecified:
-                f.write(self.content.format(**environment).encode('utf-8'))
+                if getattr(self, "_no_more_formatting", False):
+                    f.write(self.content.encode('utf-8'))
+                else:
+                    f.write(self.content.format(**environment).encode('utf-8'))
             else:
                 self.task_runner(self.task, printer=f)
 
