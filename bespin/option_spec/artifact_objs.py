@@ -7,6 +7,7 @@ from input_algorithms.dictobj import dictobj
 
 import logging
 import shutil
+import sys
 import os
 
 log = logging.getLogger("bespin.option_spec.artifact_objs")
@@ -76,7 +77,8 @@ class ArtifactPath(dictobj):
             environment = {}
 
         for full_path, tar_path in self.files(environment):
-            print(tar_path)
+            sys.stdout.write(tar_path)
+            sys.stdout.flush()
             tar.add(full_path, tar_path)
 
     def files(self, environment, prefix_path=None):
@@ -120,7 +122,8 @@ class ArtifactFile(dictobj):
                 self.task_runner(self.task, printer=f)
 
             f.close()
-            print(self.path)
+            sys.stdout.write(self.path)
+            sys.stdout.flush()
             tar.add(f.name, self.path)
 
 class ArtifactCommand(dictobj):
@@ -139,7 +142,8 @@ class ArtifactCommand(dictobj):
     def do_copy_into_tar(self, into, environment, tar):
         for path in self.add_into_tar:
             for full_path, tar_path in path.files(environment, prefix_path=into):
-                print(tar_path)
+                sys.stdout.write(tar_path)
+                sys.stdout.flush()
                 tar.add(full_path, tar_path)
 
     def do_command(self, root, environment):

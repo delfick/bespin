@@ -5,6 +5,7 @@ from datetime import datetime
 import logging
 import time
 import json
+import sys
 
 log = logging.getLogger("bespin.actions.deployer")
 
@@ -47,8 +48,9 @@ class Deployer(object):
         if stack.suspend_actions and stack.cloudformation.status.exists:
             self.suspend_cloudformation_actions(stack)
 
-        print("Building - {0}".format(stack.stack_name))
-        print(json.dumps(stack.params_json_obj, indent=4))
+        sys.stdout.write("Building - {0}".format(stack.stack_name))
+        sys.stdout.write(json.dumps(stack.params_json_obj, indent=4))
+        sys.stdout.flush()
 
         skip = False
         if stack.cloudformation.status.exists:
