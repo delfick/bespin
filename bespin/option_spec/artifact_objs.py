@@ -78,6 +78,7 @@ class ArtifactPath(dictobj):
 
         for full_path, tar_path in self.files(environment):
             sys.stdout.write(tar_path)
+            sys.stdout.write("\n")
             sys.stdout.flush()
             tar.add(full_path, tar_path)
 
@@ -123,6 +124,7 @@ class ArtifactFile(dictobj):
 
             f.close()
             sys.stdout.write(self.path)
+            sys.stdout.write("\n")
             sys.stdout.flush()
             tar.add(f.name, self.path)
 
@@ -143,6 +145,7 @@ class ArtifactCommand(dictobj):
         for path in self.add_into_tar:
             for full_path, tar_path in path.files(environment, prefix_path=into):
                 sys.stdout.write(tar_path)
+                sys.stdout.write("\n")
                 sys.stdout.flush()
                 tar.add(full_path, tar_path)
 

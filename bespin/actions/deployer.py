@@ -48,8 +48,9 @@ class Deployer(object):
         if stack.suspend_actions and stack.cloudformation.status.exists:
             self.suspend_cloudformation_actions(stack)
 
-        sys.stdout.write("Building - {0}".format(stack.stack_name))
+        sys.stdout.write("Building - {0}\n".format(stack.stack_name))
         sys.stdout.write(json.dumps(stack.params_json_obj, indent=4))
+        sys.stdout.write("\n")
         sys.stdout.flush()
 
         skip = False
