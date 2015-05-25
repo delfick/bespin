@@ -117,7 +117,7 @@ class dns_site_spec(Spec):
         log.info("Normalising dns site %s", meta.path)
         val = sb.dictionary_spec().normalise(meta, val)
         provider = val["provider"]
-        available = meta.everything["__stack__"]["dns"]["providers"]
+        available = meta.everything["stacks"][meta.everything["__stack_name__"]]["dns"]["providers"]
         if provider not in available.keys():
             raise BadConfiguration("Specified provider isn't defined in {dns.providers}", available=list(available.keys()), wanted=provider, meta=meta)
 
