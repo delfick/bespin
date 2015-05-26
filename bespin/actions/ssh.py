@@ -15,6 +15,7 @@ import logging
 import getpass
 import socket
 import uuid
+import time
 import json
 import sys
 import os
@@ -86,18 +87,30 @@ class SSH(object):
             cluster = None
             try:
                 log.info("Connecting")
-                cluster = Cluster(connections, login, console=console, defaults=defaults)
-                for _ in hp.until(timeout=10, step=0.5):
-                    if not any(cluster.pending):
+                authenticated = False
+                for _ in hp.until(timeout=120):
+                    if authenticated:
                         break
 
-                if cluster.pending:
-                    raise BespinError("Timedout waiting to connect to some hosts", waiting_for=cluster.pending.keys())
+                    cluster = Cluster(connections, login, console=console, defaults=defaults)
+                    for _ in hp.until(timeout=10, step=0.5):
+                        if not any(cluster.pending):
+                            break
 
-                for _ in hp.until(timeout=10, step=0.5):
-                    if all(conn.authenticated for conn in cluster.connections.values()):
-                        break
+                    if cluster.pending:
+                        raise BespinError("Timedout waiting to connect to some hosts", waiting_for=cluster.pending.keys())
 
+                    for _ in hp.until(timeout=10, step=0.5):
+                        if all(conn.authenticated for conn in cluster.connections.values()):
+                            break
+
+                    authenticated = all(conn.authenticated for conn in cluster.connections.values())
+                    if not authenticated:
+                        unauthenticated = [host for host, conn in cluster.connections.items() if not conn.authenticated]
+                        log.info("Failed to authenticate will try to reconnect in 5 seconds\tunauthenticate=%s", unauthenticated)
+                        time.sleep(5)
+
+                # Try to reauth if not authenticated yet
                 unauthenticated = [host for host, conn in cluster.connections.items() if not conn.authenticated]
                 if unauthenticated:
                     for host in unauthenticated:
