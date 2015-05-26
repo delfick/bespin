@@ -9,11 +9,11 @@ from radssh.ssh import Cluster
 
 from six.moves import input
 import binascii
-import tempfile
 import requests
 import paramiko
 import logging
 import getpass
+import socket
 import uuid
 import json
 import sys
@@ -87,8 +87,32 @@ class SSH(object):
             try:
                 log.info("Connecting")
                 cluster = Cluster(connections, login, console=console, defaults=defaults)
-                for host, status in cluster.status():
+                for _ in hp.until(timeout=10, step=0.5):
+                    if not any(cluster.pending):
+                        break
+
+                if cluster.pending:
+                    raise BespinError("Timedout waiting to connect to some hosts", waiting_for=cluster.pending.keys())
+
+                for _ in hp.until(timeout=10, step=0.5):
+                    if all(conn.authenticated for conn in cluster.connections.values()):
+                        break
+
+                unauthenticated = [host for host, conn in cluster.connections.items() if not conn.authenticated]
+                if unauthenticated:
+                    for host in unauthenticated:
+                        print('{0:14s} : {1}'.format(str(host), cluster.connections[host]))
+                    raise BespinError("Timedout waiting to authenticate all the hosts, do you have an ssh-agent running?", unauthenticated=unauthenticated)
+
+                failed = []
+                for host, status in cluster.connections.items():
                     print('{0:14s} : {1}'.format(str(host), status))
+                    if type(status) is socket.gaierror:
+                        failed.append(host)
+
+                if failed:
+                    raise BespinError("Failed to connect to some hosts", failed=failed)
+
                 cluster.run_command(self.command)
 
                 error = False
