@@ -198,12 +198,12 @@ class NetScaler(dictobj):
     def enable_server(self, server):
         """Enable a particular server in the netscaler"""
         log.info("Enabling %s in netscaler", server)
-        return self.post("/server", {"server": {"name": server}, "params": {"action": "enable"}}, content_type=self.content_type("server"))
+        return self.post("server?action=enable", {"server": {"name": server}}, content_type=self.content_type("server"))
 
     def disable_server(self, server):
         """Disable a particular server in the netscaler"""
         log.info("Disabling %s in netscaler", server)
-        return self.post("/server", {"server": {"name": server}, "params": {"action": "disable"}}, content_type=self.content_type("server"))
+        return self.post("server?action=disable", {"server": {"name": server}}, content_type=self.content_type("server"))
 
     def bind_policy(self, policy, vserver, priority):
         """Bind a policy to a vserver"""

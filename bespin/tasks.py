@@ -332,7 +332,8 @@ def action_server_in_netscaler(overview, configuration, stack, artifact, server=
         else:
             server = artifact
 
-    getattr(configuration["netscaler"], "{0}_server")(server)
+    with configuration["netscaler"] as netscaler:
+        getattr(netscaler, "{0}_server".format(action))(server)
 
 @a_task(needs_credentials=True)
 def enable_server_in_netscaler(*args, **kwargs):
@@ -343,7 +344,7 @@ def enable_server_in_netscaler(*args, **kwargs):
 @a_task(needs_credentials=True)
 def disable_server_in_netscaler(*args, **kwargs):
     """Enable a server in the netscaler"""
-    kwargs["action"] = "enable"
+    kwargs["action"] = "disable"
     return action_server_in_netscaler(*args, **kwargs)
 
 @a_task(needs_credentials=True, needs_stack=True)
