@@ -76,6 +76,8 @@ fi
 
 # Activate the virtualenv and build sphinx
 source $DIR/sphinx/venv/bin/activate
-pip install -r $DIR/sphinx/requirements.txt
+if [[ -z $IGNORE_PIP ]]; then
+  pip install -r $DIR/sphinx/requirements.txt
+fi
 cd $DIR/sphinx && pwd && $DIR/sphinx/venv/bin/sphinx-build -b html -d $DIR/sphinx/_build/doctrees . $DIR/sphinx/_build/html
 

@@ -1,4 +1,4 @@
-from bespin.option_spec.specs import many_item_formatted_spec
+from input_algorithms.many_item_spec import many_item_formatted_spec
 from bespin.option_spec.bespin_specs import BespinSpec
 
 from input_algorithms import spec_base as sb
