@@ -69,7 +69,7 @@ class Artifact(dictobj):
         }
 
 class ArtifactPath(dictobj):
-    fields = ["host_path", "artifact_path"]
+    fields = ["host_path", "artifact_path", ("stdout", sys.stdout)]
 
     def add_to_tar(self, tar, environment=None):
         """Add everything in this ArtifactPath to the tar"""
@@ -77,9 +77,9 @@ class ArtifactPath(dictobj):
             environment = {}
 
         for full_path, tar_path in self.files(environment):
-            sys.stdout.write(tar_path)
-            sys.stdout.write("\n")
-            sys.stdout.flush()
+            self.stdout.write(tar_path)
+            self.stdout.write("\n")
+            self.stdout.flush()
             tar.add(full_path, tar_path)
 
     def files(self, environment, prefix_path=None):
@@ -106,7 +106,7 @@ class ArtifactPath(dictobj):
                 yield file_full_path, file_tar_path
 
 class ArtifactFile(dictobj):
-    fields = ["content", "path", "task", "task_runner"]
+    fields = ["content", "path", "task", "task_runner", ("stdout", sys.stdout)]
 
     def add_to_tar(self, tar, environment=None):
         """Add this file to the tar"""
@@ -123,13 +123,13 @@ class ArtifactFile(dictobj):
                 self.task_runner(self.task, printer=f)
 
             f.close()
-            sys.stdout.write(self.path)
-            sys.stdout.write("\n")
-            sys.stdout.flush()
+            self.stdout.write(self.path)
+            self.stdout.write("\n")
+            self.stdout.flush()
             tar.add(f.name, self.path)
 
 class ArtifactCommand(dictobj):
-    fields = ["copy", "modify", "command", "add_into_tar", ("timeout", 600)]
+    fields = ["copy", "modify", "command", "add_into_tar", ("timeout", 600), ("stdout", sys.stdout)]
 
     def add_to_tar(self, tar, environment=None):
         if environment is None:
@@ -144,9 +144,9 @@ class ArtifactCommand(dictobj):
     def do_copy_into_tar(self, into, environment, tar):
         for path in self.add_into_tar:
             for full_path, tar_path in path.files(environment, prefix_path=into):
-                sys.stdout.write(tar_path)
-                sys.stdout.write("\n")
-                sys.stdout.flush()
+                self.stdout.write(tar_path)
+                self.stdout.write("\n")
+                self.stdout.flush()
                 tar.add(full_path, tar_path)
 
     def do_command(self, root, environment):

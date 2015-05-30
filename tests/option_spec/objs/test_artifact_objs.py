@@ -111,7 +111,7 @@ describe BespinCase, "ArtifactPath":
             t1 = mock.Mock(name="t1")
             t2 = mock.Mock(name="t2")
 
-            path = ArtifactPath(mock.Mock(name="host_path", spec=[]), mock.Mock(name="artifact_path", spec=[]))
+            path = ArtifactPath(mock.Mock(name="host_path", spec=[]), mock.Mock(name="artifact_path", spec=[]), stdout=mock.Mock(name="stdout"))
             with mock.patch.object(ArtifactPath, "files", lambda s, env: iter([(f1, t1), (f2, t2)])):
                 path.add_to_tar(tar, mock.Mock(name="environment", spec=[]))
 
@@ -157,7 +157,7 @@ describe BespinCase, "ArtifactFile":
             tar = mock.Mock(name="tar")
             tar.add.side_effect = lambda name, path: called.append((name, open(name).read(), path))
 
-            fle = ArtifactFile(content, path, "task", mock.Mock(name="task_runner"))
+            fle = ArtifactFile(content, path, "task", mock.Mock(name="task_runner"), stdout=mock.Mock(name="stdout"))
             fle.add_to_tar(tar)
 
             self.assertEqual(len(called), 1)
@@ -172,7 +172,7 @@ describe BespinCase, "ArtifactFile":
             tar = mock.Mock(name="tar")
             tar.add.side_effect = lambda name, path: called.append((name, open(name).read(), path))
 
-            fle = ArtifactFile(content, path, "task", mock.Mock(name="task_runner"))
+            fle = ArtifactFile(content, path, "task", mock.Mock(name="task_runner"), stdout=mock.Mock(name="stdout"))
             fle.add_to_tar(tar, {"BLAH": "trees", "STUFF": "dogs"})
 
             self.assertEqual(len(called), 1)
@@ -242,7 +242,7 @@ describe BespinCase, "ArtifactCommand":
                 added.append((full_path, tar_path))
             tar.add.side_effect = add
 
-            ArtifactCommand(None, None, None, add_into_tar=[p1, p2]).do_copy_into_tar(into, environment, tar)
+            ArtifactCommand(None, None, None, add_into_tar=[p1, p2], stdout=mock.Mock(name="stdout")).do_copy_into_tar(into, environment, tar)
             self.assertEqual(added, [(f1, t1), (f2, t2), (f3, t3), (f4, t4)])
             p1.files.assert_called_with(environment, prefix_path=into)
             p2.files.assert_called_with(environment, prefix_path=into)

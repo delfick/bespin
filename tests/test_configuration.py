@@ -55,7 +55,7 @@ describe BespinCase, "Collecting configuration":
         config = self.make_config({"a":1, "b":2, "stacks": {"meh": {}}})
         home_config = self.make_config({"a":3, "c":4})
         with self.make_overview(config, home_config) as overview:
-            self.assertEqual(sorted(overview.configuration.keys()), sorted(['a', 'b', 'c', 'stacks']))
+            self.assertEqual(sorted(overview.configuration.keys()), sorted(['a', 'b', 'c', 'config_root', 'stacks']))
             self.assertEqual(overview.configuration['a'], 1)
             self.assertEqual(overview.configuration['b'], 2)
             self.assertEqual(overview.configuration['c'], 4)

@@ -56,7 +56,7 @@ class netscaler_config_spec(Spec):
 configuration_spec = lambda: dictof(string_spec(), dictof(string_spec(), netscaler_config_spec()))
 
 class GenericNetscalerConfig(dictobj):
-    fields = {"typ", "name", "bindings", "tags", "options", "binding_options", "environments", "overrides", ("link", NotSpecified)}
+    fields = ["typ", "name", "bindings", "tags", "options", "binding_options", "environments", "overrides", ("link", NotSpecified)]
 
     def dependencies(self, configuration):
         """Get the bindings dependencies for this configuration item"""
