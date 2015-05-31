@@ -19,7 +19,7 @@ class ShowTasksDirective(Directive):
                 ---
                 environments: { dev: {} }
                 stacks: { app: {} }
-            """))
+            """).encode('utf-8'))
             fle.seek(0)
             overview = Overview(fle.name)
 
