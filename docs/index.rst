@@ -5,6 +5,7 @@
     docs/tasks
     docs/stacks
     docs/artifacts
+    docs/ssh
 
 .. _bespin:
 
