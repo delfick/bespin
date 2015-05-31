@@ -233,6 +233,8 @@ So in the example above, the ``vpcid`` variable would resolve to the ``VpcId``
 Output from the ``vpc-base`` cloudformation stack in the environment being
 deployed to.
 
+.. _stack_env:
+
 Environment Variables
 ---------------------
 

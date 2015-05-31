@@ -2,8 +2,9 @@
     :hidden:
 
     docs/configuration
-    docs/stacks
     docs/tasks
+    docs/stacks
+    docs/artifacts
 
 .. _bespin:
 
