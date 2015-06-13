@@ -150,7 +150,8 @@ class ArtifactCommand(dictobj):
                 tar.add(full_path, tar_path)
 
     def do_command(self, root, environment):
-        return command_output(self.command.format(**environment), cwd=root, timeout=self.timeout, verbose=True)
+        for cmd in self.command:
+            command_output(cmd.format(**environment), cwd=root, timeout=self.timeout, verbose=True)
 
     def do_modify(self, into, environment):
         for key, options in self.modify.items():
