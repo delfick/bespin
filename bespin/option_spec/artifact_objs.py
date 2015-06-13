@@ -1,4 +1,4 @@
-from bespin.errors import BadOption, MissingFile, InvalidArtifact
+from bespin.errors import BadOption, MissingFile, InvalidArtifact, BadCommand
 from bespin.processes import command_output
 from bespin import helpers as hp
 
@@ -151,7 +151,9 @@ class ArtifactCommand(dictobj):
 
     def do_command(self, root, environment):
         for cmd in self.command:
-            command_output(cmd.format(**environment), cwd=root, timeout=self.timeout, verbose=True)
+            output, status = command_output(cmd.format(**environment), cwd=root, timeout=self.timeout, verbose=True)
+            if status != 0:
+                raise BadCommand("Failed to run command", cmd=cmd.format(**environment), output=output, status=status)
 
     def do_modify(self, into, environment):
         for key, options in self.modify.items():

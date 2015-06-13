@@ -62,6 +62,9 @@ class InvalidArtifact(BespinError):
 ###   AMAZON
 ########################
 
+class BadCommand(BespinError):
+    desc = "Bad command"
+
 class BadAmazon(BespinError):
     desc = "Amazon says no"
 
