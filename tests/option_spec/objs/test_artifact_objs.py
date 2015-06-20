@@ -1,8 +1,8 @@
 # coding: spec
 
 from bespin.option_spec.artifact_objs import Artifact, ArtifactPath, ArtifactFile, ArtifactCommand, ArtifactCollection
+from bespin.errors import MissingFile, BadCommand
 from bespin.option_spec import stack_specs
-from bespin.errors import MissingFile
 from bespin.amazon.s3 import S3
 
 from tests.helpers import BespinCase
@@ -260,16 +260,51 @@ describe BespinCase, "ArtifactCommand":
             formatted_cmd = mock.Mock(name="formatted_cmd")
             cmd.format.return_value = formatted_cmd
 
-            command = ArtifactCommand(None, None, command=cmd, add_into_tar=None, timeout=timeout)
+            command = ArtifactCommand(None, None, command=[cmd], add_into_tar=None, timeout=timeout)
 
-            ret = mock.Mock(name="ret")
-            command_output = mock.Mock(name="command_output", return_value=ret)
+            ret_output = mock.Mock(name="ret_output")
+            ret_status = 0
+            command_output = mock.Mock(name="command_output", return_value=(ret_output, ret_status))
 
             with mock.patch("bespin.option_spec.artifact_objs.command_output", command_output):
-                self.assertIs(command.do_command(root, environment), ret)
+                self.assertIs(command.do_command(root, environment), None)
 
             cmd.format.assert_called_once_with(one=one, two=two)
             command_output.assert_called_once_with(formatted_cmd, cwd=root, timeout=timeout, verbose=True)
+
+        it "raises an error if any of the commands fail":
+            environment = {}
+            output = mock.Mock(name="output")
+            cmd1 = mock.Mock(name="cmd1")
+            cmd1f = mock.Mock(name="cmd1f")
+            cmd1.format.return_value = cmd1f
+
+            cmd2 = mock.Mock(name="cmd2")
+            cmd2f = mock.Mock(name="cmd2f")
+            cmd2.format.return_value = cmd2f
+
+            cmd3 = mock.Mock(name="cmd3")
+            cmd3f = mock.Mock(name="cmd3f")
+            cmd3.format.return_value = cmd3f
+
+            def command_output(cmd, *args, **kwargs):
+                if cmd is cmd1f:
+                    return output, 0
+                elif cmd is cmd2f:
+                    return output, 1
+                elif cmd is cmd3f:
+                    assert False, "It shouldn't reach cmd3"
+                else:
+                    assert False, "Unknown command {0}".format(cmd)
+            command_output = mock.Mock(name="command_output", side_effect=command_output)
+
+            root = mock.Mock(name="root")
+            timeout = mock.Mock(name="timeout")
+            command = ArtifactCommand(None, None, command=[cmd1, cmd2, cmd3], add_into_tar=None, timeout=timeout)
+
+            with self.fuzzyAssertRaisesError(BadCommand, "Failed to run command", cmd=cmd2f, output=output, status=1):
+                with mock.patch("bespin.option_spec.artifact_objs.command_output", command_output):
+                    command.do_command(root, environment)
 
     describe "do_modify":
         it "can append lines to a file":

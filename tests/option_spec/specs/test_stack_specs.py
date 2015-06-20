@@ -188,11 +188,11 @@ describe BespinCase, "artifact_command_spec":
             , [artifact_objs.ArtifactPath(p1, p2), artifact_objs.ArtifactPath(p3, p4)]
             )
 
-    it "makes command as a formatted string":
+    it "makes command as a list of formatted string":
         one = self.unique_val()
         meta = Meta(MergedOptions.using({"one": one}), [])
         command = "blah {one} meh"
-        expected = "blah {0} meh".format(one)
+        expected = ["blah {0} meh".format(one)]
         self.assertEqual(specs.artifact_command_spec().normalise(meta, {"command": command}).command, expected)
 
     it "makes modify as a dictionary":
