@@ -10,7 +10,6 @@ import six
 class Bespin(dictobj):
     fields = {
         "flat": "Used by the ``Show`` task to show the stacks as a flat list. Set by ``--flat``"
-      , "extra": "Holds the extra command line arguments after ``--``"
       , "config": "Holds a file object to the specified Bespin configuration file"
       , "dry_run": "Don't run any destructive or modification amazon requests"
       , "assume_role": """

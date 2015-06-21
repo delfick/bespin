@@ -1,7 +1,7 @@
 """
 This is the entry point of Bespin itself.
 
-The overview object is responsible for collecting configuration, knowing default
+The collector object is responsible for collecting configuration, knowing default
 tasks, and for starting the chosen task.
 """
 
@@ -11,7 +11,6 @@ from bespin.option_spec.bespin_specs import BespinSpec
 from bespin.option_spec.task_objs import Task
 from bespin.tasks import available_tasks
 
-from input_algorithms.spec_base import NotSpecified
 from input_algorithms import spec_base as sb
 from input_algorithms.dictobj import dictobj
 from option_merge import MergedOptions
@@ -23,9 +22,9 @@ import yaml
 import six
 import os
 
-log = logging.getLogger("bespin.executor")
+log = logging.getLogger("bespin.collector")
 
-class Overview(object):
+class Collector(object):
     def __init__(self, configuration_file):
         self.configuration_file = configuration_file
         self.configuration_folder = os.path.dirname(os.path.abspath(configuration_file))
@@ -41,17 +40,17 @@ class Overview(object):
         if hasattr(self.configuration["bespin"], "credentials"):
             new_bespin.credentials = self.configuration["bespin"].credentials
 
-        class NewOverview(Overview):
+        class NewCollector(Collector):
             def __init__(s):
                 s.configuration = self.collect_configuration(self.configuration_file)
                 s.configuration_file = self.configuration_file
                 s.configuration_folder = self.configuration_folder
 
-        new_overview = NewOverview()
+        new_collector = NewCollector()
         new_cli_args = dict(self.configuration["cli_args"].items())
         new_cli_args["bespin"] = new_bespin
-        new_overview.prepare(new_cli_args)
-        return new_overview
+        new_collector.prepare(new_cli_args)
+        return new_collector
 
     def prepare(self, cli_args, available_tasks=None):
         """Do the bespin stuff"""
@@ -71,10 +70,9 @@ class Overview(object):
             info["tasks"][task].run(self, cli_args, stack_finder(task), available_actions=available_tasks, tasks=info["tasks"], **kwargs)
 
         self.configuration.update(
-            { "$@": bespin.get("extra", "")
-            , "bespin": bespin
+            { "bespin": bespin
             , "getpass": getpass
-            , "overview": self
+            , "collector": self
             , "cli_args": cli_args
             , "command": cli_args['command']
             , "config_root": self.configuration_folder
@@ -96,11 +94,6 @@ class Overview(object):
             importer.do_import(bespin, task_overrides)
         tasks = self.find_tasks(overrides=task_overrides)
         info["tasks"] = tasks
-
-    def start(self, task=NotSpecified):
-        """Start the chosen task"""
-        task = self.configuration["bespin"].chosen_task if task is NotSpecified else task
-        self.configuration["task_runner"](task)
 
     ########################
     ###   CONFIG

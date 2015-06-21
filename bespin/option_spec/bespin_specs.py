@@ -364,7 +364,6 @@ class BespinSpec(object):
             , flat = defaulted(boolean(), False)
             , environment = optional_spec(string_spec())
 
-            , extra = defaulted(formatted_string, "")
             , no_assume_role = defaulted(formatted_boolean, False)
 
             , chosen_task = defaulted(formatted_string, "list_tasks")
