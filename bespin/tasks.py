@@ -31,6 +31,8 @@ import os
 
 log = logging.getLogger("bespin.tasks")
 
+info = {"is_default": True}
+default_tasks = []
 available_tasks = {}
 class a_task(object):
     """Records a task in the ``available_tasks`` dictionary"""
@@ -46,6 +48,8 @@ class a_task(object):
         func.needs_stack = self.needs_stack
         func.needs_stacks = self.needs_stacks
         func.needs_credentials = self.needs_credentials
+        if info["is_default"]:
+            default_tasks.append(func.__name__)
         return func
 
 @a_task()
@@ -424,3 +428,5 @@ def sync_netscaler_config(collector, configuration, stacks, stack, **kwargs):
             for _, thing in layer:
                 netscaler.sync(all_configuration, configuration["environment"], thing)
 
+# Make it so future use of @a_task doesn't result in more default tasks
+info["is_default"] = False

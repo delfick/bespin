@@ -1,14 +1,12 @@
 """
-This is the entry point of Bespin itself.
-
 The collector object is responsible for collecting configuration, knowing default
 tasks, and for starting the chosen task.
 """
 
-from bespin.errors import BadConfiguration, BadTask, BadYaml, BespinError
+from bespin.errors import BadConfiguration, BadYaml, BespinError
 from bespin.formatter import MergedOptionStringFormatter
 from bespin.option_spec.bespin_specs import BespinSpec
-from bespin.option_spec.task_objs import Task
+from bespin.task_finder import TaskFinder
 from bespin.tasks import available_tasks
 
 from input_algorithms import spec_base as sb
@@ -62,13 +60,6 @@ class Collector(object):
         bespin = cli_args.pop("bespin")
         environment = bespin.get("environment")
 
-        info = {}
-        stack_finder = lambda task: getattr(info["tasks"][task], "stack", bespin["chosen_stack"])
-        def task_runner(task, **kwargs):
-            if task not in tasks:
-                raise BadTask("Unknown task", task=task, available=tasks.keys())
-            info["tasks"][task].run(self, cli_args, stack_finder(task), available_actions=available_tasks, tasks=info["tasks"], **kwargs)
-
         self.configuration.update(
             { "bespin": bespin
             , "getpass": getpass
@@ -77,8 +68,6 @@ class Collector(object):
             , "command": cli_args['command']
             , "config_root": self.configuration_folder
             , "environment": environment
-            , "task_runner": task_runner
-            , "stack_finder": stack_finder
             }
         , source = "<cli>"
         )
@@ -88,12 +77,18 @@ class Collector(object):
             self.configuration.update({"region": self.configuration["environments"][environment].region})
 
         bespin = self.configuration["bespin"]
-
         task_overrides = {}
         for importer in bespin.extra_imports:
             importer.do_import(bespin, task_overrides)
-        tasks = self.find_tasks(overrides=task_overrides)
-        info["tasks"] = tasks
+
+        task_finder = TaskFinder(self.configuration, cli_args)
+        self.configuration.update(
+            { "stack_finder": task_finder.stack_finder
+            , "task_runner": task_finder.task_runner
+            }
+        , source = "<code>"
+        )
+        task_finder.find_tasks(task_overrides)
 
     ########################
     ###   CONFIG
@@ -294,62 +289,3 @@ class Collector(object):
         converter = Converter(convert=convert_tasks, convert_path=["stacks", stack, "tasks"])
         configuration.add_converter(converter)
 
-    ########################
-    ###   TASKS
-    ########################
-
-    def default_tasks(self, has_netscaler=False):
-        """Return default tasks"""
-        def t(name, description=None, action=None, **options):
-            if not action:
-                action = name
-            return (name, Task(action, description=description, options=options, label="Bespin"))
-        base = dict(t(name) for name in [
-              "tail"
-            , "show"
-            , "params"
-            , "become"
-            , "deploy"
-            , "execute"
-            , "outputs"
-            , "bastion"
-            , "downtime"
-            , "instances"
-            , "undowntime"
-            , "list_tasks"
-            , "deploy_plan"
-            , "sanity_check"
-            , "print_variable"
-            , "scale_instances"
-            , "encrypt_password"
-            , "publish_artifacts"
-            , "sanity_check_plan"
-            , "confirm_deployment"
-            , "clean_old_artifacts"
-            , "command_on_instances"
-            , "sync_netscaler_config"
-            , "switch_dns_traffic_to"
-            , "resume_cloudformation_actions"
-            , "suspend_cloudformation_actions"
-            ])
-        if has_netscaler:
-            for name, task in (t("enable_server_in_netscaler"), t("disable_server_in_netscaler")):
-                base[name] = task
-        return base
-
-    def find_tasks(self, configuration=None, overrides=None):
-        """Find the custom tasks and record the associated stack with each task"""
-        if configuration is None:
-            configuration = self.configuration
-
-        tasks = self.default_tasks(has_netscaler="netscaler" in configuration)
-        for stack in list(configuration["stacks"]):
-            path = configuration.path(["stacks", stack, "tasks"], joined="stacks.{0}.tasks".format(stack))
-            nxt = configuration.get(path, {})
-            for task in nxt.values():
-                task.specify_stack(stack)
-            tasks.update(nxt)
-        if overrides:
-            tasks.update(overrides)
-
-        return tasks
