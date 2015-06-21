@@ -21,7 +21,10 @@ class App(App):
     cli_positional_replacements = [('--task', 'list_tasks'), ('--environment', NotSpecified), ('--stack', NotSpecified), ('--artifact', NotSpecified)]
 
     def execute(self, args, extra_args, cli_args, logging_handler):
-        overview = Overview(configuration_file=args.bespin_config.name, logging_handler=logging_handler)
+        overview = Overview(configuration_file=args.bespin_config.name)
+        if "term_colors" in overview.configuration:
+            self.setup_logging_theme(logging_handler, colors=overview.configuration["term_colors"])
+
         overview.prepare(cli_args)
         overview.start()
 

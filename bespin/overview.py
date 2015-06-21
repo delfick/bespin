@@ -26,14 +26,11 @@ import os
 log = logging.getLogger("bespin.executor")
 
 class Overview(object):
-    def __init__(self, configuration_file, logging_handler=None):
-        self.logging_handler = logging_handler
-
+    def __init__(self, configuration_file):
         self.configuration_file = configuration_file
         self.configuration_folder = os.path.dirname(os.path.abspath(configuration_file))
 
         self.configuration = self.collect_configuration(configuration_file)
-        self.setup_logging_theme()
 
     def clone(self, new_bespin_options=None):
         new_bespin = self.configuration["bespin"].clone()
@@ -46,7 +43,6 @@ class Overview(object):
 
         class NewOverview(Overview):
             def __init__(s):
-                s.logging_handler = self.logging_handler
                 s.configuration = self.collect_configuration(self.configuration_file)
                 s.configuration_file = self.configuration_file
                 s.configuration_folder = self.configuration_folder
@@ -105,38 +101,6 @@ class Overview(object):
         """Start the chosen task"""
         task = self.configuration["bespin"].chosen_task if task is NotSpecified else task
         self.configuration["task_runner"](task)
-
-    ########################
-    ###   THEME
-    ########################
-
-    def setup_logging_theme(self):
-        """
-        Setup a logging theme
-
-        Currently there is only ``light`` and ``dark`` which consists of a difference
-        in color for INFO level messages.
-        """
-        if "term_colors" not in self.configuration:
-            return
-
-        if not getattr(self, "logging_handler", None):
-            log.warning("Told to set term_colors but don't have a logging_handler to change")
-            return
-
-        colors = self.configuration.get("term_colors")
-        if not colors:
-            return
-
-        if colors not in ("light", "dark"):
-            log.warning("Told to set colors to a theme we don't have\tgot=%s\thave=[light, dark]", colors)
-            return
-
-        # Haven't put much effort into actually working out more than just the message colour
-        if colors == "light":
-            self.logging_handler._column_color['%(message)s'][logging.INFO] = ('cyan', None, False)
-        else:
-            self.logging_handler._column_color['%(message)s'][logging.INFO] = ('blue', None, False)
 
     ########################
     ###   CONFIG
