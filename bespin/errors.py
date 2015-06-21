@@ -1,10 +1,13 @@
+from delfick_error import DelfickError, ProgrammerError, UserQuit
 from input_algorithms.errors import BadSpec, BadSpecValue
-from delfick_error import DelfickError, ProgrammerError
+from delfick_app import BadOption
 
 class BespinError(DelfickError): pass
 
 # Explicitly make these errors in this context
 BadSpec = BadSpec
+UserQuit = UserQuit
+BadOption = BadOption
 BadSpecValue = BadSpecValue
 ProgrammerError = ProgrammerError
 
@@ -17,9 +20,6 @@ class BadConfiguration(BespinError):
 
 class BadOptionFormat(BespinError):
     desc = "Bad option format"
-
-class BadOption(BespinError):
-    desc = "Bad Option"
 
 class MissingOutput(BespinError):
     desc = "Couldn't find an output"
@@ -80,9 +80,6 @@ class StackDoesntExist(BadAmazon):
 ########################
 ###   OTHER
 ########################
-
-class UserQuit(BespinError):
-    desc = "User quit the program"
 
 class StackDepCycle(BespinError):
     desc = "Stack dependency cycle"
