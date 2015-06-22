@@ -11,10 +11,12 @@ from bespin.tasks import available_tasks
 
 from input_algorithms import spec_base as sb
 from input_algorithms.dictobj import dictobj
-from option_merge import MergedOptions
 from input_algorithms.meta import Meta
+
+from option_merge.collector import Collector
+from option_merge import MergedOptions
 from option_merge import Converter
-from getpass import getpass
+
 import logging
 import yaml
 import six
@@ -22,14 +24,12 @@ import os
 
 log = logging.getLogger("bespin.collector")
 
-class Collector(object):
-    def __init__(self, configuration_file):
-        self.configuration_file = configuration_file
-        self.configuration_folder = os.path.dirname(os.path.abspath(configuration_file))
+class Collector(Collector):
 
-        self.configuration = self.collect_configuration(configuration_file)
+    BadFileErrorKls = BadYaml
+    BadConfigurationErrorKls = BadConfiguration
 
-    def clone(self, new_bespin_options=None):
+    def alter_clone_cli_args(self, new_collector, new_cli_args, new_bespin_options=None):
         new_bespin = self.configuration["bespin"].clone()
         if new_bespin_options:
             new_bespin.update(new_bespin_options)
@@ -38,41 +38,31 @@ class Collector(object):
         if hasattr(self.configuration["bespin"], "credentials"):
             new_bespin.credentials = self.configuration["bespin"].credentials
 
-        class NewCollector(Collector):
-            def __init__(s):
-                s.configuration = self.collect_configuration(self.configuration_file)
-                s.configuration_file = self.configuration_file
-                s.configuration_folder = self.configuration_folder
-
-        new_collector = NewCollector()
-        new_cli_args = dict(self.configuration["cli_args"].items())
         new_cli_args["bespin"] = new_bespin
-        new_collector.prepare(new_cli_args)
-        return new_collector
 
-    def prepare(self, cli_args, available_tasks=None):
-        """Do the bespin stuff"""
+    def find_missing_config(self, configuration):
+        """Used to make sure we have stacks and environments before doing anything"""
         if "stacks" not in self.configuration:
-            raise BadConfiguration("Didn't find any stacks in the configuration")
+            raise self.BadConfigurationErrorKls("Didn't find any stacks in the configuration")
         if not self.configuration.get("environments"):
-            raise BadConfiguration("Didn't find any environments configuration")
+            raise self.BadConfigurationErrorKls("Didn't find any environments configuration")
 
+    def extra_prepare(self, configuration, cli_args, available_tasks):
+        """Called before the configuration.converters are activated"""
         bespin = cli_args.pop("bespin")
         environment = bespin.get("environment")
 
         self.configuration.update(
             { "bespin": bespin
-            , "getpass": getpass
-            , "collector": self
-            , "cli_args": cli_args
             , "command": cli_args['command']
-            , "config_root": self.configuration_folder
             , "environment": environment
             }
-        , source = "<cli>"
+        , source = "<cli_args>"
         )
 
-        self.configuration.converters.activate()
+    def extra_prepare_after_activation(self, configuration, cli_args, available_tasks):
+        """Called after the configuration.converters are activated"""
+        environment = configuration["environment"]
         if environment in self.configuration["environments"]:
             self.configuration.update({"region": self.configuration["environments"][environment].region})
 
@@ -90,111 +80,49 @@ class Collector(object):
         )
         task_finder.find_tasks(task_overrides)
 
-    ########################
-    ###   CONFIG
-    ########################
-
-    def read_yaml(self, filepath):
-        """Read in a yaml file and return as a python object"""
-        try:
-            if os.stat(filepath).st_size == 0:
-                return {}
-            return yaml.load(open(filepath))
-        except yaml.parser.ParserError as error:
-            raise BadYaml("Failed to read yaml", location=filepath, error_type=error.__class__.__name__, error="{0}{1}".format(error.problem, error.problem_mark))
-
     def home_dir_configuration_location(self):
-        """Return the location of the configuration in the user's home directory"""
         return os.path.expanduser("~/.bespin.yml")
 
-    def collect_configuration(self, configuration_file):
-        """Return us a MergedOptions with this configuration and any collected configurations"""
-        errors = []
+    def start_configuration(self):
+        """Create the base of the configuration"""
+        return MergedOptions(dont_prefix=[dictobj])
 
+    def read_file(self, location):
+        """Read in a yaml file and return as a python object"""
+        try:
+            return yaml.load(open(location))
+        except yaml.parser.ParserError as error:
+            raise self.BadFileErrorKls("Failed to read yaml", location=location, error_type=error.__class__.__name__, error="{0}{1}".format(error.problem, error.problem_mark))
+
+    def add_configuration(self, configuration, collect_another_source, done, result, src):
+        """Used to add a file to the configuration, result here is the yaml.load of the src"""
+        configuration.update(result, dont_prefix=[dictobj], source=src)
+
+        if "bespin" in configuration:
+            if "extra_files" in configuration["bespin"]:
+                for extra in sb.listof(sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)).normalise(Meta(configuration, [("bespin", ""), ("extra_files", "")]), configuration["bespin"]["extra_files"]):
+                    if os.path.abspath(extra) not in done:
+                        if not os.path.exists(extra):
+                            raise BadConfiguration("Specified extra file doesn't exist", extra=extra, source=src)
+                        collect_another_source(extra)
+
+    def extra_configuration_collection(self, configuration):
+        """Hook to do any extra configuration collection or converter registration"""
         bespin_spec = BespinSpec()
-        configuration = MergedOptions(dont_prefix=[dictobj])
-        configuration["config_root"] = self.configuration_folder
-
-        home_dir_configuration = self.home_dir_configuration_location()
-        sources = [home_dir_configuration, configuration_file]
-
-        done = set()
-        def add_configuration(src):
-            log.info("Adding configuration from %s", os.path.abspath(src))
-            if os.path.abspath(src) in done:
-                return
-            else:
-                done.add(os.path.abspath(src))
-
-            if src is None or not os.path.exists(src):
-                return
-
-            try:
-                result = self.read_yaml(src)
-            except BadYaml as error:
-                errors.append(error)
-                return
-
-            if not result:
-                return
-
-            configuration.update(result, dont_prefix=[dictobj], source=src)
-
-            if "bespin" in configuration:
-                if "extra_files" in configuration["bespin"]:
-                    for extra in sb.listof(sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)).normalise(Meta(configuration, [("bespin", ""), ("extra_files", "")]), configuration["bespin"]["extra_files"]):
-                        if os.path.abspath(extra) not in done:
-                            if not os.path.exists(extra):
-                                raise BadConfiguration("Specified extra file doesn't exist", extra=extra, source=src)
-                            add_configuration(extra)
-
-        for source in sources:
-            add_configuration(source)
 
         for stack in configuration.get('stacks', {}).keys():
             self.make_stack_converters(stack, configuration, bespin_spec)
 
-        def convert_bespin(path, val):
-            log.info("Converting %s", path)
-            meta = Meta(path.configuration, [("bespin", "")])
-            configuration.converters.started(path)
-            val["configuration"] = configuration.root()
-            return bespin_spec.bespin_spec.normalise(meta, val)
-
-        bespin_converter = Converter(convert=convert_bespin, convert_path=["bespin"])
-        configuration.add_converter(bespin_converter)
-
-        def convert_environments(path, val):
-            log.info("Converting %s", path)
-            meta = Meta(path.configuration, [("environments", "")])
-            configuration.converters.started(path)
-            return bespin_spec.environments_spec.normalise(meta, val)
-
-        environments_converter = Converter(convert=convert_environments, convert_path=["environments"])
-        configuration.add_converter(environments_converter)
-
-        def convert_plans(path, val):
-            log.info("Converting %s", path)
-            meta = Meta(path.configuration, [("plans", "")])
-            configuration.converters.started(path)
-            return bespin_spec.plans_spec.normalise(meta, val)
-
-        plans_converter = Converter(convert=convert_plans, convert_path=["plans"])
-        configuration.add_converter(plans_converter)
-
-        def convert_netscaler(path, val):
-            log.info("Converting %s", path)
-            meta = Meta(path.configuration, [("netscaler", "")])
-            configuration.converters.started(path)
-            return bespin_spec.netscaler_spec.normalise(meta, val)
-
-        converter = Converter(convert=convert_netscaler, convert_path=["netscaler"])
-        configuration.add_converter(converter)
-
-        if errors:
-            raise BadConfiguration("Some of the configuration was broken", _errors=errors)
-
-        return configuration
+        for path in ("bespin", "environments", "plans", "netscaler"):
+            def make_converter(path):
+                def converter(p, v):
+                    log.info("Converting %s", p)
+                    meta = Meta(p.configuration, [(path, "")])
+                    spec = getattr(bespin_spec, "{0}_spec".format(path))
+                    configuration.converters.started(p)
+                    return spec.normalise(meta, v)
+                return Converter(convert=converter, convert_path=[path])
+            configuration.add_converter(make_converter(path))
 
     def make_stack_converters(self, stack, configuration, bespin_spec):
         """Make converters for this stack and add them to the configuration"""
