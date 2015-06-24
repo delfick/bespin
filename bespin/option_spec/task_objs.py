@@ -32,14 +32,14 @@ class Task(dictobj):
             if self.action in available_actions:
                 self.description = available_actions[self.action].__doc__
 
-    def run(self, overview, cli_args, stack, available_actions=None, tasks=None, **extras):
+    def run(self, collector, cli_args, stack, available_actions=None, tasks=None, **extras):
         """Run this task"""
         if available_actions is None:
             from bespin.tasks import available_tasks as available_actions
 
         task_action = available_actions[self.action]
         self.set_description(available_actions)
-        configuration = MergedOptions.using(overview.configuration, dont_prefix=overview.configuration.dont_prefix, converters=overview.configuration.converters)
+        configuration = MergedOptions.using(collector.configuration, dont_prefix=collector.configuration.dont_prefix, converters=collector.configuration.converters)
 
         if self.options:
             if stack:
@@ -55,7 +55,7 @@ class Task(dictobj):
                 overrides[key] = val
                 if isinstance(val, MergedOptions):
                     overrides[key] = dict(val.items())
-            overview.configuration.update(overrides)
+            collector.configuration.update(overrides)
 
         stacks = None
         if task_action.needs_stacks:
@@ -65,7 +65,7 @@ class Task(dictobj):
             if configuration["environments"].get(environment) is None:
                 raise BadOption("No configuration found for specified environment", environment=environment, available=list(configuration["environments"].keys()))
 
-            stacks = self.determine_stack(stack, overview, configuration, needs_stack=task_action.needs_stack)
+            stacks = self.determine_stack(stack, collector, configuration, needs_stack=task_action.needs_stack)
             if stack and task_action.needs_stack:
                 stack = stacks[stack]
 
@@ -102,9 +102,9 @@ class Task(dictobj):
         if task_action.needs_artifact and not artifact:
                 raise BadOption("Please specify an artifact")
 
-        return task_action(overview, configuration, stacks=stacks, stack=stack, artifact=artifact, tasks=tasks, **extras)
+        return task_action(collector, configuration, stacks=stacks, stack=stack, artifact=artifact, tasks=tasks, **extras)
 
-    def determine_stack(self, stack, overview, configuration, needs_stack=True):
+    def determine_stack(self, stack, collector, configuration, needs_stack=True):
         """Complain if we don't have an stack"""
         stacks = configuration["stacks"]
 

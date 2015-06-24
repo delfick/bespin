@@ -7,10 +7,11 @@ from bespin.option_spec.task_objs import Task
 from bespin.errors import BadTask
 
 class TaskFinder(object):
-    def __init__(self, configuration, cli_args):
+    def __init__(self, collector, cli_args):
         self.tasks = {}
         self.cli_args = cli_args
-        self.configuration = configuration
+        self.collector = collector
+        self.configuration = self.collector.configuration
 
     def stack_finder(self, task):
         return getattr(self.tasks[task], "stack", self.configuration['bespin'].chosen_stack)
@@ -18,7 +19,7 @@ class TaskFinder(object):
     def task_runner(self, task, **kwargs):
         if task not in self.tasks:
             raise BadTask("Unknown task", task=task, available=self.tasks.keys())
-        return self.tasks[task].run(self, self.cli_args, self.stack_finder(task), available_actions=available_tasks, tasks=self.tasks, **kwargs)
+        return self.tasks[task].run(self.collector, self.cli_args, self.stack_finder(task), available_actions=available_tasks, tasks=self.tasks, **kwargs)
 
     def default_tasks(self):
         """Return default tasks"""

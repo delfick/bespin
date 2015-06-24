@@ -71,7 +71,7 @@ class Collector(Collector):
         for importer in bespin.extra_imports:
             importer.do_import(bespin, task_overrides)
 
-        task_finder = TaskFinder(self.configuration, cli_args)
+        task_finder = TaskFinder(self, cli_args)
         self.configuration.update(
             { "stack_finder": task_finder.stack_finder
             , "task_runner": task_finder.task_runner
