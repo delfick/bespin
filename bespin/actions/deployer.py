@@ -68,9 +68,9 @@ class Deployer(object):
             # Avoid race condition
             time.sleep(5)
 
-            stack.cloudformation.wait(rollback_is_failure=True)
+            stack.cloudformation.wait(timeout=stack.build_timeout, rollback_is_failure=True)
         else:
-            stack.cloudformation.wait()
+            stack.cloudformation.wait(timeout=stack.build_timeout)
 
         stack.cloudformation.reset()
 

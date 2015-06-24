@@ -48,6 +48,7 @@ class Stack(dictobj):
         , "stack_name_env": "A list of environment variables that are necessary for creating the stack name"
 
         , "build_first": "A list of stacks that should be built before this one is built"
+        , "build_timeout": "A timeout for waiting for a build to happen"
         , "build_after": "A list of stacks that should be built after this one is buildt"
         , "ignore_deps": "Don't build any dependency stacks"
         , "suspend_actions": """

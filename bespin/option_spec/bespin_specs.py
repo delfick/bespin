@@ -264,6 +264,7 @@ class BespinSpec(object):
 
             , build_first = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , build_after = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+            , build_timeout = defaulted(integer_spec(), 1200)
             , ignore_deps = defaulted(boolean(), False)
 
             , vars = dictof(string_spec(), stack_specs.var_spec(), nested=True)
