@@ -1,6 +1,5 @@
 """
-The collector object is responsible for collecting configuration, knowing default
-tasks, and for starting the chosen task.
+Collects then parses configuration files and verifies that they are valid.
 """
 
 from bespin.errors import BadConfiguration, BadYaml, BespinError
