@@ -6,9 +6,9 @@ from bespin import helpers as hp
 
 from ultra_rest_client import RestApiClient as UltraRestApiClient
 from input_algorithms.spec_base import NotSpecified
+from dnslib import DNSRecord, DNSQuestion, QTYPE
 from input_algorithms.dictobj import dictobj
 from pyrelic import Client as NewrelicClient
-from dns.resolver import Resolver
 import binascii
 import logging
 import socket
@@ -631,13 +631,13 @@ class UltraDNSSite(dictobj):
                 log.info("Current value is %s", list(set(found)))
 
         if rtype == "CNAME":
-            answer = list(Resolver().query(self.domain, rtype))
+            answer = DNSRecord.parse(DNSRecord(q=DNSQuestion(self.domain, QTYPE.CNAME)).send("8.8.8.8", 53)).short()
             if not answer:
                 raise BespinError("couldn't resolve the domain", domain=self.domain)
 
-            if answer[0].target.to_text() == current_val[0]:
+            if answer == current_val[0]:
                 return True
             else:
-                log.info("Current value is %s", answer[0].target.to_text())
+                log.info("Current value is %s", answer)
 
         return False

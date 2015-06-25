@@ -26,7 +26,7 @@ setup(
       , "pyYaml==3.10"
       , "ultra_rest_client==0.1.4"
       , "FileChunkIO==1.6"
-      , "dnspython3==1.12.0"
+      , "dnslib==0.9.4"
       ]
 
     , extras_require =
