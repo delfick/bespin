@@ -16,6 +16,7 @@ from bespin.actions.builder import Builder
 from bespin.actions.plan import Plan
 from bespin.actions.ssh import SSH
 from bespin.layers import Layers
+from bespin import helpers as hp
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms import spec_base as sb
@@ -427,6 +428,55 @@ def sync_netscaler_config(collector, configuration, stacks, stack, **kwargs):
         for layer in layers.layered:
             for _, thing in layer:
                 netscaler.sync(all_configuration, configuration["environment"], thing)
+
+@a_task(needs_stack=True, needs_credentials=True)
+def wait_for_dns_switch(collector, configuration, stacks, stack, artifact, site=NotSpecified, **kwargs):
+    """Periodically check dns until all our sites point to where they should be pointing to for specified environment"""
+
+    if stack.dns is NotSpecified:
+        raise BespinError("No dns options are specified!")
+
+    if site is NotSpecified and artifact not in ("", None, NotSpecified):
+        site = artifact
+    if site is NotSpecified or not site:
+        site = None
+
+    all_sites = stack.dns.sites()
+    available = list(all_sites.keys())
+    if site:
+        if site not in available:
+            raise BespinError("Have no dns options for specified site", available=available, wanted=site)
+        sites = [site]
+    else:
+        sites = available
+    sites = [all_sites[s] for s in sites]
+
+    environment = configuration["bespin"].environment
+    errors = []
+    for site in sorted(sites):
+        if environment not in site.environments:
+            errors.append(BespinError("Site doesn't have specified environment", site=site.name, wanted=environment, available=list(stack.environments.keys())))
+
+        try:
+            rtype, rdata = site.current_value
+            if rtype != site.record_type:
+                errors.append(BespinError("Site is a different record type!", recorded_as=rtype, wanted=site.record_type))
+
+            log.info("%s is currently %s (%s)", site.domain, rdata, rtype)
+        except BespinError as error:
+            errors.append(error)
+            continue
+
+    if errors:
+        raise BespinError("Prechecks failed", _errors=errors)
+
+    log.info("Waiting for traffic to switch to %s\tsites=%s", environment, [site.domain for site in sites])
+    for _ in hp.until(timeout=600, step=5):
+        if all(site.switched_to(environment) for site in sites):
+            log.info("Finished switching!")
+            break
+        else:
+            log.info("Waiting for sites to switch")
 
 # Make it so future use of @a_task doesn't result in more default tasks
 info["is_default"] = False

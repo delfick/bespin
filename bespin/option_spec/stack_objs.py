@@ -8,8 +8,10 @@ from ultra_rest_client import RestApiClient as UltraRestApiClient
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms.dictobj import dictobj
 from pyrelic import Client as NewrelicClient
+from dns.resolver import Resolver
 import binascii
 import logging
+import socket
 import base64
 import shlex
 import json
@@ -608,3 +610,34 @@ class UltraDNSSite(dictobj):
             if res.get("message") != "Successful":
                 raise BadDnsSwitch("Didn't switch record", zone=self.zone, domain=self.domain, rdata=rdata, result=res)
 
+    def switched_to(self, environment):
+        rtype, current_val = self.current_value
+        wanted_val = self.environments[environment]
+
+        if set(current_val) != set(wanted_val):
+            raise BespinError("The current value in ultradns is different than the specified value for this environment"
+                , environment = environment
+                , ultradns_has = current_val
+                , specified = wanted_val
+                )
+
+        log.info("Seeing if %s has switched to %s(%s)", self.domain, environment, current_val)
+        if rtype == "A":
+            info = socket.getaddrinfo(self.domain, 80)
+            found = [sockaddr[0] for _, _, _, _, sockaddr in info]
+            if set(found) == set(current_val):
+                return True
+            else:
+                log.info("Current value is %s", list(set(found)))
+
+        if rtype == "CNAME":
+            answer = list(Resolver().query(self.domain, rtype))
+            if not answer:
+                raise BespinError("couldn't resolve the domain", domain=self.domain)
+
+            if answer[0].target.to_text() == current_val[0]:
+                return True
+            else:
+                log.info("Current value is %s", answer[0].target.to_text())
+
+        return False
