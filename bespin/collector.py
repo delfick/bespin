@@ -51,6 +51,7 @@ class Collector(Collector):
         bespin = cli_args.pop("bespin")
         environment = bespin.get("environment")
 
+        bespin["configuration"] = configuration
         self.configuration.update(
             { "bespin": bespin
             , "command": cli_args['command']
@@ -61,7 +62,12 @@ class Collector(Collector):
 
     def extra_prepare_after_activation(self, configuration, cli_args, available_tasks):
         """Called after the configuration.converters are activated"""
-        environment = configuration["environment"]
+        environment = configuration["bespin"].environment
+
+        available = list(self.configuration["environments"].keys())
+        if environment not in available:
+            raise self.BadConfigurationErrorKls("Please choose a valid environment", available=available, wanted=environment)
+
         if environment in self.configuration["environments"]:
             self.configuration.update({"region": self.configuration["environments"][environment].region})
 
