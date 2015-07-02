@@ -28,6 +28,7 @@ import logging
 import base64
 import shlex
 import json
+import sys
 import os
 
 log = logging.getLogger("bespin.tasks")
@@ -153,6 +154,10 @@ def execute(collector, configuration, **kwargs):
     """Exec a command using assumed credentials"""
     parts = shlex.split(configuration["$@"])
     configuration["bespin"].credentials.verify_creds()
+    if not parts:
+        suggestion = " ".join(sys.argv) + " -- /bin/command_to_run"
+        msg = "No command was provided. Try something like:\n\t\t{0}".format(suggestion)
+        raise BespinError(msg)
     os.execvpe(parts[0], parts, os.environ)
 
 @a_task(needs_credentials=True, needs_stack=True)
