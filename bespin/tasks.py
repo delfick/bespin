@@ -173,9 +173,15 @@ def params(collector, configuration, stacks, stack, **kwargs):
     print(json.dumps(stack.params_json_obj, indent=4))
 
 @a_task(needs_stack=True, needs_credentials=True)
-def outputs(collector, configuration, stacks, stack, **kwargs):
+def outputs(collector, configuration, stacks, stack, artifact, **kwargs):
     """Print out the outputs"""
-    print(json.dumps(stack.cloudformation.outputs, indent=4))
+    outputs = stack.cloudformation.outputs
+    if artifact not in (None, NotSpecified):
+        if artifact not in outputs:
+            raise BespinError("Couldn't find output", wanted=artifact, available=list(outputs.keys()))
+        print(outputs[artifact])
+    else:
+        print(json.dumps(outputs, indent=4))
 
 @a_task(needs_credentials=True, needs_stacks=True)
 def deploy_plan(collector, configuration, stacks, stack, artifact, **kwargs):
