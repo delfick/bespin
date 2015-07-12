@@ -20,7 +20,7 @@ setup(
       , "requests"
       , "paramiko"
 
-      , "radssh==1.0.1"
+      , "radssh==1.0.5"
       , "pyrelic==0.8.0"
       , "boto==2.38.0"
       , "pyYaml==3.10"

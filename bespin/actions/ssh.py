@@ -73,10 +73,6 @@ class SSH(object):
                 keys[identity] = key
                 login.deferred_keys[identity] = key
 
-            # Diry dirty hack
-            # Waiting for https://github.com/radssh/radssh/pull/10
-            paramiko.Agent = type("AgentConnection", (object, ), {"get_keys": lambda *args: keys.keys()})
-
         try:
             console = RadSSHConsole()
             connections = [(ip, None) for ip in self.ips]
@@ -101,7 +97,11 @@ class SSH(object):
                         raise BespinError("Timedout waiting to connect to some hosts", waiting_for=cluster.pending.keys())
 
                     for _ in hp.until(timeout=10, step=0.5):
-                        if all(conn.authenticated for conn in cluster.connections.values()):
+                        connections = list(cluster.connections.values())
+                        if any(isinstance(connection, socket.gaierror) for connection in connections):
+                            raise BespinError("Some connections failed!", failures=[conn for conn in connections if isinstance(conn, socket.gaierror)])
+
+                        if all(conn.authenticated for conn in connections):
                             break
 
                     authenticated = all(conn.authenticated for conn in cluster.connections.values())
