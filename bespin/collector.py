@@ -8,6 +8,7 @@ from bespin.option_spec.bespin_specs import BespinSpec
 from bespin.task_finder import TaskFinder
 from bespin.tasks import available_tasks
 
+from input_algorithms.spec_base import NotSpecified
 from input_algorithms import spec_base as sb
 from input_algorithms.dictobj import dictobj
 from input_algorithms.meta import Meta
@@ -65,7 +66,7 @@ class Collector(Collector):
         environment = configuration["bespin"].environment
 
         available = list(self.configuration["environments"].keys())
-        if environment not in available:
+        if environment is not NotSpecified and environment not in available:
             raise self.BadConfigurationErrorKls("Please choose a valid environment", available=available, wanted=environment)
 
         if environment in self.configuration["environments"]:
