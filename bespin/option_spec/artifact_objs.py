@@ -99,10 +99,10 @@ class ArtifactPath(dictobj):
             yield host_path, artifact_path
             return
 
-        for root, dirs, files in os.walk(self.host_path, followlinks=True):
+        for root, dirs, files in os.walk(host_path, followlinks=True):
             for f in files:
                 file_full_path = os.path.abspath(os.path.join(root, f))
-                file_tar_path = file_full_path.replace(os.path.normpath(self.host_path), artifact_path, 1)
+                file_tar_path = file_full_path.replace(os.path.normpath(host_path), artifact_path, 1)
                 yield file_full_path, file_tar_path
 
 class ArtifactFile(dictobj):
