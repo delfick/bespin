@@ -8,6 +8,7 @@ from bespin.collector import Collector
 from tests.helpers import BespinCase
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp
+from input_algorithms.spec_base import NotSpecified
 from contextlib import contextmanager
 import mock
 import yaml
@@ -45,7 +46,8 @@ describe BespinCase, "Collecting configuration":
         home_dir_configuration_location = mock.Mock(name="home_dir_configuration_location", spec=[])
         home_dir_configuration_location.return_value = home_dir_configuration
         collector_kls = type("CollectorSub", (Collector, ), {"home_dir_configuration_location": home_dir_configuration_location})
-        collector = collector_kls(config)
+        collector = collector_kls()
+        collector.configuration = collector.collect_configuration(config)
         if activate_converters:
             collector.configuration.converters.activate()
         yield collector
