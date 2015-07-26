@@ -1,9 +1,7 @@
 """
 The functionality itself for each task.
 
-Each task is specified with the ``a_task`` decorator and indicates whether it's
-necessary to provide the task with the object containing all the stacks and/or
-one specific stack object.
+Each task is specified with the ``an_action`` decorator
 """
 
 from bespin.errors import BespinError, BadOption, ProgrammerError
@@ -34,28 +32,45 @@ import os
 log = logging.getLogger("bespin.tasks")
 
 info = {"is_default": True}
-default_tasks = []
-available_tasks = {}
+default_actions = []
+available_actions = {}
+
 class a_task(object):
+    def __init__(self, **kwargs):
+        raise DeprecationWarning(dedent("""
+            the @a_task decorator has been deprecated in favour of @an_action
+
+            This new decorator is the same except it has no needs_stacks option.
+
+            The signature of the actions themselves has also changed.
+
+            It is no longer (collector, configuration, stacks, stack, artifact, tasks)
+
+            It is now (collector, stack, artifact, tasks)
+
+            configuration can be found at collector.configuration
+
+            stacks can be found at collector.configuration["stacks"]
+        """))
+
+class an_action(object):
     """Records a task in the ``available_tasks`` dictionary"""
-    def __init__(self, needs_artifact=False, needs_stack=False, needs_stacks=False, needs_credentials=False):
+    def __init__(self, needs_artifact=False, needs_stack=False, needs_credentials=False):
         self.needs_artifact = needs_artifact
         self.needs_stack = needs_stack
-        self.needs_stacks = needs_stack or needs_stacks
         self.needs_credentials = needs_credentials
 
     def __call__(self, func):
-        available_tasks[func.__name__] = func
+        available_actions[func.__name__] = func
         func.needs_artifact = self.needs_artifact
         func.needs_stack = self.needs_stack
-        func.needs_stacks = self.needs_stacks
         func.needs_credentials = self.needs_credentials
         if info["is_default"]:
-            default_tasks.append(func.__name__)
+            default_actions.append(func.__name__)
         return func
 
-@a_task()
-def list_tasks(collector, configuration, tasks, **kwargs):
+@an_action()
+def list_tasks(collector, tasks, **kwargs):
     """List the available_tasks"""
     print("Available tasks to choose from are:")
     print("Use the --task option to choose one")
@@ -72,17 +87,19 @@ def list_tasks(collector, configuration, tasks, **kwargs):
             print("\t{0}{1} :-: {2}".format(" " * (max_length-len(key)), key, desc))
         print("")
 
-@a_task(needs_stacks=True)
-def show(collector, configuration, stacks, **kwargs):
+@an_action()
+def show(collector, **kwargs):
     """
     Show what stacks we have in layered order.
 
     When combined with the ``--flat`` option, the stacks are shown as a flat
     list instead of in layers.
     """
+    configuration = collector.configuration
     flat = configuration.get("bespin.flat", False)
     only_pushable = configuration.get("bespin.only_pushable", False)
 
+    stacks = configuration["stacks"]
     for index, layer in enumerate(Builder().layered(stacks, only_pushable=only_pushable)):
         if flat:
             for _, stack in layer:
@@ -93,65 +110,67 @@ def show(collector, configuration, stacks, **kwargs):
                 print("    {0}".format(stack.display_line()))
             print("")
 
-@a_task(needs_stack=True, needs_credentials=True)
-def deploy(collector, configuration, stacks, stack, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def deploy(collector, stack, **kwargs):
     """Deploy a particular stack"""
-    Deployer().deploy_stack(stack, stacks)
+    Deployer().deploy_stack(stack, collector.configuration["stacks"])
 
-@a_task(needs_stack=True, needs_credentials=True)
-def publish_artifacts(collector, configuration, stacks, stack, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def publish_artifacts(collector, stack, **kwargs):
     """Build and publish an artifact"""
     Builder().publish_artifacts(stack)
 
-@a_task(needs_stack=True, needs_credentials=True)
-def clean_old_artifacts(collector, configuration, stacks, stack, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def clean_old_artifacts(collector, stack, **kwargs):
     """Cleanup old artifacts"""
     Builder().clean_old_artifacts(stack)
 
-@a_task(needs_stack=True, needs_credentials=True)
-def confirm_deployment(collector, configuration, stacks, stack, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def confirm_deployment(collector, stack, **kwargs):
     """Confirm deployment via SNS notification for each instance and/or url checks"""
     Deployer().confirm_deployment(stack)
 
-@a_task(needs_artifact=True)
-def print_variable(collector, configuration, stacks, stack, artifact, **kwargs):
+@an_action(needs_artifact=True)
+def print_variable(collector, stack, artifact, **kwargs):
     """Prints out a variable from the stack"""
-    print(configuration["bespin"].get_variable(artifact))
+    print(collector.configuration["bespin"].get_variable(artifact))
 
-@a_task(needs_stack=True, needs_credentials=True)
-def suspend_cloudformation_actions(collector, configuration, stacks, stack, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def suspend_cloudformation_actions(collector, stack, **kwargs):
     """Suspends all schedule actions on a cloudformation stack"""
     Deployer().suspend_cloudformation_actions(stack)
 
-@a_task(needs_stack=True, needs_credentials=True)
-def resume_cloudformation_actions(collector, configuration, stacks, stack, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def resume_cloudformation_actions(collector, stack, **kwargs):
     """Resumes all schedule actions on a cloudformation stack"""
     Deployer().resume_cloudformation_actions(stack)
 
-@a_task(needs_stack=True, needs_credentials=True)
-def sanity_check(collector, configuration, stacks, stack, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def sanity_check(collector, stack, **kwargs):
     """Sanity check a stack and it's dependencies"""
-    Builder().sanity_check(stack, stacks)
+    Builder().sanity_check(stack, collector.configuration["stacks"])
     log.info("All the stacks are sane!")
 
-@a_task(needs_stack=True, needs_credentials=True)
-def instances(collector, configuration, stacks, stack, artifact, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def instances(collector, stack, artifact, **kwargs):
     """Find and ssh into instances"""
     if artifact is None:
         instance_ids = stack.ssh.find_instance_ids(stack)
         stack.ec2.display_instances(instance_ids, address=stack.ssh.address)
     else:
-        stack.ssh.ssh_into(artifact, configuration["$@"])
+        stack.ssh.ssh_into(artifact, collector.configuration["$@"])
 
-@a_task()
-def bastion(collector, configuration, **kwargs):
+@an_action()
+def bastion(collector, **kwargs):
     """SSH into the bastion"""
+    configuration = collector.configuration
     stack = list(configuration["stacks"].keys())[0]
     configuration["stacks"][stack].ssh.ssh_into_bastion(configuration["$@"])
 
-@a_task(needs_credentials=True)
-def execute(collector, configuration, **kwargs):
+@an_action(needs_credentials=True)
+def execute(collector, **kwargs):
     """Exec a command using assumed credentials"""
+    configuration = collector.configuration
     parts = shlex.split(configuration["$@"])
     configuration["bespin"].credentials.verify_creds()
     if not parts:
@@ -160,20 +179,20 @@ def execute(collector, configuration, **kwargs):
         raise BespinError(msg)
     os.execvpe(parts[0], parts, os.environ)
 
-@a_task(needs_credentials=True, needs_stack=True)
-def tail(collector, configuration, stacks, stack, **kwargs):
+@an_action(needs_credentials=True, needs_stack=True)
+def tail(collector, stack, **kwargs):
     """Tail the deployment of a stack"""
     stack.cloudformation.wait()
 
-@a_task(needs_stack=True)
-def params(collector, configuration, stacks, stack, **kwargs):
+@an_action(needs_stack=True)
+def params(collector, stack, **kwargs):
     """Print out the params"""
     stack.find_missing_env()
     print(stack.stack_name)
     print(json.dumps(stack.params_json_obj, indent=4))
 
-@a_task(needs_stack=True, needs_credentials=True)
-def outputs(collector, configuration, stacks, stack, artifact, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def outputs(collector, stack, artifact, **kwargs):
     """Print out the outputs"""
     outputs = stack.cloudformation.outputs
     if artifact not in (None, NotSpecified):
@@ -183,29 +202,31 @@ def outputs(collector, configuration, stacks, stack, artifact, **kwargs):
     else:
         print(json.dumps(outputs, indent=4))
 
-@a_task(needs_credentials=True, needs_stacks=True)
-def deploy_plan(collector, configuration, stacks, stack, artifact, **kwargs):
+@an_action(needs_credentials=True)
+def deploy_plan(collector, stack, artifact, **kwargs):
     """Deploy a predefined list of stacks in order"""
     plan = artifact if artifact else stack
     made = []
     checked = []
     deployer = Deployer()
 
-    for stack in Plan.find_stacks(configuration, stacks, plan):
+    stacks = collector.configuration["stacks"]
+    for stack in Plan.find_stacks(collector.configuration, stacks, plan):
         deployer.deploy_stack(stacks[stack], stacks, made=made, checked=checked)
 
-@a_task(needs_credentials=True, needs_stacks=True)
-def sanity_check_plan(collector, configuration, stacks, stack, artifact, **kwargs):
+@an_action(needs_credentials=True)
+def sanity_check_plan(collector, stack, artifact, **kwargs):
     """sanity check a predefined list of stacks in order"""
     plan = artifact if artifact else stack
     checked = []
     builder = Builder()
 
-    for stack in Plan.find_stacks(configuration, stacks, plan):
+    stacks = collector.configuration["stacks"]
+    for stack in Plan.find_stacks(collector.configuration, stacks, plan):
         builder.sanity_check(stacks[stack], stacks, checked=checked)
 
-@a_task(needs_stack=True, needs_credentials=True)
-def command_on_instances(collector, configuration, stacks, stack, artifact, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def command_on_instances(collector, stack, artifact, **kwargs):
     """Run a shell command on all the instances in the stack"""
     if stack.command is NotSpecified:
         raise BespinError("No command was found to run")
@@ -220,7 +241,7 @@ def command_on_instances(collector, configuration, stacks, stack, artifact, **kw
         raise BespinError("Didn't find any instances to run the command on")
     log.info("Running command on the following ips: %s", ips)
 
-    if configuration["bespin"].dry_run:
+    if collector.configuration["bespin"].dry_run:
         log.warning("Dry-run, only gonna run hostname on the boxes")
         command = "hostname"
     else:
@@ -234,8 +255,8 @@ def command_on_instances(collector, configuration, stacks, stack, artifact, **kw
 
     SSH(ips, command, stack.ssh.user, instance_key_path, **extra_kwargs).run()
 
-@a_task(needs_stack=True, needs_credentials=True, needs_artifact=True)
-def scale_instances(collector, configuration, stacks, stack, artifact, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True, needs_artifact=True)
+def scale_instances(collector, stack, artifact, **kwargs):
     """Change the number of instances in the stack's auto_scaling_group"""
     if isinstance(artifact, int) or artifact.isdigit():
         artifact = int(artifact)
@@ -264,9 +285,10 @@ def scale_instances(collector, configuration, stacks, stack, artifact, **kwargs)
     group.desired_capacity = artifact
     group.update()
 
-@a_task()
-def become(collector, configuration, stacks, stack, artifact, **kwargs):
+@an_action()
+def become(collector, stack, artifact, **kwargs):
     """Print export statements for assuming an amazon iam role"""
+    configuration = collector.configuration
     bespin = configuration['bespin']
     environment = bespin.environment
     region = configuration['environments'][environment].region
@@ -290,8 +312,8 @@ def become(collector, configuration, stacks, stack, artifact, **kwargs):
     print("export AWS_SECURITY_TOKEN={0}".format(os.environ['AWS_SECURITY_TOKEN']))
     print("export AWS_SESSION_TOKEN={0}".format(os.environ['AWS_SESSION_TOKEN']))
 
-@a_task(needs_stack=True)
-def downtime(collector, configuration, stacks, stack, method="downtime", **kwargs):
+@an_action(needs_stack=True)
+def downtime(collector, stack, method="downtime", **kwargs):
     """Downtime this stack in alerting systems"""
     if stack.downtimer_options is NotSpecified:
         raise BespinError("Nothing to downtime!")
@@ -306,26 +328,27 @@ def downtime(collector, configuration, stacks, stack, method="downtime", **kwarg
     comment = provided_env["COMMENT"]
     duration = provided_env["DURATION"]
 
-    downtimer = Downtimer(stack.downtimer_options, dry_run=configuration["bespin"].dry_run)
+    downtimer = Downtimer(stack.downtimer_options, dry_run=collector.configuration["bespin"].dry_run)
     for system, options in stack.alerting_systems.items():
         downtimer.register_system(system, options)
 
     getattr(downtimer, method)(duration, author, comment)
 
-@a_task(needs_stack=True)
-def undowntime(collector, configuration, **kwargs):
+@an_action(needs_stack=True)
+def undowntime(collector, **kwargs):
     """UnDowntime this stack in alerting systems"""
     kwargs["method"] = "undowntime"
-    downtime(collector, configuration, **kwargs)
+    downtime(collector, collector.configuration, **kwargs)
 
-@a_task(needs_credentials=True)
-def encrypt_password(collector, configuration, stack, artifact, **kwargs):
+@an_action(needs_credentials=True)
+def encrypt_password(collector, stack, artifact, **kwargs):
     """Convert plain text password into crypto text"""
     if artifact is None:
         key = stack
     else:
         key = artifact
 
+    configuration = collector.configuration
     key = valid_password_key().normalise(Meta(configuration, []), key)
     password_options = configuration["passwords"][key]
 
@@ -336,7 +359,7 @@ def encrypt_password(collector, configuration, stack, artifact, **kwargs):
     log.info("Generated crypto text for %s", key)
     print(base64.b64encode(res["CiphertextBlob"]).decode('utf-8'))
 
-def action_server_in_netscaler(collector, configuration, stack, artifact, server=NotSpecified, action=NotSpecified, **kwargs):
+def action_server_in_netscaler(collector, stack, artifact, server=NotSpecified, action=NotSpecified, **kwargs):
     if action is NotSpecified:
         raise ProgrammerError("Action needs to be specified")
     if action not in ("enable", "disable"):
@@ -348,23 +371,23 @@ def action_server_in_netscaler(collector, configuration, stack, artifact, server
         else:
             server = artifact
 
-    with configuration["netscaler"] as netscaler:
+    with collector.configuration["netscaler"] as netscaler:
         getattr(netscaler, "{0}_server".format(action))(server)
 
-@a_task(needs_credentials=True)
+@an_action(needs_credentials=True)
 def enable_server_in_netscaler(*args, **kwargs):
     """Disable a server in the netscaler"""
     kwargs["action"] = "enable"
     return action_server_in_netscaler(*args, **kwargs)
 
-@a_task(needs_credentials=True)
+@an_action(needs_credentials=True)
 def disable_server_in_netscaler(*args, **kwargs):
     """Enable a server in the netscaler"""
     kwargs["action"] = "disable"
     return action_server_in_netscaler(*args, **kwargs)
 
-@a_task(needs_credentials=True, needs_stack=True)
-def switch_dns_traffic_to(collector, configuration, stacks, stack, artifact, site=NotSpecified, **kwargs):
+@an_action(needs_credentials=True, needs_stack=True)
+def switch_dns_traffic_to(collector, stack, artifact, site=NotSpecified, **kwargs):
     """Switch dns traffic to some environment"""
     if stack.dns is NotSpecified:
         raise BespinError("No dns options are specified!")
@@ -384,7 +407,7 @@ def switch_dns_traffic_to(collector, configuration, stacks, stack, artifact, sit
         sites = available
     sites = [all_sites[s] for s in sites]
 
-    environment = configuration["bespin"].environment
+    environment = collector.configuration["bespin"].environment
     errors = []
     for site in sorted(sites):
         if environment not in site.environments:
@@ -405,13 +428,14 @@ def switch_dns_traffic_to(collector, configuration, stacks, stack, artifact, sit
 
     log.info("Switching traffic to %s\tsites=%s", environment, [site.domain for site in sites])
     for site in sorted(sites):
-        site.switch_to(configuration["bespin"].environment, dry_run=configuration["bespin"].dry_run)
+        site.switch_to(collector.configuration["bespin"].environment, dry_run=collector.configuration["bespin"].dry_run)
 
-@a_task(needs_stack=True, needs_credentials=True)
-def sync_netscaler_config(collector, configuration, stacks, stack, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def sync_netscaler_config(collector, stack, **kwargs):
     """Sync netscaler configuration with the specified netscaler"""
     logging.captureWarnings(True)
     logging.getLogger("py.warnings").setLevel(logging.ERROR)
+    configuration = collector.configuration
 
     if stack.netscaler is NotSpecified or stack.netscaler.configuration is NotSpecified:
         raise BespinError("Please configure {netscaler.configuration}")
@@ -440,8 +464,8 @@ def sync_netscaler_config(collector, configuration, stacks, stack, **kwargs):
             for _, thing in layer:
                 netscaler.sync(all_configuration, configuration["environment"], thing)
 
-@a_task(needs_stack=True, needs_credentials=True)
-def wait_for_dns_switch(collector, configuration, stacks, stack, artifact, site=NotSpecified, **kwargs):
+@an_action(needs_stack=True, needs_credentials=True)
+def wait_for_dns_switch(collector, stack, artifact, site=NotSpecified, **kwargs):
     """Periodically check dns until all our sites point to where they should be pointing to for specified environment"""
 
     if stack.dns is NotSpecified:
@@ -462,7 +486,7 @@ def wait_for_dns_switch(collector, configuration, stacks, stack, artifact, site=
         sites = available
     sites = [all_sites[s] for s in sites]
 
-    environment = configuration["bespin"].environment
+    environment = collector.configuration["bespin"].environment
     errors = []
     for site in sorted(sites):
         if environment not in site.environments:
@@ -489,5 +513,5 @@ def wait_for_dns_switch(collector, configuration, stacks, stack, artifact, site=
         else:
             log.info("Waiting for sites to switch")
 
-# Make it so future use of @a_task doesn't result in more default tasks
+# Make it so future use of @an_action doesn't result in more default tasks
 info["is_default"] = False

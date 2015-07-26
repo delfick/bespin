@@ -11,6 +11,7 @@ class Bespin(dictobj):
     fields = {
         "flat": "Used by the ``Show`` task to show the stacks as a flat list. Set by ``--flat``"
       , "config": "Holds a file object to the specified Bespin configuration file"
+      , "extra": "Holds extra arguments after a -- when executed from the command line"
       , "dry_run": "Don't run any destructive or modification amazon requests"
       , "assume_role": """
             An iam role to assume into before doing any amazon requests.

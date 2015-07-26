@@ -5,8 +5,8 @@ Collects then parses configuration files and verifies that they are valid.
 from bespin.errors import BadConfiguration, BadYaml, BespinError
 from bespin.formatter import MergedOptionStringFormatter
 from bespin.option_spec.bespin_specs import BespinSpec
+from bespin.actions import available_actions
 from bespin.task_finder import TaskFinder
-from bespin.tasks import available_tasks
 
 from input_algorithms.spec_base import NotSpecified
 from input_algorithms import spec_base as sb
@@ -47,21 +47,22 @@ class Collector(Collector):
         if not self.configuration.get("environments"):
             raise self.BadConfigurationErrorKls("Didn't find any environments configuration")
 
-    def extra_prepare(self, configuration, cli_args, available_tasks):
+    def extra_prepare(self, configuration, cli_args):
         """Called before the configuration.converters are activated"""
         bespin = cli_args.pop("bespin")
         environment = bespin.get("environment")
 
         bespin["configuration"] = configuration
         self.configuration.update(
-            { "bespin": bespin
+            { "$@": bespin["extra"]
+            , "bespin": bespin
             , "command": cli_args['command']
             , "environment": environment
             }
         , source = "<cli_args>"
         )
 
-    def extra_prepare_after_activation(self, configuration, cli_args, available_tasks):
+    def extra_prepare_after_activation(self, configuration, cli_args):
         """Called after the configuration.converters are activated"""
         environment = configuration["bespin"].environment
 
@@ -77,7 +78,7 @@ class Collector(Collector):
         for importer in bespin.extra_imports:
             importer.do_import(bespin, task_overrides)
 
-        task_finder = TaskFinder(self, cli_args)
+        task_finder = TaskFinder(self)
         self.configuration.update(
             { "stack_finder": task_finder.stack_finder
             , "task_runner": task_finder.task_runner
@@ -215,10 +216,13 @@ class Collector(Collector):
             configuration.add_converter(converter)
 
         def convert_tasks(path, val):
-            spec = bespin_spec.tasks_spec(available_tasks)
+            spec = bespin_spec.tasks_spec(available_actions)
             meta = Meta(path.configuration.root(), [('stacks', ""), (stack, ""), ('tasks', "")])
             configuration.converters.started(path)
-            return spec.normalise(meta, val)
+            tasks = spec.normalise(meta, val)
+            for task in tasks.values():
+                task.stack = stack
+            return tasks
 
         converter = Converter(convert=convert_tasks, convert_path=["stacks", stack, "tasks"])
         configuration.add_converter(converter)

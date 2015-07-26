@@ -21,13 +21,13 @@ class App(App):
     cli_positional_replacements = [('--task', 'list_tasks'), ('--environment', NotSpecified), ('--stack', NotSpecified), ('--artifact', NotSpecified)]
 
     def execute(self, args, extra_args, cli_args, logging_handler):
-        collector = Collector(configuration_file=args.bespin_config.name)
-        collector.configuration["$@"] = extra_args
+        collector = Collector()
+        cli_args["bespin"]["extra"] = extra_args
 
+        collector.prepare(args.bespin_config.name, cli_args)
         if "term_colors" in collector.configuration:
             self.setup_logging_theme(logging_handler, colors=collector.configuration["term_colors"])
 
-        collector.prepare(cli_args)
         collector.configuration["task_runner"](collector.configuration["bespin"].chosen_task)
 
     def setup_other_logging(self, args, verbose=False, silent=False, debug=False):

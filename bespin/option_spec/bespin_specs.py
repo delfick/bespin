@@ -361,6 +361,7 @@ class BespinSpec(object):
 
             , assume_role = optional_spec(string_spec())
 
+            , extra = defaulted(string_spec(), "")
             , dry_run = defaulted(boolean(), False)
             , flat = defaulted(boolean(), False)
             , environment = optional_spec(string_spec())
