@@ -20,7 +20,7 @@ import json
 import sys
 import os
 
-log = logging.getLogger("bespin.actions.ssh")
+log = logging.getLogger("bespin.operations.ssh")
 
 def insert_char_every_n_chars(string, char='\n', every=64):
     return char.join(string[i:i + every] for i in range(0, len(string), every))

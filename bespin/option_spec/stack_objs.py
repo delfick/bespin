@@ -1,7 +1,7 @@
 from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError, BadDnsSwitch
 from bespin.errors import StackDoesntExist, MissingSSHKey
+from bespin.operations.ssh import RatticSSHKeys
 from bespin.helpers import memoized_property
-from bespin.actions.ssh import RatticSSHKeys
 from bespin import helpers as hp
 
 from ultra_rest_client import RestApiClient as UltraRestApiClient

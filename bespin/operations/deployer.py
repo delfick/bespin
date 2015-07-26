@@ -1,4 +1,4 @@
-from bespin.actions.builder import Builder
+from bespin.operations.builder import Builder
 from bespin.errors import NoSuchStack
 
 from datetime import datetime
@@ -7,7 +7,7 @@ import time
 import json
 import sys
 
-log = logging.getLogger("bespin.actions.deployer")
+log = logging.getLogger("bespin.operations.deployer")
 
 class Deployer(object):
     def deploy_stack(self, stack, stacks, made=None, ignore_deps=False, checked=None, start=None):

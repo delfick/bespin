@@ -3,7 +3,7 @@ from bespin import helpers as hp
 
 import logging
 
-log = logging.getLogger("bespin.actions.builder")
+log = logging.getLogger("bespin.operations.builder")
 
 class Builder(object):
     def sanity_check(self, stack, stacks, ignore_deps=False, checked=None):

@@ -8,11 +8,11 @@ from bespin.errors import BespinError, BadOption, ProgrammerError
 from bespin.option_spec.bespin_specs import valid_password_key
 from bespin.option_spec.stack_specs import env_spec
 from bespin.amazon.credentials import Credentials
-from bespin.actions.downtimer import Downtimer
-from bespin.actions.deployer import Deployer
-from bespin.actions.builder import Builder
-from bespin.actions.plan import Plan
-from bespin.actions.ssh import SSH
+from bespin.operations.downtimer import Downtimer
+from bespin.operations.deployer import Deployer
+from bespin.operations.builder import Builder
+from bespin.operations.plan import Plan
+from bespin.operations.ssh import SSH
 from bespin.layers import Layers
 from bespin import helpers as hp
 

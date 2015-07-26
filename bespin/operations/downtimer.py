@@ -6,7 +6,7 @@ import requests
 import logging
 import json
 
-log = logging.getLogger("bespin.action.downtimer")
+log = logging.getLogger("bespin.operations.downtimer")
 
 class Downtimer(object):
     def __init__(self, downtime_options, dry_run=False):
