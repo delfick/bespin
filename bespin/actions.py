@@ -35,24 +35,6 @@ info = {"is_default": True}
 default_actions = []
 available_actions = {}
 
-class a_task(object):
-    def __init__(self, **kwargs):
-        raise DeprecationWarning(dedent("""
-            the @a_task decorator has been deprecated in favour of @an_action
-
-            This new decorator is the same except it has no needs_stacks option.
-
-            The signature of the actions themselves has also changed.
-
-            It is no longer (collector, configuration, stacks, stack, artifact, tasks)
-
-            It is now (collector, stack, artifact, tasks)
-
-            configuration can be found at collector.configuration
-
-            stacks can be found at collector.configuration["stacks"]
-        """))
-
 class an_action(object):
     """Records a task in the ``available_tasks`` dictionary"""
     def __init__(self, needs_artifact=False, needs_stack=False, needs_credentials=False):
