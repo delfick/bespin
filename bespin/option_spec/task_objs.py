@@ -52,7 +52,7 @@ class Task(dictobj):
                 overrides[key] = val
                 if isinstance(val, MergedOptions):
                     overrides[key] = dict(val.items())
-            collector.configuration.update(overrides)
+            configuration.update(overrides)
 
         if task_action.needs_stack:
             environment = configuration["bespin"].environment
@@ -61,7 +61,7 @@ class Task(dictobj):
             if configuration["environments"].get(environment) is None:
                 raise BadOption("No configuration found for specified environment", environment=environment, available=list(configuration["environments"].keys()))
 
-            self.find_stack(stack, collector.configuration)
+            self.find_stack(stack, configuration)
             stack = configuration["stacks"][stack]
 
         bespin = configuration["bespin"]
@@ -97,6 +97,10 @@ class Task(dictobj):
         if task_action.needs_artifact and not artifact:
             raise BadOption("Please specify an artifact")
 
+        from bespin.collector import Collector
+        new_collector = Collector()
+        new_collector.configuration = configuration
+        new_collector.configuration_file = collector.configuration_file
         return task_action(collector, stack=stack, artifact=artifact, tasks=tasks, **extras)
 
     def find_stack(self, stack, configuration):
