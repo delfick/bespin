@@ -294,6 +294,14 @@ def become(collector, stack, artifact, **kwargs):
     print("export AWS_SECURITY_TOKEN={0}".format(os.environ['AWS_SECURITY_TOKEN']))
     print("export AWS_SESSION_TOKEN={0}".format(os.environ['AWS_SESSION_TOKEN']))
 
+@an_action(needs_stack=True, needs_credentials=True)
+def note_deployment_in_newrelic(collector, stack, **kwargs):
+    """Note the deployment in newrelic"""
+    if stack.newrelic is NotSpecified:
+        raise BespinError("Please specify newrelic configuration for your stack")
+    stack.newrelic.note_deployment()
+    log.info("Great success!")
+
 @an_action(needs_stack=True)
 def downtime(collector, stack, method="downtime", **kwargs):
     """Downtime this stack in alerting systems"""

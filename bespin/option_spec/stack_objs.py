@@ -517,6 +517,9 @@ class NewRelic(dictobj):
 
     def note_deployment(self):
         """Note a deployment"""
+        missing = [e.env_name for e in self.env if e.missing]
+        if missing:
+            raise BadOption("Some environment variables aren't in the current environment", missing=missing)
         provided_env = dict(e.pair for e in self.env)
         version = self.deployed_version.format(**provided_env)
         self.client.notify_deployment(application_id=self.application_id, description="Deployed {0}".format(version), revision=version)
