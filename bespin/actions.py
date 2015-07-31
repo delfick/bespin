@@ -328,7 +328,7 @@ def downtime(collector, stack, method="downtime", **kwargs):
 def undowntime(collector, **kwargs):
     """UnDowntime this stack in alerting systems"""
     kwargs["method"] = "undowntime"
-    downtime(collector, collector.configuration, **kwargs)
+    downtime(collector, **kwargs)
 
 @an_action(needs_credentials=True)
 def encrypt_password(collector, stack, artifact, **kwargs):
