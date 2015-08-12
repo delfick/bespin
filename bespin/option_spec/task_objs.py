@@ -25,6 +25,10 @@ class Task(dictobj):
         super(Task, self).setup(*args, **kwargs)
         self.set_description()
 
+    def specify_stack(self, stack):
+        """Helper to set stack on the task object"""
+        self.stack = stack
+
     def set_description(self, available_actions=None):
         if not self.description:
             if not available_actions:
