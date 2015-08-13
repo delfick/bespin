@@ -527,7 +527,7 @@ class NewRelic(dictobj):
     def throughput(self):
         """Get the current throughput"""
         vals = self.client.get_threshold_values(self.application_id)
-        return int([t.metric_value for t in vals if t.name == 'Throughput'][0])
+        return float([t.metric_value for t in vals if t.name == 'Throughput'][0])
 
 class DNS(dictobj):
     fields = {
