@@ -267,6 +267,12 @@ def scale_instances(collector, stack, artifact, **kwargs):
     group.desired_capacity = artifact
     group.update()
 
+@an_action(needs_stack=True, needs_credentials=True)
+def num_instances(collector, stack, **kwargs):
+    """Count the number of running instances."""
+    instance_ids = stack.ssh.find_instance_ids(stack)
+    print(stack.ec2.num_alive_instances(instance_ids))
+
 @an_action()
 def become(collector, stack, artifact, **kwargs):
     """Print export statements for assuming an amazon iam role"""

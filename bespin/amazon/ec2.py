@@ -62,3 +62,7 @@ class EC2(object):
                 ip_address = address
             print("{0}\t{1}\t{2}\tUp {3} seconds".format(instance.id, ip_address, instance.state, delta))
 
+    def num_alive_instances(self, instance_ids):
+        return sum(1 for instance in self.instances(instance_ids)
+            if instance.private_ip_address
+            )
