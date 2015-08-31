@@ -166,11 +166,12 @@ class Cloudformation(AmazonMixin):
 
             description = self.description()
             events = description.describe_events()
+            next_last = events[0].timestamp
             for event in events:
                 if event.timestamp > last:
                     reason = event.resource_status_reason or ""
                     log.info("%s - %s %s (%s) %s", self.stack_name, event.resource_type, event.logical_resource_id, event.resource_status, reason)
-            last = datetime.datetime.utcnow()
+            last = next_last
 
         status = self.status
         if status.failed or (rollback_is_failure and status.is_rollback) or not status.complete:
