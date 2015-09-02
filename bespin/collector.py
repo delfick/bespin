@@ -140,7 +140,7 @@ class Collector(Collector):
 
             config_as_dict = configuration.as_dict(ignore=["stacks"])
             val_as_dict = val.as_dict(ignore=["stacks"])
-            if not environment:
+            if not environment or environment is NotSpecified:
                 raise BespinError("No environment was provided", available=list(configuration["environments"].keys()))
 
             env = configuration[["environments", environment]]
