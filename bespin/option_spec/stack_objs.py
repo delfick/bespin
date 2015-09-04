@@ -247,6 +247,18 @@ class Stack(dictobj):
 
         return False
 
+    def output_yet_to_be_deployed(self, var):
+        """Return true if this output will be deployed but hasn't yet"""
+        try:
+            resolved = var.resolve()
+        except MissingOutput:
+            if "Outputs" in self.stack_json:
+                if var.output in self.stack_json["Outputs"].keys():
+                    return True
+
+        # Otherwise return False
+        return False
+
     def sanity_check(self):
         self.find_missing_env()
         if all(isinstance(item, six.string_types) for item in (self.params_json, self.params_yaml)):
@@ -256,8 +268,11 @@ class Stack(dictobj):
 
         # Hack for sanity check
         for var in self.nested_vars():
-            if hasattr(var, 'stack') and not isinstance(var.stack, six.string_types) and not var.stack.cloudformation.status.exists:
-                var._resolved = "YYY_RESOLVED_BY_MISSING_STACK_YYY"
+            if hasattr(var, 'stack') and not isinstance(var.stack, six.string_types):
+                if not var.stack.cloudformation.status.exists:
+                    var._resolved = "YYY_RESOLVED_BY_MISSING_STACK_YYY"
+                elif var.stack.output_yet_to_be_deployed(var):
+                    var._resolved = "YYY_RESOLVED_BY_MISSING_OUTPUT_YYY"
 
         matches = re.findall("XXX_[A-Z_]+_XXX", json.dumps(self.params_json_obj))
         for var in self.nested_vars():
@@ -299,15 +314,21 @@ class DynamicVariable(dictobj):
         if getattr(self, "_resolved", None) is not None:
             return self._resolved
 
+        after_deployment = []
         if isinstance(self.stack, six.string_types):
             cloudformation = self.bespin.credentials.cloudformation(self.stack)
             cloudformation.wait()
             outputs = cloudformation.outputs
         else:
             outputs = self.stack.cloudformation.outputs
+            after_deployment = list(self.stack.stack_json.get("Outputs").keys())
 
         if self.output not in outputs:
-            raise MissingOutput(wanted=self.output, available=outputs.keys())
+            output_keys = list(outputs.keys())
+            kwargs = {"wanted": self.output, "available": output_keys}
+            if after_deployment and set(after_deployment) != set(output_keys):
+                kwargs["after_deployment"] = after_deployment
+            raise MissingOutput(**kwargs)
 
         return outputs[self.output]
 
