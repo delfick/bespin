@@ -173,7 +173,7 @@ class Collector(Collector):
                 thing["environment"] = environment
                 thing["configuration"] = configuration
                 thing["__stack__"] = val
-                thing["__environment__"] = configuration["environment"][environment]
+                thing["__environment__"] = configuration["environments"][environment]
                 thing["__stack_name__"] = stack
 
             meta = Meta(everything, [("stacks", ""), (stack, "")])
