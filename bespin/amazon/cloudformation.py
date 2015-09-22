@@ -8,6 +8,7 @@ import logging
 import time
 import json
 import six
+import os
 
 log = logging.getLogger("bespin.amazon.cloudformation")
 
@@ -124,15 +125,17 @@ class Cloudformation(AmazonMixin):
     def create(self, stack, params, tags):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
         params = [(param["ParameterKey"], param["ParameterValue"]) for param in params] if params else None
-        self.conn.create_stack(self.stack_name, template_body=json.dumps(stack), parameters=params, tags=tags, capabilities=['CAPABILITY_IAM'])
+        disable_rollback = os.environ.get("DISABLE_ROLLBACK", 0) == "1"
+        self.conn.create_stack(self.stack_name, template_body=json.dumps(stack), parameters=params, tags=tags, capabilities=['CAPABILITY_IAM'], disable_rollback=disable_rollback)
         return True
 
     def update(self, stack, params):
         log.info("Updating stack (%s)", self.stack_name)
         params = [(param["ParameterKey"], param["ParameterValue"]) for param in params] if params else None
+        disable_rollback = os.environ.get("DISABLE_ROLLBACK", 0) == "1"
         with self.catch_boto_400(BadStack, "Couldn't update the stack", stack_name=self.stack_name):
             try:
-                self.conn.update_stack(self.stack_name, template_body=json.dumps(stack), parameters=params, capabilities=['CAPABILITY_IAM'])
+                self.conn.update_stack(self.stack_name, template_body=json.dumps(stack), parameters=params, capabilities=['CAPABILITY_IAM'], disable_rollback=disable_rollback)
             except boto.exception.BotoServerError as error:
                 if error.message == "No updates are to be performed.":
                     log.info("No updates were necessary!")
