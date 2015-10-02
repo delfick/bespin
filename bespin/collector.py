@@ -82,6 +82,7 @@ class Collector(Collector):
         self.configuration.update(
             { "stack_finder": task_finder.stack_finder
             , "task_runner": task_finder.task_runner
+            , "task_finder": task_finder
             }
         , source = "<code>"
         )

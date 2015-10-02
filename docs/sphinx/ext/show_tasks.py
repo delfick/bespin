@@ -1,5 +1,4 @@
-from bespin.tasks import available_tasks
-from bespin.overview import Overview
+from bespin.collector import Collector
 from bespin import helpers as hp
 
 from docutils.statemachine import ViewList
@@ -13,15 +12,15 @@ class ShowTasksDirective(Directive):
 
     def run(self):
         """For each file in noseOfYeti/specs, output nodes to represent each spec file"""
-        tokens = []
         with hp.a_temp_file() as fle:
             fle.write(dedent("""
                 ---
-                environments: { dev: {} }
+                environments: { dev: {account_id: "123"} }
                 stacks: { app: {} }
             """).encode('utf-8'))
             fle.seek(0)
-            overview = Overview(fle.name)
+            collector = Collector()
+            collector.prepare(fle.name, {'bespin': {'extra': ""}, "command": None, "bash": None})
 
         section = nodes.section()
         section['ids'].append("available-tasks")
@@ -30,7 +29,7 @@ class ShowTasksDirective(Directive):
         title += nodes.Text("Default tasks")
         section += title
 
-        for name, task in sorted(overview.find_tasks().items(), key=lambda x: len(x[0])):
+        for name, task in sorted(collector.configuration['task_finder'].tasks.items(), key=lambda x: len(x[0])):
 
             lines = [name] + ["  {0}".format(line.strip()) for line in task.description.split('\n')]
             viewlist = ViewList()
