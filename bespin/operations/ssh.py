@@ -152,7 +152,8 @@ class SSH(object):
                 for host, job in cluster.last_result.items():
                     if not job.completed or job.result.return_code not in self.acceptable_return_codes:
                         log.error('%s -%s', host, cluster.connections[host])
-                        log.error('%s, %s', job, job.result.status)
+                        if hasattr(job.result, "status"):
+                            log.error('%s, %s', job, job.result.status)
                         error = True
 
                 if error:
