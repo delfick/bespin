@@ -7,7 +7,8 @@ from radssh.plugins import jumpbox
 from radssh import plugins, config
 from radssh.ssh import Cluster
 
-from six.moves import input
+from collections import defaultdict
+from six.moves import input, queue
 import binascii
 import requests
 import paramiko
@@ -74,7 +75,26 @@ class SSH(object):
                 login.deferred_keys[identity] = key
 
         try:
-            console = RadSSHConsole()
+            outputs = defaultdict(lambda: {"stdout": [], "stderr": []})
+            class TwoQueue(object):
+                def __init__(self):
+                    self.q = queue.Queue(300)
+
+                def put(self, thing):
+                    (host, is_stderr), line = thing
+                    outputs[host][["stdout", "stderr"][is_stderr]].append(line)
+                    self.q.put(thing)
+
+                def get(self, **kwargs):
+                    return self.q.get(**kwargs)
+
+                def join(self):
+                    self.q.join()
+
+                def task_done(self):
+                    self.q.task_done()
+
+            console = RadSSHConsole(q=TwoQueue())
             connections = [(ip, None) for ip in self.ips]
             if jb:
                 jb.add_jumpbox(self.proxy)
@@ -137,6 +157,8 @@ class SSH(object):
 
                 if error:
                     raise BespinError("Failed to run the commands")
+
+                return outputs
             finally:
                 if cluster:
                     cluster.close_connections()
