@@ -85,14 +85,11 @@ class SSH(object):
                     outputs[host][["stdout", "stderr"][is_stderr]].append(line)
                     self.q.put(thing)
 
-                def get(self, **kwargs):
-                    return self.q.get(**kwargs)
-
-                def join(self):
-                    self.q.join()
-
-                def task_done(self):
-                    self.q.task_done()
+                def __getattr__(self, key):
+                    if key in ("q", "put"):
+                        return object.__getattribute__(self, key)
+                    else:
+                        return getattr(self.q, key)
 
             console = RadSSHConsole(q=TwoQueue())
             connections = [(ip, None) for ip in self.ips]
@@ -152,8 +149,7 @@ class SSH(object):
                 for host, job in cluster.last_result.items():
                     if not job.completed or job.result.return_code not in self.acceptable_return_codes:
                         log.error('%s -%s', host, cluster.connections[host])
-                        if hasattr(job.result, "status"):
-                            log.error('%s, %s', job, job.result.status)
+                        log.error('%s, %s', job, job.result.status)
                         error = True
 
                 if error:
