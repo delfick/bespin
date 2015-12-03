@@ -22,6 +22,7 @@ describe BespinCase, "Dynamic Variable":
             resolved = mock.Mock(name="resolved")
 
             stack = mock.Mock(name="stack")
+            stack.stack_json = {"Outputs": {"one": 1}}
             stack.cloudformation = mock.Mock(name="cloudformation", outputs={output: resolved})
 
             var = objs.DynamicVariable(stack, output)

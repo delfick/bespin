@@ -72,15 +72,15 @@ describe BespinCase, "Collecting configuration":
             self.assertIs(type(collector.configuration["stacks.blah.tasks"]["a_task"]), Task)
 
     it "sets up converters for stacks":
-        config = self.make_config({"environment": "dev", "environments": {"dev": {}}, "bespin": {"environment": "dev"}, "config_root": ".", "stacks": {"blah": {"params_yaml":self.make_config({"one":"two"}), "stack_json": self.make_config({"Resources": {}}, is_json=True), "resources": []}}})
+        config = self.make_config({"environment": "dev", "environments": {"dev": {"account_id": "123"}}, "bespin": {"environment": "dev"}, "config_root": ".", "stacks": {"blah": {"params_yaml":self.make_config({"one":"two"}), "stack_json": self.make_config({"Resources": {}}, is_json=True), "resources": []}}})
         with self.make_collector(config, activate_converters=True) as collector:
             self.assertIs(type(collector.configuration["stacks.blah"]), Stack)
 
     it "merges environment into stack":
         config = {
               "environments":
-              { "dev": {"vars": {"one": 1}}
-              , 'staging': {"vars": {"one": 2}}
+              { "dev": {"account_id": "123", "vars": {"one": 1}}
+              , 'staging': {"account_id": "456", "vars": {"one": 2}}
               }
             , "config_root": "."
             , "stacks":
