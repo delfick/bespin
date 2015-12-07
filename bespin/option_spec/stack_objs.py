@@ -84,6 +84,7 @@ class Stack(dictobj):
         , "dns": "Dns options"
         , "newrelic": "Newrelic declaration"
         , "netscaler": "Netscaler declaration"
+        , "stackdriver": "Stackdriver options used for giving events to stackdriver"
         }
 
     def __repr__(self):
@@ -290,8 +291,18 @@ class Stack(dictobj):
             json.dump(self.stack_json_obj, open(fle.name, "w"))
             self.cloudformation.validate_template(fle.name)
 
-    def create_stackdriver_event(self, api_key, message, sent_by):
+class Stackdriver(dictobj):
+    fields = {
+          "api_key": "The api key used to gain access to stackdriver"
+        }
+
+    def create_event(self, message, sent_by):
         log.info("Making an event in stackdriver!\tmessage=%s\tannotation=%s", message, sent_by)
+
+        api_key = self.api_key
+        if callable(api_key):
+            api_key = api_key()
+
         headers = {
               "content-type": "application/json"
             , "x-stackdriver-apikey": api_key

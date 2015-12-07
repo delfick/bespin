@@ -520,10 +520,9 @@ def wait_for_dns_switch(collector, stack, artifact, site=NotSpecified, **kwargs)
 @an_action(needs_credentials=True, needs_stack=True)
 def create_stackdriver_event(collector, stack, **kwargs):
     env = get_from_env(["MESSAGE", "SENT_BY"])
-    if "passwords" not in collector.configuration or "stackdriver_api_key" not in collector.configuration["passwords"]:
-        raise BespinError("Please specify passwords.stackdriver_api_key")
-    api_key = collector.configuration["passwords.stackdriver_api_key"].decrypted()
-    stack.create_stackdriver_event(api_key, env["MESSAGE"], env['SENT_BY'])
+    if stack.stackdriver is NotSpecified:
+        raise BespinError("Please specify stackdriver options for your stack")
+    stack.stackdriver.create_event(env["MESSAGE"], env['SENT_BY'])
 
 # Make it so future use of @an_action doesn't result in more default tasks
 info["is_default"] = False
