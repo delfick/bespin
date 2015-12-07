@@ -1,16 +1,18 @@
+from bespin.errors import NoSuchStack, BespinError
 from bespin.operations.builder import Builder
-from bespin.errors import NoSuchStack
+from bespin import VERSION
 
 from datetime import datetime
 import logging
 import time
 import json
 import sys
+import os
 
 log = logging.getLogger("bespin.operations.deployer")
 
 class Deployer(object):
-    def deploy_stack(self, stack, stacks, made=None, ignore_deps=False, checked=None, start=None):
+    def deploy_stack(self, stack, stacks, made=None, ignore_deps=False, checked=None, start=None, is_dependency=False):
         """Deploy a stack and all it's dependencies"""
         if start is None:
             start = datetime.utcnow()
@@ -26,9 +28,15 @@ class Deployer(object):
         if stack.name not in stacks:
             raise NoSuchStack(looking_for=stack.name, available=stacks.keys())
 
+        sent_by = "bespin=={0}({1})".format(VERSION, os.environ.get("USER", "<unknown_user>"))
+        if not is_dependency and stack.notify_stackdriver:
+            if stack.stackdriver is NotSpecified:
+                raise BespinError("Need to specify stackdriver options when specifying notify_stackdriver")
+            stack.stackdriver.create_event("Deploying cloudformation for application {0}".format(stack.name), sent_by)
+
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
-                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked, start=start)
+                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked, start=start, is_dependency=True)
 
         # Should have all our dependencies now
         log.info("Making stack for '%s' (%s)", stack.name, stack.stack_name)
@@ -36,7 +44,10 @@ class Deployer(object):
 
         if any(stack.build_after):
             for dependency in stack.build_after:
-                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked, start=start)
+                self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked, start=start, is_dependency=True)
+
+        if not is_dependency and stack.notify_stackdriver:
+            stack.stackdriver.create_event("Deployed cloudformation for application {0}".format(stack.name), sent_by)
 
         if stack.artifact_retention_after_deployment:
             Builder().clean_old_artifacts(stack)

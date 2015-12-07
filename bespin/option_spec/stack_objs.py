@@ -85,6 +85,7 @@ class Stack(dictobj):
         , "newrelic": "Newrelic declaration"
         , "netscaler": "Netscaler declaration"
         , "stackdriver": "Stackdriver options used for giving events to stackdriver"
+        , "notify_stackdriver": "Whether to notify stackdriver about deploying the cloudformation"
         }
 
     def __repr__(self):
