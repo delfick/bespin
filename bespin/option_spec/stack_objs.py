@@ -10,11 +10,13 @@ from dnslib import DNSRecord, DNSQuestion, QTYPE
 from input_algorithms.dictobj import dictobj
 from pyrelic import Client as NewrelicClient
 import binascii
+import requests
 import logging
 import socket
 import base64
 import shlex
 import json
+import time
 import stat
 import six
 import os
@@ -287,6 +289,23 @@ class Stack(dictobj):
         with hp.a_temp_file() as fle:
             json.dump(self.stack_json_obj, open(fle.name, "w"))
             self.cloudformation.validate_template(fle.name)
+
+    def create_stackdriver_event(self, api_key, message, sent_by):
+        log.info("Making an event in stackdriver!\tmessage=%s\tannotation=%s", message, sent_by)
+        headers = {
+              "content-type": "application/json"
+            , "x-stackdriver-apikey": api_key
+            }
+        url = "https://event-gateway.stackdriver.com/v1/annotationevent"
+        event =  {
+              "message": message
+            , "annotated_by": sent_by
+            , "level": "INFO"
+            , "event_epoch": time.time()
+            }
+        res = requests.post(url, headers=headers, data=json.dumps(event))
+        if res.status_code != 201 or res.content != b'Published':
+            raise BespinError("Failed to send stackdriver event", status_code=res.status_code, error=res.content)
 
 class DowntimerOptions(dictobj):
     fields = {
