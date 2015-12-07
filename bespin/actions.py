@@ -51,6 +51,14 @@ class an_action(object):
             default_actions.append(func.__name__)
         return func
 
+def get_from_env(wanted):
+    """Get environment variables from the env"""
+    env = sb.listof(env_spec()).normalise(Meta({}, []), wanted)
+    missing = [e.env_name for e in env if e.missing]
+    if missing:
+        raise BespinError("Missing environment variables", missing=missing)
+    return dict(e.pair for e in env)
+
 @an_action()
 def list_tasks(collector, tasks, **kwargs):
     """List the available_tasks"""
@@ -508,6 +516,13 @@ def wait_for_dns_switch(collector, stack, artifact, site=NotSpecified, **kwargs)
             break
         else:
             log.info("Waiting for sites to switch")
+
+@an_action(needs_credentials=True, needs_stack=True)
+def create_stackdriver_event(collector, stack, **kwargs):
+    env = get_from_env(["MESSAGE", "SENT_BY"])
+    if stack.stackdriver is NotSpecified:
+        raise BespinError("Please specify stackdriver options for your stack")
+    stack.stackdriver.create_event(env["MESSAGE"], env['SENT_BY'])
 
 # Make it so future use of @an_action doesn't result in more default tasks
 info["is_default"] = False

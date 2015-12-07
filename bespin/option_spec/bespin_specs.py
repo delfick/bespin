@@ -280,6 +280,12 @@ class BespinSpec(object):
 
             , netscaler = optional_spec(self.netscaler_spec)
 
+            , notify_stackdriver = defaulted(boolean(), False)
+
+            , stackdriver = optional_spec(create_spec(stack_objs.Stackdriver
+                , api_key = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                ))
+
             , dns = optional_spec(stack_specs.dns_spec(create_spec(stack_objs.DNS
                 , vars = dictof(string_spec(), formatted(string_spec(), formatter=MergedOptionStringFormatter), nested=True)
                 , providers = dictof(string_spec(), stack_specs.dns_provider_spec())
