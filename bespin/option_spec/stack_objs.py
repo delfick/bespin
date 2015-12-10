@@ -295,7 +295,11 @@ class Stack(dictobj):
 class Stackdriver(dictobj):
     fields = {
           "api_key": "The api key used to gain access to stackdriver"
+        , "deployment_version": "The version being deployed"
         }
+
+    def format_version(self, stack_env):
+        return self.deployment_version.format(**dict(e.pair for e in stack_env))
 
     def create_event(self, message, sent_by):
         log.info("Making an event in stackdriver!\tmessage=%s\tannotation=%s", message, sent_by)

@@ -284,6 +284,7 @@ class BespinSpec(object):
 
             , stackdriver = optional_spec(create_spec(stack_objs.Stackdriver
                 , api_key = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
+                , deployment_version = defaulted(formatted(string_spec(), formatter=MergedOptionStringFormatter), "<version>")
                 ))
 
             , dns = optional_spec(stack_specs.dns_spec(create_spec(stack_objs.DNS
