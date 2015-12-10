@@ -39,6 +39,8 @@ class Bespin(dictobj):
             env_objs = []
             for part in artifact.split(','):
                 val = val[part]
+                if callable(val):
+                    val = val()
                 if hasattr(val, "env"):
                     env_objs.append(val.env)
                 if hasattr(val, "build_env"):
