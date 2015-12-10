@@ -33,7 +33,7 @@ class Deployer(object):
         if not is_dependency and stack.notify_stackdriver:
             if stack.stackdriver is NotSpecified:
                 raise BespinError("Need to specify stackdriver options when specifying notify_stackdriver")
-            stack.stackdriver.create_event("Deploying cloudformation for application {0}-{1}".format(stack.name, stack.stackdriver.format_version(stack.env)), sent_by)
+            stack.stackdriver.create_event("Deploying cloudformation for application {0}-{1}".format(stack.stack_name, stack.stackdriver.format_version(stack.env)), sent_by)
 
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
@@ -48,7 +48,7 @@ class Deployer(object):
                 self.deploy_stack(stacks[dependency], stacks, made=made, ignore_deps=True, checked=checked, start=start, is_dependency=True)
 
         if not is_dependency and stack.notify_stackdriver:
-            stack.stackdriver.create_event("Finished cloudformation for application {0}-{1}".format(stack.name, stack.stackdriver.format_version(stack.env)), sent_by)
+            stack.stackdriver.create_event("Finished cloudformation for application {0}-{1}".format(stack.stack_name, stack.stackdriver.format_version(stack.env)), sent_by)
 
         if stack.artifact_retention_after_deployment:
             Builder().clean_old_artifacts(stack)
