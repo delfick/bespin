@@ -91,10 +91,16 @@ class Stack(dictobj):
     def __repr__(self):
         return "<Stack({0})>".format(self.name)
 
+    @property
+    def resolved_vars(self):
+        if not getattr(self, "_resolved_vars", None):
+            self._resolved_vars = self.vars()
+        return self._resolved_vars
+
     def nested_var_items(self):
-        for key, var in self.vars.items():
+        for key, var in self.resolved_vars.items():
             if type(var) is dict:
-                for k, v in self.vars.items():
+                for k, v in self.resolved_vars.items():
                     yield k, v
             else:
                 yield key, var

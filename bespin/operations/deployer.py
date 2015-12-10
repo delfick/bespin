@@ -2,6 +2,7 @@ from bespin.errors import NoSuchStack, BespinError
 from bespin.operations.builder import Builder
 from bespin import VERSION
 
+from input_algorithms.spec_base import NotSpecified
 from datetime import datetime
 import logging
 import time

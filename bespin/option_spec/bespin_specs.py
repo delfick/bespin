@@ -267,7 +267,7 @@ class BespinSpec(object):
             , build_timeout = defaulted(integer_spec(), 1200)
             , ignore_deps = defaulted(boolean(), False)
 
-            , vars = dictof(string_spec(), stack_specs.var_spec(), nested=True)
+            , vars = delayed(dictof(string_spec(), stack_specs.var_spec(), nested=True))
 
             , skip_update_if_equivalent = listof(stack_specs.skipper_spec())
 
