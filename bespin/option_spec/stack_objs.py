@@ -672,7 +672,7 @@ class UltraDNSSite(dictobj):
                 res = provider.client.rest_api_connection.put(uri, json.dumps(rrset))
             else:
                 res = provider.client.edit_rrset_rdata(self.zone, self.record_type, self.domain, rdata)
-            if (type(res) is list and any("errorcode" in item for item in res)) or type(res) is dict and res.get("message") != "Successful":
+            if (type(res) is list and any(any("error" in key for key in item) for item in res)) or type(res) is dict and res.get("message") != "Successful":
                 raise BadDnsSwitch("Didn't switch record", zone=self.zone, domain=self.domain, rdata=rdata, result=res)
 
     def switched_to(self, environment):
