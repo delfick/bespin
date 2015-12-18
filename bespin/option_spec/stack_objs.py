@@ -669,6 +669,8 @@ class UltraDNSSite(dictobj):
                 rrset = {"profile": rrset["profile"], "rdata": rdata}
                 if self.ttl is not NotSpecified:
                     rrset["ttl"] = self.ttl
+                else:
+                    rrset["ttl"] = 60
                 res = provider.client.rest_api_connection.put(uri, json.dumps(rrset))
             else:
                 res = provider.client.edit_rrset_rdata(self.zone, self.record_type, self.domain, rdata)
