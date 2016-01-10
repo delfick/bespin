@@ -16,7 +16,7 @@ import logging
 import boto
 import os
 
-log = logging.getLogger("iam_syncr.amazon")
+log = logging.getLogger("bespin.amazon.credentials")
 
 class Credentials(object):
     def __init__(self, region, account_id, assume_role):
