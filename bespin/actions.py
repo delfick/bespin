@@ -519,6 +519,7 @@ def wait_for_dns_switch(collector, stack, artifact, site=NotSpecified, **kwargs)
 
 @an_action(needs_credentials=True, needs_stack=True)
 def create_stackdriver_event(collector, stack, **kwargs):
+    """Create an event in stackdriver"""
     env = get_from_env(["MESSAGE", "SENT_BY"])
     if stack.stackdriver is NotSpecified:
         raise BespinError("Please specify stackdriver options for your stack")
