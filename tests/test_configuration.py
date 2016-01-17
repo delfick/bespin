@@ -99,15 +99,15 @@ describe BespinCase, "Collecting configuration":
         config["bespin"] = {"environment": "dev"}
         with self.make_collector(self.make_config(config), activate_converters=True) as collector:
             stack = collector.configuration["stacks.blah"]
-            self.assertEqual(stack.vars["two"].resolve(), '2')
-            self.assertEqual(stack.vars["one"].resolve(), '1')
+            self.assertEqual(stack.vars()["two"].resolve(), '2')
+            self.assertEqual(stack.vars()["one"].resolve(), '1')
 
         config["environment"] = "staging"
         config["bespin"] = {"environment": "staging"}
         with self.make_collector(self.make_config(config), activate_converters=True) as collector:
             stack = collector.configuration["stacks.blah"]
-            self.assertEqual(stack.vars["two"].resolve(), '2')
-            self.assertEqual(stack.vars["one"].resolve(), '2')
+            self.assertEqual(stack.vars()["two"].resolve(), '2')
+            self.assertEqual(stack.vars()["one"].resolve(), '2')
 
     it "converts environments":
         config = self.make_config({"environments": {"dev": {"account_id": "1231434"}, "staging": {"account_id": "087089", "vars": {"one": "ONE"}}}})
