@@ -21,11 +21,11 @@ def a_temp_file():
             os.remove(filename)
 
 @contextmanager
-def a_temp_directory():
+def a_temp_directory(base=None):
     """Yield the name of a temporary directory and ensure it's removed after use"""
     directory = None
     try:
-        directory = tempfile.mkdtemp()
+        directory = tempfile.mkdtemp(dir=base)
         yield directory
     finally:
         if directory and os.path.exists(directory):

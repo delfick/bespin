@@ -129,13 +129,16 @@ class ArtifactFile(dictobj):
             tar.add(f.name, self.path)
 
 class ArtifactCommand(dictobj):
-    fields = ["copy", "modify", "command", "add_into_tar", ("timeout", 600), ("stdout", sys.stdout)]
+    fields = ["copy", "modify", "command", "add_into_tar", ("timeout", 600), ("stdout", sys.stdout), ("temp_dir", None)]
 
     def add_to_tar(self, tar, environment=None):
         if environment is None:
             environment = {}
 
-        with hp.a_temp_directory() as command_root:
+        if self.temp_dir and not os.path.exists(self.temp_dir):
+            os.makedirs(self.temp_dir)
+
+        with hp.a_temp_directory(self.temp_dir) as command_root:
             self.do_copy(command_root, environment)
             self.do_modify(command_root, environment)
             self.do_command(command_root, environment)

@@ -176,6 +176,7 @@ artifact_command_spec = lambda : sb.create_spec(ArtifactCommand
     , modify = sb.dictof(sb.string_spec(), sb.set_options(append=sb.listof(formatted_string)))
     , command = sb.listof(formatted_string)
     , timeout = sb.defaulted(sb.integer_spec(), 600)
+    , temp_dir = sb.defaulted(formatted_string, None)
     , add_into_tar = sb.listof(artifact_path_spec())
     )
 
