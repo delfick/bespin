@@ -148,6 +148,15 @@ def instances(collector, stack, artifact, **kwargs):
         instance_ids = stack.ssh.find_instance_ids(stack)
         stack.ec2.display_instances(instance_ids, address=stack.ssh.address)
     else:
+        # Have to convert instance ids into ip addresses
+        if artifact.startswith("i-"):
+            instance_ids = stack.ssh.find_instance_ids(stack)
+            if artifact not in instance_ids:
+                raise BadOption("Please specify either an IP Address or instance id that exists", instance_ids = instance_ids, got = artifact) 
+
+            artifact = stack.ec2.ip_for_instance_id(artifact)
+
+        # Artifact should be an ip address now !
         stack.ssh.ssh_into(artifact, collector.configuration["$@"])
 
 @an_action()

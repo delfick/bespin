@@ -46,6 +46,9 @@ class EC2(object):
         for instance in self.instances(instance_ids):
             yield instance.private_ip_address
 
+    def ip_for_instance_id(self, instance_id):
+        return self.conn.get_only_instances(instance_ids=[instance_id])[0].private_ip_address
+
     def instances(self, instance_ids):
         if instance_ids:
             for instance in self.conn.get_only_instances(instance_ids=instance_ids):
