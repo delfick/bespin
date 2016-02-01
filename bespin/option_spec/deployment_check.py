@@ -54,6 +54,7 @@ class SNSConfirmation(dictobj):
 
     def wait(self, instances, environment, sqs):
         version_message = self.version_message.format(**environment)
+        deployment_queue = self.deployment_queue.format(**environment)
 
         failed = []
         success = []
@@ -62,7 +63,7 @@ class SNSConfirmation(dictobj):
         log.info("Checking sqs for %s", version_message)
         log.info("Checking for message for instances [%s]", ",".join(instances))
         for _ in hp.until(timeout=self.timeout, step=5, action="Checking for valid deployment actions"):
-            messages = sqs.get_all_deployment_messages(self.deployment_queue)
+            messages = sqs.get_all_deployment_messages(deployment_queue)
 
             # Look for success and failure in the messages
             for message in messages:
