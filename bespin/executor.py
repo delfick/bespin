@@ -32,6 +32,7 @@ class App(App):
 
     def setup_other_logging(self, args, verbose=False, silent=False, debug=False):
         logging.getLogger("boto").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
+        logging.getLogger("botocore").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
         logging.getLogger("requests").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
         logging.getLogger("paramiko.transport").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
 
