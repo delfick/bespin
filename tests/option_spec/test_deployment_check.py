@@ -72,6 +72,7 @@ describe BespinCase, "SNSConfirmation":
             sqs = mock.Mock(name="sqs")
             sqs.get_all_deployment_messages.return_value = messages
             queue = mock.Mock(name="queue")
+            queue.format.return_value = queue
 
             confirmation = SNSConfirmation(version_message="{VAR}*", deployment_queue=queue)
             confirmation.wait(["i-1", "i-2", "i-3", "i-4"], {"VAR": "blah"}, sqs)
@@ -88,6 +89,7 @@ describe BespinCase, "SNSConfirmation":
             sqs = mock.Mock(name="sqs")
             sqs.get_all_deployment_messages.return_value = messages
             queue = mock.Mock(name="queue")
+            queue.format.return_value = queue
 
             confirmation = SNSConfirmation(version_message="{VAR}*", deployment_queue=queue)
             with self.fuzzyAssertRaisesError(BadDeployment, failed=["i-2"]):
@@ -107,6 +109,7 @@ describe BespinCase, "SNSConfirmation":
             sqs = mock.Mock(name="sqs")
             sqs.get_all_deployment_messages.return_value = messages
             queue = mock.Mock(name="queue")
+            queue.format.return_value = queue
 
             confirmation = SNSConfirmation(version_message="{VAR}*", deployment_queue=queue)
             confirmation.wait(["i-1", "i-2", "i-3", "i-4"], {"VAR": "blah"}, sqs)
@@ -137,6 +140,7 @@ describe BespinCase, "SNSConfirmation":
                 return info["responses"][info["index"]]
             sqs.get_all_deployment_messages.side_effect = get_all_deployment_messages
             queue = mock.Mock(name="queue")
+            queue.format.return_value = queue
             sleep = mock.Mock(name="sleep", side_effect=lambda amount: sleeps.append(amount))
 
             with mock.patch("time.sleep", sleep):
@@ -150,6 +154,7 @@ describe BespinCase, "SNSConfirmation":
             sqs = mock.Mock(name="sqs")
             sqs.get_all_deployment_messages.return_value = []
             queue = mock.Mock(name="queue")
+            queue.format.return_value = queue
             sleep = mock.Mock(name="sleep")
 
             with self.fuzzyAssertRaisesError(BadDeployment, "Failed to receive any messages"):
