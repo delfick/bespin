@@ -29,7 +29,7 @@ class Collector(Collector):
     BadFileErrorKls = BadYaml
     BadConfigurationErrorKls = BadConfiguration
 
-    def alter_clone_cli_args(self, new_collector, new_cli_args, new_bespin_options=None):
+    def alter_clone_args_dict(self, new_collector, new_args_dict, new_bespin_options=None):
         new_bespin = self.configuration["bespin"].clone()
         if new_bespin_options:
             new_bespin.update(new_bespin_options)
@@ -38,7 +38,7 @@ class Collector(Collector):
         if hasattr(self.configuration["bespin"], "credentials"):
             new_bespin.credentials = self.configuration["bespin"].credentials
 
-        new_cli_args["bespin"] = new_bespin
+        new_args_dict["bespin"] = new_bespin
 
     def find_missing_config(self, configuration):
         """Used to make sure we have stacks and environments before doing anything"""
@@ -47,22 +47,22 @@ class Collector(Collector):
         if not self.configuration.get("environments"):
             raise self.BadConfigurationErrorKls("Didn't find any environments configuration")
 
-    def extra_prepare(self, configuration, cli_args):
+    def extra_prepare(self, configuration, args_dict):
         """Called before the configuration.converters are activated"""
-        bespin = cli_args.pop("bespin")
+        bespin = args_dict.pop("bespin")
         environment = bespin.get("environment")
 
         bespin["configuration"] = configuration
         self.configuration.update(
             { "$@": bespin["extra"]
             , "bespin": bespin
-            , "command": cli_args['command']
+            , "command": args_dict['command']
             , "environment": environment
             }
-        , source = "<cli_args>"
+        , source = "<args_dict>"
         )
 
-    def extra_prepare_after_activation(self, configuration, cli_args):
+    def extra_prepare_after_activation(self, configuration, args_dict):
         """Called after the configuration.converters are activated"""
         environment = configuration["bespin"].environment
 

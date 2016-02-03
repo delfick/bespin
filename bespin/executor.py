@@ -20,17 +20,17 @@ class App(App):
     cli_environment_defaults = {"BESPIN_CONFIG": ("--bespin-config", './bespin.yml'), "NO_ASSUME_ROLE": "--no-assume-role"}
     cli_positional_replacements = [('--task', 'list_tasks'), ('--environment', NotSpecified), ('--stack', NotSpecified), ('--artifact', NotSpecified)]
 
-    def execute(self, args, extra_args, cli_args, logging_handler):
+    def execute(self, args_obj, args_dict, extra_args, logging_handler):
         collector = Collector()
-        cli_args["bespin"]["extra"] = extra_args
+        args_dict["bespin"]["extra"] = extra_args
 
-        collector.prepare(args.bespin_config.name, cli_args)
+        collector.prepare(args_obj.bespin_config.name, args_dict)
         if "term_colors" in collector.configuration:
             self.setup_logging_theme(logging_handler, colors=collector.configuration["term_colors"])
 
         collector.configuration["task_runner"](collector.configuration["bespin"].chosen_task)
 
-    def setup_other_logging(self, args, verbose=False, silent=False, debug=False):
+    def setup_other_logging(self, args_obj, verbose=False, silent=False, debug=False):
         logging.getLogger("boto").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
         logging.getLogger("botocore").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])
         logging.getLogger("requests").setLevel([logging.CRITICAL, logging.ERROR][verbose or debug])

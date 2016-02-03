@@ -48,7 +48,7 @@ class Task(dictobj):
             else:
                 configuration.update(self.options)
 
-        configuration.update(configuration["cli_args"].as_dict(), source="<cli>")
+        configuration.update(configuration["args_dict"].as_dict(), source="<cli>")
 
         if self.overrides:
             overrides = {}
