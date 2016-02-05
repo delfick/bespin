@@ -228,6 +228,8 @@ class Stack(dictobj):
                 if key in params:
                     if not isinstance(value, six.string_types):
                         value = value.resolve()
+                    if callable(value):
+                        value = value()
                     params = params.replace(key, value.format(**environment))
 
         try:
