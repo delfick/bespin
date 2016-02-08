@@ -211,7 +211,7 @@ class Stack(dictobj):
 
     @property
     def params_json_obj(self):
-        if self.params_json is NotSpecified:
+        if self.params_json is not NotSpecified:
             params = json.dumps(self.params_json)
         else:
             params = json.dumps([{"ParameterKey": key, "ParameterValue": value} for key, value in self.params_yaml.items()])

@@ -44,6 +44,8 @@ class valid_params(Spec):
                 except (ValueError, TypeError) as error:
                     raise BadFile(error, filename=val, meta=meta)
                 self.params_spec().normalise(meta, val)
+            else:
+                val = NotSpecified
         else:
             self.params_spec().normalise(meta, val)
 
