@@ -273,9 +273,9 @@ class Stack(dictobj):
 
     def sanity_check(self):
         self.find_missing_env()
-        if all(isinstance(item, six.string_types) for item in (self.params_json, self.params_yaml)):
+        if all(item is NotSpecified for item in (self.params_json, self.params_yaml)):
             raise BadStack("Need either params_json or params_yaml", looking_in=[self.params_json, self.params_yaml])
-        if not any(isinstance(item, six.string_types) for item in (self.params_json, self.params_yaml)):
+        if all(item is not NotSpecified for item in (self.params_json, self.params_yaml)):
             raise BadStack("Please don't have both params_json and params_yaml")
 
         # Hack for sanity check
