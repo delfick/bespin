@@ -177,13 +177,6 @@ class Collector(Collector):
                 thing["__environment__"] = configuration["environments"][environment]
                 thing["__stack_name__"] = stack
 
-            isdict = lambda item: isinstance(item, dict) or getattr(item, "is_dict", False)
-            ssh_options = base.get("ssh", ignore_converters=True)
-            if "SSH_GROUP" in os.environ and isdict(ssh_options):
-                ssh_options = ssh_options.as_dict()
-                if os.environ['SSH_GROUP'] in ssh_options.get("groups", {}):
-                    base['ssh'].update(ssh_options['groups'][os.environ['SSH_GROUP']])
-
             meta = Meta(everything, [("stacks", ""), (stack, "")])
             return bespin_spec.stack_spec.normalise(meta, base)
 
