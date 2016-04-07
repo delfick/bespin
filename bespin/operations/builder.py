@@ -1,3 +1,4 @@
+from bespin.errors import MissingDependency
 from bespin.layers import Layers
 from bespin import helpers as hp
 
@@ -18,10 +19,14 @@ class Builder(object):
 
         if not ignore_deps and not stack.ignore_deps:
             for dependency in stack.dependencies(stacks):
+                if dependency not in stacks:
+                    raise MissingDependency("Couldn't find dependency stack!", dependency=dependency)
                 self.sanity_check(stacks[dependency], stacks, ignore_deps, checked)
 
         if any(stack.build_after):
             for dependency in stack.build_after:
+                if dependency not in stacks:
+                    raise MissingDependency("Couldn't find dependency stack specified by build_after option!", dependency=dependency)
                 self.sanity_check(stacks[dependency], stacks, ignore_deps, checked)
 
     def layered(self, stacks, only_pushable=False):

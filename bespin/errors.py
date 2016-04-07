@@ -39,6 +39,9 @@ class BadJson(BespinError):
 class BadYaml(BespinError):
     desc = "Invalid yaml file"
 
+class MissingDependency(BespinError):
+    desc = "Missing dependency"
+
 ########################
 ###   OBJECTS
 ########################
