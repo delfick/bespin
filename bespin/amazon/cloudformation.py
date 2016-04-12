@@ -168,7 +168,17 @@ class Cloudformation(AmazonMixin):
                 break
 
             description = self.description()
-            events = description.describe_events()
+
+            events = []
+            while True:
+                try:
+                    with self.ignore_throttling_error():
+                        events = description.describe_events()
+                        break
+                except Throttled:
+                    log.info("Was throttled, waiting a bit")
+                    time.sleep(1)
+
             next_last = events[0].timestamp
             for event in events:
                 if event.timestamp > last:
