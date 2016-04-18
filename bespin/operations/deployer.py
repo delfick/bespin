@@ -75,6 +75,9 @@ class Deployer(object):
         if not skip:
             changed = stack.create_or_update()
 
+        if stack.bespin.dry_run:
+            return
+
         if changed:
 
             # Avoid race condition
