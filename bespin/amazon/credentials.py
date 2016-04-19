@@ -60,7 +60,8 @@ class Credentials(object):
         self._verified = True
 
     def assume(self):
-        log.info("Assuming role as aws:arn:iam::%s:%s", self.account_id, self.assume_role)
+        assumed_role = "arn:aws:iam::{0}:{1}".format(self.account_id, self.assume_role)
+        log.info("Assuming role as %s", assumed_role)
 
         for name in ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SECURITY_TOKEN', 'AWS_SESSION_TOKEN']:
             if name in os.environ and not os.environ[name]:
@@ -72,7 +73,7 @@ class Credentials(object):
             raise BespinError("Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY before running this script (your aws credentials)")
 
         try:
-            creds = conn.assume_role("arn:aws:iam::{0}:{1}".format(self.account_id, self.assume_role), "bespin")
+            creds = conn.assume_role(assumed_role, "bespin")
         except boto.exception.BotoServerError as error:
             if error.status == 403:
                 raise BespinError("Not allowed to assume role", error=error.message)
