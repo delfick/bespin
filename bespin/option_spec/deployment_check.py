@@ -40,7 +40,7 @@ class UrlChecker(dictobj):
             except requests.exceptions.ConnectionError as error:
                 log.warning("Failed to ask server\terror=%s", error)
             else:
-                log.info("\tgot back (%s) %s", status, result)
+                log.info("\tgot back (%s) '%s'", status, result)
                 if fnmatch.fnmatch(result, expected):
                     log.info("Deployment successful!")
                     return
