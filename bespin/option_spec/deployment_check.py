@@ -34,11 +34,13 @@ class UrlChecker(dictobj):
         for _ in hp.until(self.timeout_after, step=15):
             log.info("Asking %s", url)
             try:
-                result = requests.get(url).text
+                res = requests.get(url)
+                result = res.text
+                status = res.status_code
             except requests.exceptions.ConnectionError as error:
                 log.warning("Failed to ask server\terror=%s", error)
             else:
-                log.info("\tgot back %s", result)
+                log.info("\tgot back (%s) %s", status, result)
                 if fnmatch.fnmatch(result, expected):
                     log.info("Deployment successful!")
                     return
