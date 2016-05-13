@@ -7,6 +7,8 @@ and make things happen.
 .. image:: https://travis-ci.org/realestate-com-au/bespin.png?branch=master
     :target: https://travis-ci.org/realestate-com-au/bespin
 
+The documentation can be found at http://bespin.readthedocs.io
+
 Installation
 ------------
 
