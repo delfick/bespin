@@ -15,7 +15,7 @@ class ShowSpecsDirective(Directive):
     def run(self):
         """For each file in noseOfYeti/specs, output nodes to represent each spec file"""
         tokens = []
-        for name, spec in (("Bespin", BespinSpec().bespin_spec), ("Stack", BespinSpec().stack_spec)):
+        for name, spec in (("Bespin", BespinSpec().bespin_spec), ("Stack", BespinSpec().stack_spec.spec)):
             section = nodes.section()
             section['names'].append(name)
             section['ids'].append(name)

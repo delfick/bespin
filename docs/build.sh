@@ -66,8 +66,6 @@ if sys.version.startswith('3'): sys.exit(1)
 
   source $TMP_DIR/bin/activate
   pip install -r sphinx/requirements.txt
-  cd $DIR/..
-  pip install -e .
 fi
 
 # use with --clean if you change anything in sphinx
@@ -77,8 +75,6 @@ fi
 
 # Activate the virtualenv and build sphinx
 source $DIR/sphinx/venv/bin/activate
-if [[ -z $IGNORE_PIP ]]; then
-  pip install -r $DIR/sphinx/requirements.txt
-fi
+pip install -r $DIR/sphinx/requirements.txt
 cd $DIR/sphinx && pwd && $DIR/sphinx/venv/bin/sphinx-build -b html -d $DIR/sphinx/_build/doctrees . $DIR/sphinx/_build/html
 
