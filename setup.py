@@ -50,9 +50,9 @@ setup(
       }
 
     # metadata for upload to PyPI
-    , url = "https://github.com/realestate-com-au/bespin"
+    , url = "https://github.com/delfick/bespin"
     , author = "Stephen Moore"
-    , author_email = "stephen.moore@rea-group.com"
+    , author_email = "delfick755@gmail.com"
     , description = "Opinionated wrapper around boto that reads yaml"
     , license = "MIT"
     , keywords = "cloudformation boto"
