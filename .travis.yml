@@ -7,8 +7,8 @@ cache:
   directories:
     - $HOME/.pip-cache/
 install:
-  - pip install -e . --use-mirrors --download-cache $HOME/.pip-cache/
-  - pip install -e '.[tests]' --use-mirrors --download-cache $HOME/.pip-cache/
+  - pip install -e .
+  - pip install -e '.[tests]'
 
 script:
   - ./test.sh
