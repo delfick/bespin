@@ -47,7 +47,7 @@ describe BespinCase, "Collecting configuration":
         home_dir_configuration_location.return_value = home_dir_configuration
         collector_kls = type("CollectorSub", (Collector, ), {"home_dir_configuration_location": home_dir_configuration_location})
         collector = collector_kls()
-        collector.configuration = collector.collect_configuration(config)
+        collector.configuration = collector.collect_configuration(config, mock.Mock(name="args_dict"))
         if activate_converters:
             collector.configuration.converters.activate()
         yield collector
@@ -56,7 +56,7 @@ describe BespinCase, "Collecting configuration":
         config = self.make_config({"a":1, "b":2, "stacks": {"meh": {}}})
         home_config = self.make_config({"a":3, "c":4})
         with self.make_collector(config, home_config) as collector:
-            self.assertEqual(sorted(collector.configuration.keys()), sorted(['a', 'b', 'c', 'config_root', 'stacks']))
+            self.assertEqual(sorted(collector.configuration.keys()), sorted(['a', 'b', 'c', 'config_root', 'stacks', 'getpass', 'args_dict', 'collector']))
             self.assertEqual(collector.configuration['a'], 1)
             self.assertEqual(collector.configuration['b'], 2)
             self.assertEqual(collector.configuration['c'], 4)

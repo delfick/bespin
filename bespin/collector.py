@@ -107,7 +107,7 @@ class Collector(Collector):
         configuration.update(result, dont_prefix=[dictobj], source=src)
 
         if "bespin" in configuration:
-            if "extra_files" in configuration["bespin"]:
+            if "extra_files" in configuration.get("bespin", {}, ignore_converters=True):
                 for extra in sb.listof(sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)).normalise(Meta(configuration, [("bespin", ""), ("extra_files", "")]), configuration["bespin"]["extra_files"]):
                     if os.path.abspath(extra) not in done:
                         if not os.path.exists(extra):
