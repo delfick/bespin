@@ -29,16 +29,22 @@ class Collector(Collector):
     BadFileErrorKls = BadYaml
     BadConfigurationErrorKls = BadConfiguration
 
-    def alter_clone_args_dict(self, new_collector, new_args_dict, new_bespin_options=None):
-        new_bespin = self.configuration["bespin"].clone()
-        if new_bespin_options:
-            new_bespin.update(new_bespin_options)
+    def alter_clone_args_dict(self, new_collector, new_args_dict, options=None):
+        return MergedOptions.using(
+              new_args_dict
+            , {"bespin": self.configuration["bespin"].as_dict()}
+            , options
+            )
+
+    def clone(self, *args, **kwargs):
+        clone = super(Collector, self).clone(*args, **kwargs)
+        new_bespin = clone.configuration["bespin"]
 
         new_bespin.set_credentials = self.configuration["bespin"].set_credentials
         if hasattr(self.configuration["bespin"], "credentials"):
             new_bespin.credentials = self.configuration["bespin"].credentials
 
-        new_args_dict["bespin"] = new_bespin
+        return clone
 
     def find_missing_config(self, configuration):
         """Used to make sure we have stacks and environments before doing anything"""
@@ -49,7 +55,11 @@ class Collector(Collector):
 
     def extra_prepare(self, configuration, args_dict):
         """Called before the configuration.converters are activated"""
-        bespin = args_dict.pop("bespin")
+        bespin = dict(args_dict.get("bespin", MergedOptions()).items())
+
+        while "bespin" in args_dict:
+            del args_dict["bespin"]
+
         environment = bespin.get("environment")
 
         bespin["configuration"] = configuration
