@@ -638,7 +638,7 @@ class UltraDNSSite(dictobj):
     @property
     def rrset(self):
         """Get rrset information"""
-        rrset = self.provider().client.get_rrsets(self.zone, {"owner": self.domain})
+        rrset = self.provider().client.get_rrsets(self.zone, {"owner": self.domain}, limit=500)
         if rrset.get("errorMessage"):
             raise BespinError("Failed to get record set", error=rrset["errorMessage"], error_code=rrset["errorCode"])
 
