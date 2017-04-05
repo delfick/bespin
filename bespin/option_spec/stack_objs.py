@@ -68,6 +68,7 @@ class Stack(dictobj):
 
         , "vars": "A dictionary of variable definitions that may be referred to in other parts of the configuration"
         , "stack_json": "The path to a json file for the cloudformation stack definition"
+        , "stack_yaml": "The path to a yaml file for the cloudformation stack definition"
         , "params_json": "The path to a json file for the parameters used by the cloudformation stack"
         , "params_yaml": "Either a dictionary of parameters to use in the stack, or path to a yaml file with the dictionary of parameters"
         , "auto_scaling_group_name": "The name of the auto scaling group used in the stack"
@@ -206,8 +207,11 @@ class Stack(dictobj):
         return self.bespin.credentials.s3
 
     @property
-    def stack_json_obj(self):
-        return self.stack_json
+    def stack_obj(self):
+        if self.stack_json is not NotSpecified:
+            return self.stack_json
+        else:
+            return self.stack_yaml
 
     @property
     def params_json_obj(self):
@@ -247,20 +251,20 @@ class Stack(dictobj):
             if self.bespin.dry_run:
                 log.info("DRYRUN: Would create stack")
                 log.info("Would use following stack from {0}".format(self.stack_json))
-                print(json.dumps(self.stack_json_obj))
+                print(json.dumps(self.stack_obj))
             else:
                 tags = self.tags or None
                 if tags and type(tags) is not dict and hasattr(self.tags, "as_dict"):
                     tags = tags.as_dict()
-                return self.cloudformation.create(self.stack_json_obj, self.params_json_obj, tags)
+                return self.cloudformation.create(self.stack_obj, self.params_json_obj, tags)
         elif status.complete:
             log.info("Found existing stack, doing an update")
             if self.bespin.dry_run:
                 log.info("DRYRUN: Would update stack")
                 log.info("Would use following stack from {0}".format(self.stack_json))
-                print(json.dumps(self.stack_json_obj))
+                print(json.dumps(self.stack_obj))
             else:
-                return self.cloudformation.update(self.stack_json_obj, self.params_json_obj)
+                return self.cloudformation.update(self.stack_obj, self.params_json_obj)
         else:
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
 
@@ -304,7 +308,7 @@ class Stack(dictobj):
             raise BadStack("Stack is in a failed state, this means it probably has to be deleted first....", stack=self.stack_name)
 
         with hp.a_temp_file() as fle:
-            json.dump(self.stack_json_obj, open(fle.name, "w"))
+            json.dump(self.stack_obj, open(fle.name, "w"))
             self.cloudformation.validate_template(fle.name)
 
 class Stackdriver(dictobj):
