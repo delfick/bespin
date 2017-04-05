@@ -8,9 +8,9 @@ setup(
     , include_package_data = True
 
     , install_requires =
-      [ "delfick_app==0.7.3"
-      , "option_merge==1.2"
-      , "input_algorithms==0.4.5.4"
+      [ "delfick_app==0.9.3"
+      , "option_merge==1.4.4"
+      , "input_algorithms==0.5.7"
 
       , "six"
       , "pytz"
