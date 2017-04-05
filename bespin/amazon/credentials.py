@@ -14,6 +14,8 @@ import boto.sqs
 from input_algorithms.spec_base import NotSpecified
 import logging
 import boto
+import botocore
+import boto3
 import os
 
 log = logging.getLogger("bespin.amazon.credentials")
@@ -37,27 +39,15 @@ class Credentials(object):
 
         log.info("Verifying amazon credentials")
         try:
-            connection = boto.iam.connect_to_region(self.region)
-        except boto.exception.NoAuthHandlerFound:
+            amazon_account_id = boto3.client('sts').get_caller_identity().get('Account')
+            if int(self.account_id) != int(amazon_account_id):
+                raise BespinError("Please use credentials for the right account", expect=self.account_id, got=amazon_account_id)
+            self._verified = True
+        except botocore.exceptions.NoCredentialsError:
             raise BespinError("Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY before running this script (your aws credentials)")
+        except botocore.exceptions.ClientError as error:
+            raise BespinError("Couldn't determine what account your credentials are from", error=error.message)
 
-        try:
-            result = connection.list_roles(max_items=1)
-        except boto.exception.BotoServerError as error:
-            if error.status == 403:
-                raise BespinError("Couldn't determine what account your credentials are from", error=error.message)
-            else:
-                raise
-
-        roles = result["list_roles_response"]["list_roles_result"]["roles"]
-        if not roles:
-            raise BespinError("There are no roles in your account, I can't figure out the account id")
-
-        amazon_account_id = roles[0]['arn'].split(":")[4]
-        if int(self.account_id) != int(amazon_account_id):
-            raise BespinError("Please use credentials for the right account", expect=self.account_id, got=amazon_account_id)
-
-        self._verified = True
 
     def assume(self):
         assumed_role = "arn:aws:iam::{0}:{1}".format(self.account_id, self.assume_role)
