@@ -59,18 +59,24 @@ class valid_params(Spec):
         if isinstance(val, six.string_types) or val is NotSpecified:
             val = formatted(defaulted(string_spec(), self.dflt), formatter=MergedOptionStringFormatter).normalise(meta, val)
             if os.path.exists(val):
+                if self.filetype is str:
+                    with open(val) as fle:
+                        return fle.read()
+
                 try:
                     with open(val) as fle:
                         val = self.filetype.load(fle)
                 except (ValueError, TypeError) as error:
                     raise BadFile(error, filename=val, meta=meta)
-                self.params_spec().normalise(meta, val)
+                else:
+                    return self.params_spec().normalise(meta, val)
             else:
-                val = NotSpecified
-        else:
-            self.params_spec().normalise(meta, val)
+                return NotSpecified
 
-        return val
+        if self.filetype is str:
+            return string_spec().normalise(meta, val)
+
+        return self.params_spec().normalise(meta, val)
 
 class valid_params_json(valid_params):
     filetype = json
@@ -85,8 +91,8 @@ class valid_stack_json(valid_params):
     params_spec = lambda k: stack_specs.stack_json_spec()
 
 class valid_stack_yaml(valid_params):
-    filetype = yaml
-    params_spec = lambda k: stack_specs.stack_json_spec()
+    filetype = str
+    params_spec = None
 
 class valid_alerting_system(Spec):
     def normalise_filled(self, meta, val):
