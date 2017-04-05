@@ -8,7 +8,8 @@ request in the issue tracker.
 
 Setting up for development can be as simple as::
 
-  $ pip install virtualenvtools
+  $ pip install virtualenvtools virtualenvwrapper
+  $ source `which virtualenvwrapper.sh`
   $ mkvirtualenv bespin
   $ pip install -e .
   $ pip install -e ".[tests]"
