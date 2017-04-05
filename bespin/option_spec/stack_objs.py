@@ -214,6 +214,13 @@ class Stack(dictobj):
             return self.stack_yaml
 
     @property
+    def dumped_stack_obj(self):
+        if isinstance(self.stack_obj, six.string_types):
+            return self.stack_obj
+        else:
+            return json.dumps(self.stack_obj)
+
+    @property
     def params_json_obj(self):
         if self.params_json is not NotSpecified:
             params = json.dumps(self.params_json)
@@ -251,20 +258,20 @@ class Stack(dictobj):
             if self.bespin.dry_run:
                 log.info("DRYRUN: Would create stack")
                 log.info("Would use following stack from {0}".format(self.stack_json))
-                print(json.dumps(self.stack_obj))
+                print(self.dumped_stack_obj)
             else:
                 tags = self.tags or None
                 if tags and type(tags) is not dict and hasattr(self.tags, "as_dict"):
                     tags = tags.as_dict()
-                return self.cloudformation.create(self.stack_obj, self.params_json_obj, tags)
+                return self.cloudformation.create(self.dumped_stack_obj, self.params_json_obj, tags)
         elif status.complete:
             log.info("Found existing stack, doing an update")
             if self.bespin.dry_run:
                 log.info("DRYRUN: Would update stack")
                 log.info("Would use following stack from {0}".format(self.stack_json))
-                print(json.dumps(self.stack_obj))
+                print(json.dumps(self.dumped_stack_obj))
             else:
-                return self.cloudformation.update(self.stack_obj, self.params_json_obj)
+                return self.cloudformation.update(self.dumped_stack_obj, self.params_json_obj)
         else:
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
 
@@ -308,7 +315,8 @@ class Stack(dictobj):
             raise BadStack("Stack is in a failed state, this means it probably has to be deleted first....", stack=self.stack_name)
 
         with hp.a_temp_file() as fle:
-            json.dump(self.stack_obj, open(fle.name, "w"))
+            with open(fle.name, "w") as fle:
+                fle.write(self.dumped_stack_obj)
             self.cloudformation.validate_template(fle.name)
 
 class Stackdriver(dictobj):
