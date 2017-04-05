@@ -249,7 +249,7 @@ class Stack(dictobj):
                 log.info("Would use following stack from {0}".format(self.stack_json))
                 print(json.dumps(self.stack_json_obj))
             else:
-                return self.cloudformation.create(self.stack_json_obj, self.params_json_obj, self.tags.as_dict() or None)
+                return self.cloudformation.create(self.stack_json_obj, self.params_json_obj, self.tags.as_dict() if self.tags else None)
         elif status.complete:
             log.info("Found existing stack, doing an update")
             if self.bespin.dry_run:
