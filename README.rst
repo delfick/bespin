@@ -1,3 +1,17 @@
+Project Dormant
+===============
+
+This project was purpose built for a need at a previous workplace of mine.
+
+As far as I could tell, that was the only place this was used and since my
+departure from that workplace they have slowly switched to other projects for
+their deployments.
+
+I don't use AWS at my current workplace, or in any personal projects and so
+haven't needed to use this.
+
+In the future it's likely I'll only have time for small changes in this project.
+
 Bespin
 ======
 
