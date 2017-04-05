@@ -84,6 +84,10 @@ class valid_stack_json(valid_params):
     filetype = json
     params_spec = lambda k: stack_specs.stack_json_spec()
 
+class valid_stack_yaml(valid_params):
+    filetype = yaml
+    params_spec = lambda k: stack_specs.stack_json_spec()
+
 class valid_alerting_system(Spec):
     def normalise_filled(self, meta, val):
         if meta.everything.get("alerting_systems", NotSpecified) is NotSpecified:
@@ -281,6 +285,7 @@ class BespinSpec(object):
             , tags = dictionary_spec()
 
             , stack_json = valid_stack_json(default="{config_root}/{_key_name_1}.json")
+            , stack_yaml = valid_stack_yaml(default="{config_root}/{_key_name_1}.yaml")
 
             , params_json = valid_params_json(default="{config_root}/{environment}/{_key_name_1}-params.json")
             , params_yaml = valid_params_yaml(default="{config_root}/{environment}/{_key_name_1}-params.yaml")
