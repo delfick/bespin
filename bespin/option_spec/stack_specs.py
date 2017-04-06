@@ -185,7 +185,7 @@ params_json_spec = lambda: sb.listof(sb.set_options(
     , ParameterValue = sb.required(sb.any_spec())
     ))
 
-params_yaml_spec = lambda: sb.dictionary_spec()
+params_yaml_spec = lambda: sb.dictof(sb.string_spec(), sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter))
 
 stack_json_spec = lambda: sb.set_options(
       Resources = sb.required(sb.dictof(sb.string_spec(), sb.set_options(Type=sb.required(sb.string_spec()), Properties=sb.optional_spec(sb.dictionary_spec()))))
