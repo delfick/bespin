@@ -110,11 +110,13 @@ describe BespinCase, "Collecting configuration":
             self.assertEqual(stack.vars()["one"].resolve(), '2')
 
     it "converts environments":
-        config = self.make_config({"environments": {"dev": {"account_id": "1231434"}, "staging": {"account_id": "087089", "vars": {"one": "ONE"}}}})
+        config = self.make_config({"environments": {"dev": {"account_id": "1231434"}, "staging": {"account_id": 87089, "vars": {"one": "ONE"}}}})
         with self.make_collector(config, activate_converters=True) as collector:
             environment = collector.configuration["environments"]
             self.assertEqual(type(environment["dev"]), Environment)
             self.assertEqual(environment["dev"].account_id, "1231434")
-            self.assertEqual(environment["staging"].account_id, "087089")
+            self.assertEqual(type(environment["dev"].account_id), str)
+            self.assertEqual(environment["staging"].account_id, 87089)
+            self.assertEqual(type(environment["staging"].account_id), int)
             self.assertEqual(environment["staging"].vars.as_dict(), {"one": "ONE"})
 
