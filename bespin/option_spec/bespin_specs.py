@@ -288,7 +288,12 @@ class BespinSpec(object):
             , build_env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
             , stack_name_env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
 
-            , tags = dictionary_spec()
+            # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions
+            # Keys = 127 UTF-8 '^aws:' reserved. Values = 255 UTF-8
+            , tags = dictof(
+                  valid_string_spec(validators.regexed("^.{0,127}$"))
+                , formatted(valid_string_spec(validators.regexed("^(?!aws:).{0,255}$")), formatter=MergedOptionStringFormatter)
+                )
 
             , stack_json = valid_stack_json(default="{config_root}/{_key_name_1}.json")
             , stack_yaml = valid_stack_yaml(default="{config_root}/{_key_name_1}.yaml")
