@@ -29,9 +29,7 @@ describe BespinCase, "Collecting configuration":
             filename = str(uuid.uuid1())
         location = os.path.join(folder, filename)
 
-        filetype = yaml
-        if json:
-            filetype = json
+        filetype = json if is_json else yaml
         filetype.dump(options, open(location, 'w'))
         return location
 
