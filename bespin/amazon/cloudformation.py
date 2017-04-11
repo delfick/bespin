@@ -136,18 +136,34 @@ class Cloudformation(AmazonMixin):
         """ helper to convert python dictionary into list of AWS Tag dicts """
         return [{'Key': k, 'Value': v} for k,v in tags.items()] if tags else None
 
-    def create(self, stack, params, tags):
+    def create(self, stack, params, tags=None, policy=None):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
-        disable_rollback = os.environ.get("DISABLE_ROLLBACK", 0) == "1"
-        self.conn.create_stack(StackName=self.stack_name, TemplateBody=stack, Parameters=params, Tags=self._convert_tags(tags), Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'], DisableRollback=disable_rollback)
+        stack_args = {
+              'StackName': self.stack_name
+            , 'TemplateBody': stack
+            , 'Parameters': params
+            , 'Tags': self._convert_tags(tags)
+            , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
+            , 'DisableRollback': os.environ.get("DISABLE_ROLLBACK", 0) == "1"
+        }
+        if policy: stack_args['StackPolicyBody'] = policy
+        self.conn.create_stack(**stack_args)
         return True
 
-    def update(self, stack, params, tags):
+    def update(self, stack, params, tags=None, policy=None):
         log.info("Updating stack (%s)", self.stack_name)
-        # NOTE: DisableRollback is not supported by UpdateStack. It is a property of the stack that can only be set during stack creation
+        stack_args = {
+              'StackName': self.stack_name
+            , 'TemplateBody': stack
+            , 'Parameters': params
+            , 'Tags': self._convert_tags(tags)
+            , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
+            # NOTE: DisableRollback is not supported by UpdateStack. It is a property of the stack that can only be set during stack creation
+        }
+        if policy: stack_args['StackPolicyBody'] = policy
         with self.catch_boto_400(BadStack, "Couldn't update the stack", stack_name=self.stack_name):
             try:
-                self.conn.update_stack(StackName=self.stack_name, TemplateBody=stack, Parameters=params, Tags=self._convert_tags(tags), Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'])
+                self.conn.update_stack(**stack_args)
             except botocore.exceptions.ClientError as error:
                 if error.response['Error']['Message'] == "No updates are to be performed.":
                     log.info("No updates were necessary!")
@@ -197,7 +213,7 @@ class Cloudformation(AmazonMixin):
             next_last = events[0]['Timestamp']
             for event in events:
                 if event['Timestamp'] > last:
-                    reason = event['ResourceStatusReason'] or ""
+                    reason = event.get('ResourceStatusReason', '')
                     log.info("%s - %s %s (%s) %s", self.stack_name, event['ResourceType'], event['LogicalResourceId'], event['ResourceStatus'], reason)
             last = next_last
 

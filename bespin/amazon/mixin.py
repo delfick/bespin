@@ -14,9 +14,10 @@ class AmazonMixin(object):
             yield
         except botocore.exceptions.ClientError as error:
             code = error.response['ResponseMetadata']['HTTPStatusCode']
+            error_message = error.response['Error']['Message']
             if code == 400:
-                log.error("%s -(%s)- %s", message, code, error.message)
-                raise errorkls(message, error_code=code, error_message=error.message, **info)
+                log.error("%s -(%s)- %s", message, code, error_message)
+                raise errorkls(message, error_code=code, error_message=error_message, **info)
             else:
                 raise
 
