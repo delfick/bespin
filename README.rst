@@ -18,8 +18,8 @@ Bespin
 An opinionated wrapper around Amazon Cloudformation that reads yaml files.
 and make things happen.
 
-.. image:: https://travis-ci.org/realestate-com-au/bespin.png?branch=master
-    :target: https://travis-ci.org/realestate-com-au/bespin
+.. image:: https://travis-ci.org/delfick/bespin.png?branch=master
+    :target: https://travis-ci.org/delfick/bespin
 
 The documentation can be found at http://bespin.readthedocs.io
 
