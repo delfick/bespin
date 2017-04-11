@@ -70,14 +70,18 @@ for kls in [Status] + Status.__subclasses__():
 
 ##BOTO3 TODO: refactor to use boto3 resources
 class Cloudformation(AmazonMixin):
-    def __init__(self, stack_name, region="ap-southeast-2"):
+    def __init__(self, stack_name, region="ap-southeast-2", session=None):
         self.region = region
         self.stack_name = stack_name
+        self.session = session
+        if self.session is None:
+            self.session = boto3.session.Session(region_name=self.region)
+        assert self.session.region_name == self.region
 
     @hp.memoized_property
     def conn(self):
         log.info("Using region [%s] for cloudformation (%s)", self.region, self.stack_name)
-        return boto3.client('cloudformation', region_name=self.region)
+        return self.session.client('cloudformation', region_name=self.region)
 
     def reset(self):
         self._description = None
