@@ -57,7 +57,8 @@ And your bespin.yml looked like::
   ---
 
   bespin:
-    extra_imports: ["{config_root}", "scripts"]
+    extra_imports:
+    - ["{config_root}", "scripts"]
 
   stacks:
     app:
