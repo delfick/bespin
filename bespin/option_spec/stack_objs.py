@@ -252,6 +252,9 @@ class Stack(dictobj):
         """Create or update the stack, return True if the stack actually changed"""
         log.info("Creating or updating the stack (%s)", self.stack_name)
         status = self.cloudformation.wait(may_not_exist=True)
+        tags = self.tags or None
+        if tags and type(tags) is not dict and hasattr(self.tags, "as_dict"):
+            tags = tags.as_dict()
 
         if not status.exists:
             log.info("No existing stack, making one now")
@@ -260,9 +263,6 @@ class Stack(dictobj):
                 log.info("Would use following stack from {0}".format(self.stack_json))
                 print(self.dumped_stack_obj)
             else:
-                tags = self.tags or None
-                if tags and type(tags) is not dict and hasattr(self.tags, "as_dict"):
-                    tags = tags.as_dict()
                 return self.cloudformation.create(self.dumped_stack_obj, self.params_json_obj, tags)
         elif status.complete:
             log.info("Found existing stack, doing an update")
@@ -271,7 +271,7 @@ class Stack(dictobj):
                 log.info("Would use following stack from {0}".format(self.stack_json))
                 print(json.dumps(self.dumped_stack_obj))
             else:
-                return self.cloudformation.update(self.dumped_stack_obj, self.params_json_obj)
+                return self.cloudformation.update(self.dumped_stack_obj, self.params_json_obj, tags)
         else:
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
 

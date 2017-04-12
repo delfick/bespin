@@ -2,9 +2,11 @@ from bespin.errors import StackDoesntExist, BadStack, Throttled
 from bespin.amazon.mixin import AmazonMixin
 from bespin import helpers as hp
 
-import boto.cloudformation
+import botocore
+import boto3
 import datetime
 import logging
+import pytz
 import time
 import six
 import os
@@ -58,11 +60,15 @@ class UPDATE_ROLLBACK_FAILED(Status): pass
 class UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS(Status): pass
 class UPDATE_ROLLBACK_COMPLETE(Status): pass
 
+# REVIEW_IN_PROGRESS only valid for CreateChangeSet with ChangeSetType=CREATE
+class REVIEW_IN_PROGRESS(Status): pass
+
 for kls in [Status] + Status.__subclasses__():
     with_meta = six.add_metaclass(StatusMeta)(kls)
     locals()[kls.__name__] = with_meta
     Status.statuses[kls.__name__] = with_meta
 
+##BOTO3 TODO: refactor to use boto3 resources
 class Cloudformation(AmazonMixin):
     def __init__(self, stack_name, region="ap-southeast-2"):
         self.region = region
@@ -71,7 +77,11 @@ class Cloudformation(AmazonMixin):
     @hp.memoized_property
     def conn(self):
         log.info("Using region [%s] for cloudformation (%s)", self.region, self.stack_name)
-        return boto.cloudformation.connect_to_region(self.region)
+        return self.session.client('cloudformation', region_name=self.region)
+
+    @hp.memoized_property
+    def session(self):
+        return boto3.session.Session(region_name=self.region)
 
     def reset(self):
         self._description = None
@@ -83,7 +93,8 @@ class Cloudformation(AmazonMixin):
                 while True:
                     try:
                         with self.ignore_throttling_error():
-                            self._description = self.conn.describe_stacks(self.stack_name)[0]
+                            response = self.conn.describe_stacks(StackName=self.stack_name)
+                            self._description = response['Stacks'][0]
                             break
                     except Throttled:
                         log.info("Was throttled, waiting a bit")
@@ -94,10 +105,10 @@ class Cloudformation(AmazonMixin):
     def outputs(self):
         self.wait()
         description = self.description()
-        if description is None:
-            return {}
+        if 'Outputs' in description.outputs:
+            return dict((out['OutputKey'], out['OutputValue']) for out in description['Outputs'])
         else:
-            return dict((out.key, out.value) for out in description.outputs)
+            return {}
 
     @property
     def status(self):
@@ -113,30 +124,32 @@ class Cloudformation(AmazonMixin):
 
         try:
             description = self.description(force=force)
-            return Status.find(description.stack_status)
+            return Status.find(description['StackStatus'])
         except StackDoesntExist:
             return NONEXISTANT
 
     def map_logical_to_physical_resource_id(self, logical_id):
-        resource = self.conn.describe_stack_resource(stack_name_or_id=self.stack_name, logical_resource_id=logical_id)
-        return resource['DescribeStackResourceResponse']['DescribeStackResourceResult']['StackResourceDetail']["PhysicalResourceId"]
+        response = self.conn.describe_stack_resource(StackName=self.stack_name, LogicalResourceId=logical_id)
+        return response['StackResourceDetail']["PhysicalResourceId"]
+
+    def _convert_tags(self, tags):
+        """ helper to convert python dictionary into list of AWS Tag dicts """
+        return [{'Key': k, 'Value': v} for k,v in tags.items()] if tags else None
 
     def create(self, stack, params, tags):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
-        params = [(param["ParameterKey"], param["ParameterValue"]) for param in params] if params else None
         disable_rollback = os.environ.get("DISABLE_ROLLBACK", 0) == "1"
-        self.conn.create_stack(self.stack_name, template_body=stack, parameters=params, tags=tags, capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'], disable_rollback=disable_rollback)
+        self.conn.create_stack(StackName=self.stack_name, TemplateBody=stack, Parameters=params, Tags=self._convert_tags(tags), Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'], DisableRollback=disable_rollback)
         return True
 
-    def update(self, stack, params):
+    def update(self, stack, params, tags):
         log.info("Updating stack (%s)", self.stack_name)
-        params = [(param["ParameterKey"], param["ParameterValue"]) for param in params] if params else None
-        disable_rollback = os.environ.get("DISABLE_ROLLBACK", 0) == "1"
+        # NOTE: DisableRollback is not supported by UpdateStack. It is a property of the stack that can only be set during stack creation
         with self.catch_boto_400(BadStack, "Couldn't update the stack", stack_name=self.stack_name):
             try:
-                self.conn.update_stack(self.stack_name, template_body=stack, parameters=params, capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'], disable_rollback=disable_rollback)
-            except boto.exception.BotoServerError as error:
-                if error.message == "No updates are to be performed.":
+                self.conn.update_stack(StackName=self.stack_name, TemplateBody=stack, Parameters=params, Tags=self._convert_tags(tags), Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'])
+            except botocore.exceptions.ClientError as error:
+                if error.response['Error']['Message'] == "No updates are to be performed.":
                     log.info("No updates were necessary!")
                     return False
                 else:
@@ -145,14 +158,16 @@ class Cloudformation(AmazonMixin):
 
     def validate_template(self, filename):
         with self.catch_boto_400(BadStack, "Amazon says no", stack_name=self.stack_name, filename=filename):
-            self.conn.validate_template(open(filename).read())
+            self.conn.validate_template(TemplateBody=open(filename).read())
 
+    ##BOTO3 TODO: can this be refactored with client.get_waiter?
+    ##BOTO3 TODO: also consider client.get_paginator('describe_stack_events')
     def wait(self, timeout=1200, rollback_is_failure=False, may_not_exist=True):
         status = self.status
         if not status.exists and may_not_exist:
             return status
 
-        last = datetime.datetime.utcnow()
+        last = datetime.datetime.now(pytz.utc)
         if status.failed:
             raise BadStack("Stack is in a failed state, it must be deleted first", name=self.stack_name, status=status)
 
@@ -172,17 +187,18 @@ class Cloudformation(AmazonMixin):
             while True:
                 try:
                     with self.ignore_throttling_error():
-                        events = description.describe_events()
+                        response = self.conn.describe_stack_events(StackName=self.stack_name)
+                        events = response['StackEvents']
                         break
                 except Throttled:
                     log.info("Was throttled, waiting a bit")
                     time.sleep(1)
 
-            next_last = events[0].timestamp
+            next_last = events[0]['Timestamp']
             for event in events:
-                if event.timestamp > last:
-                    reason = event.resource_status_reason or ""
-                    log.info("%s - %s %s (%s) %s", self.stack_name, event.resource_type, event.logical_resource_id, event.resource_status, reason)
+                if event['Timestamp'] > last:
+                    reason = event['ResourceStatusReason'] or ""
+                    log.info("%s - %s %s (%s) %s", self.stack_name, event['ResourceType'], event['LogicalResourceId'], event['ResourceStatus'], reason)
             last = next_last
 
         status = self.status

@@ -1,19 +1,14 @@
 from bespin.amazon.cloudformation import Cloudformation
 from bespin.helpers import memoized_property
-from bespin.errors import BespinError
+from bespin.errors import BespinError, ProgrammerError
 from bespin.amazon.ec2 import EC2
 from bespin.amazon.sqs import SQS
 from bespin.amazon.kms import KMS
 from bespin.amazon.s3 import S3
-
-import boto.sts
-import boto.iam
-import boto.s3
-import boto.sqs
+from bespin import VERSION
 
 from input_algorithms.spec_base import NotSpecified
 import logging
-import boto
 import botocore
 import boto3
 import os
@@ -25,6 +20,7 @@ class Credentials(object):
         self.region = region
         self.account_id = account_id
         self.assume_role = assume_role
+        self.session = None
         self.clouds = {}
 
     def verify_creds(self):
@@ -39,7 +35,8 @@ class Credentials(object):
 
         log.info("Verifying amazon credentials")
         try:
-            amazon_account_id = boto3.client('sts').get_caller_identity().get('Account')
+            self.session = boto3.session.Session(region_name=self.region)
+            amazon_account_id = self.session.client('sts').get_caller_identity().get('Account')
             if int(self.account_id) != int(amazon_account_id):
                 raise BespinError("Please use credentials for the right account", expect=self.account_id, got=amazon_account_id)
             self._verified = True
@@ -47,6 +44,9 @@ class Credentials(object):
             raise BespinError("Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY before running this script (your aws credentials)")
         except botocore.exceptions.ClientError as error:
             raise BespinError("Couldn't determine what account your credentials are from", error=error.message)
+
+        if self.session is None or self.session.region_name != self.region:
+            raise ProgrammerError("botocore.session created in incorrect region")
 
 
     def assume(self):
@@ -58,24 +58,28 @@ class Credentials(object):
                 del os.environ[name]
 
         try:
-            conn = boto.sts.connect_to_region(self.region)
-        except boto.exception.NoAuthHandlerFound:
+            conn = boto3.client('sts', region_name=self.region)
+            session_name = "{1}@bespin{0}".format(VERSION, os.environ.get("USER", "<unknown_user>"))
+            response = conn.assume_role(RoleArn=assumed_role, RoleSessionName=session_name)
+
+            role = response['AssumedRoleUser']
+            creds = response['Credentials']
+            log.info("Assumed role (%s)", role['Arn'])
+            self.session = boto3.session.Session(
+                    aws_access_key_id=creds['AccessKeyId'],
+                    aws_secret_access_key=creds['SecretAccessKey'],
+                    aws_session_token=creds['SessionToken'],
+                    region_name=self.region
+            )
+
+            os.environ['AWS_ACCESS_KEY_ID'] = creds["AccessKeyId"]
+            os.environ['AWS_SECRET_ACCESS_KEY'] = creds["SecretAccessKey"]
+            os.environ['AWS_SECURITY_TOKEN'] = creds["SessionToken"]
+            os.environ['AWS_SESSION_TOKEN'] = creds["SessionToken"]
+        except botocore.exceptions.NoCredentialsError:
             raise BespinError("Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY before running this script (your aws credentials)")
-
-        try:
-            creds = conn.assume_role(assumed_role, "bespin")
-        except boto.exception.BotoServerError as error:
-            if error.status == 403:
-                raise BespinError("Not allowed to assume role", error=error.message)
-            else:
-                raise
-
-        creds_dict = creds.credentials.to_dict()
-
-        os.environ['AWS_ACCESS_KEY_ID'] = creds_dict["access_key"]
-        os.environ['AWS_SECRET_ACCESS_KEY'] = creds_dict["secret_key"]
-        os.environ['AWS_SECURITY_TOKEN'] = creds_dict["session_token"]
-        os.environ['AWS_SESSION_TOKEN'] = creds_dict["session_token"]
+        except botocore.exceptions.ClientError as error:
+            raise BespinError("Unable to assume role", error=error.message)
 
     @memoized_property
     def s3(self):
@@ -101,7 +105,7 @@ class Credentials(object):
     def iam(self):
         self.verify_creds()
         log.info("Using region [%s] for iam", self.region)
-        return boto.iam.connect_to_region(self.region)
+        return self.session.client('iam', region_name=self.region)
 
     def cloudformation(self, stack_name):
         self.verify_creds()
