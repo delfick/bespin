@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -67,6 +67,8 @@ if sys.version.startswith('3'): sys.exit(1)
   source $TMP_DIR/bin/activate
   pip install -r sphinx/requirements.txt
 fi
+
+set -e
 
 # use with --clean if you change anything in sphinx
 if (($CLEAN==1)); then
