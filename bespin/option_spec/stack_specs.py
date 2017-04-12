@@ -18,6 +18,7 @@ from bespin.helpers import memoized_property
 from input_algorithms.many_item_spec import many_item_formatted_spec
 from input_algorithms.spec_base import NotSpecified, Spec
 from input_algorithms import spec_base as sb
+from input_algorithms import validators
 from six.moves.urllib.parse import urlparse
 import logging
 
@@ -193,3 +194,28 @@ stack_json_spec = lambda: sb.set_options(
     , Outputs = sb.optional_spec(sb.dictof(sb.string_spec(), sb.dictionary_spec()))
     )
 
+class policy_set_options(sb.set_options):
+    """
+    Strip ``NotSpecified`` values from normalised dictionary
+    and ensure only one of the 'Not' options are specified
+    """
+    def normalise_filled(self, meta, val):
+        result = super(policy_set_options, self).normalise_filled(meta, val)
+        val = dict((k, v) for k, v in result.iteritems() if v is not NotSpecified)
+        return sb.apply_validators(meta, val, [
+                validators.has_only_one_of(["Action", "NotAction"]),
+                validators.has_only_one_of(["Resource", "NotResource"])
+            ])
+
+# http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html#stack-policy-reference
+policy_json_spec = lambda: sb.set_options(
+      Statement = sb.listof(policy_set_options(
+          Effect = sb.string_choice_spec(choices=["Deny", "Allow"])
+        , Action = sb.optional_spec(sb.listof(sb.string_choice_spec(choices=["Update:Modify", "Update:Replace", "Update:Delete", "Update:*"])))
+        , NotAction = sb.optional_spec(sb.listof(sb.string_choice_spec(choices=["Update:Modify", "Update:Replace", "Update:Delete", "Update:*"])))
+        , Principal = sb.valid_string_spec(validators.regexed("^\*$"))
+        , Resource = sb.optional_spec(sb.listof(sb.valid_string_spec(validators.regexed("^LogicalResourceId/.*$"))))
+        , NotResource = sb.optional_spec(sb.listof(sb.valid_string_spec(validators.regexed("^LogicalResourceId/.*$"))))
+        , Condition = sb.optional_spec(sb.dictionary_spec())
+      ))
+    )
