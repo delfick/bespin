@@ -201,7 +201,7 @@ class policy_set_options(sb.set_options):
     """
     def normalise_filled(self, meta, val):
         result = super(policy_set_options, self).normalise_filled(meta, val)
-        val = {k: v for k, v in result.iteritems() if v is not NotSpecified }
+        val = dict((k, v) for k, v in result.iteritems() if v is not NotSpecified)
         return sb.apply_validators(meta, val, [
                 validators.has_only_one_of(["Action", "NotAction"]),
                 validators.has_only_one_of(["Resource", "NotResource"])
