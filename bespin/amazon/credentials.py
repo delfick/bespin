@@ -1,6 +1,6 @@
 from bespin.amazon.cloudformation import Cloudformation
 from bespin.helpers import memoized_property
-from bespin.errors import BespinError
+from bespin.errors import BespinError, ProgrammerError
 from bespin.amazon.ec2 import EC2
 from bespin.amazon.sqs import SQS
 from bespin.amazon.kms import KMS
@@ -45,7 +45,8 @@ class Credentials(object):
         except botocore.exceptions.ClientError as error:
             raise BespinError("Couldn't determine what account your credentials are from", error=error.message)
 
-        assert self.session is not None and self.session.region_name == self.region
+        if self.session is None or self.session.region_name != self.region:
+            raise ProgrammerError("botocore.session created in incorrect region")
 
 
     def assume(self):
@@ -109,6 +110,6 @@ class Credentials(object):
     def cloudformation(self, stack_name):
         self.verify_creds()
         if stack_name not in self.clouds:
-            self.clouds[stack_name] = Cloudformation(stack_name, self.region, self.session)
+            self.clouds[stack_name] = Cloudformation(stack_name, self.region)
         return self.clouds[stack_name]
 
