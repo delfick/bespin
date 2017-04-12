@@ -114,15 +114,16 @@ class Collector(Collector):
 
     def add_configuration(self, configuration, collect_another_source, done, result, src):
         """Used to add a file to the configuration, result here is the yaml.load of the src"""
-        configuration.update(result, dont_prefix=[dictobj], source=src)
-
-        if "bespin" in configuration:
-            if "extra_files" in configuration.get("bespin", {}, ignore_converters=True):
-                for extra in sb.listof(sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)).normalise(Meta(configuration, [("bespin", ""), ("extra_files", "")]), configuration["bespin"]["extra_files"]):
+        if "bespin" in result:
+            if "extra_files" in result.get("bespin", {}):
+                for extra in sb.listof(sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)).normalise(Meta(configuration, [("bespin", ""), ("extra_files", "")]), result["bespin"]["extra_files"]):
+                    extra = os.path.join(result['config_root'], extra)
                     if os.path.abspath(extra) not in done:
                         if not os.path.exists(extra):
                             raise BadConfiguration("Specified extra file doesn't exist", extra=extra, source=src)
                         collect_another_source(extra)
+
+        configuration.update(result, dont_prefix=[dictobj], source=src)
 
     def extra_configuration_collection(self, configuration):
         """Hook to do any extra configuration collection or converter registration"""
