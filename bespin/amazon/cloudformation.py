@@ -138,14 +138,15 @@ class Cloudformation(AmazonMixin):
 
     def create(self, stack, params, tags=None, policy=None, role_arn=None):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
+        stack_tags = self._convert_tags(tags)
         stack_args = {
               'StackName': self.stack_name
             , 'TemplateBody': stack
             , 'Parameters': params
-            , 'Tags': self._convert_tags(tags)
             , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
             , 'DisableRollback': os.environ.get("DISABLE_ROLLBACK", 0) == "1"
         }
+        if stack_tags: stack_args['Tags'] = stack_tags
         if policy: stack_args['StackPolicyBody'] = policy
         if role_arn: stack_args['RoleARN'] = role_arn
         self.conn.create_stack(**stack_args)
@@ -153,14 +154,15 @@ class Cloudformation(AmazonMixin):
 
     def update(self, stack, params, tags=None, policy=None, role_arn=None):
         log.info("Updating stack (%s)", self.stack_name)
+        stack_tags = self._convert_tags(tags)
         stack_args = {
               'StackName': self.stack_name
             , 'TemplateBody': stack
             , 'Parameters': params
-            , 'Tags': self._convert_tags(tags)
             , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
             # NOTE: DisableRollback is not supported by UpdateStack. It is a property of the stack that can only be set during stack creation
         }
+        if stack_tags: stack_args['Tags'] = stack_tags
         if policy: stack_args['StackPolicyBody'] = policy
         if role_arn: stack_args['RoleARN'] = role_arn
         with self.catch_boto_400(BadStack, "Couldn't update the stack", stack_name=self.stack_name):
