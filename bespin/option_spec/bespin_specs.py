@@ -306,6 +306,7 @@ class BespinSpec(object):
             , params_yaml = valid_params_yaml(default="{config_root}/{environment}/{_key_name_1}-params.yaml")
 
             , stack_policy = valid_policy_json(default="{config_root}/{_key_name_1}-policy.json")
+            , role_name = formatted(string_spec(), formatter=MergedOptionStringFormatter)
 
             , build_first = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , build_after = listof(formatted(string_spec(), formatter=MergedOptionStringFormatter))

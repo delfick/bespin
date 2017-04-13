@@ -72,6 +72,7 @@ class Stack(dictobj):
         , "params_json": "The path to a json file for the parameters used by the cloudformation stack"
         , "params_yaml": "Either a dictionary of parameters to use in the stack, or path to a yaml file with the dictionary of parameters"
         , "stack_policy": "The path to a json file for the cloudformation stack policy"
+        , "role_name": "The IAM role that cloudformation assumes to create the stack"
         , "auto_scaling_group_name": "The name of the auto scaling group used in the stack"
 
         , "ssh": "Options for ssh'ing into instances"
@@ -259,6 +260,7 @@ class Stack(dictobj):
         log.info("Creating or updating the stack (%s)", self.stack_name)
         status = self.cloudformation.wait(may_not_exist=True)
         tags = self.tags or None
+        role = self.bespin.credentials.account_role_arn(self.role_name)
         if tags and type(tags) is not dict and hasattr(self.tags, "as_dict"):
             tags = tags.as_dict()
 
@@ -269,7 +271,7 @@ class Stack(dictobj):
                 log.info("Would use following stack from {0}".format(self.stack_json))
                 print(self.dumped_stack_obj)
             else:
-                return self.cloudformation.create(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj)
+                return self.cloudformation.create(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj, role)
         elif status.complete:
             log.info("Found existing stack, doing an update")
             if self.bespin.dry_run:
@@ -277,7 +279,7 @@ class Stack(dictobj):
                 log.info("Would use following stack from {0}".format(self.stack_json))
                 print(json.dumps(self.dumped_stack_obj))
             else:
-                return self.cloudformation.update(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj)
+                return self.cloudformation.update(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj, role)
         else:
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
 
