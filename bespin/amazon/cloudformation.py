@@ -153,7 +153,7 @@ class Cloudformation(AmazonMixin):
         return True
 
     def update(self, stack, params, tags=None, policy=None, role_arn=None):
-        log.info("Updating stack (%s)", self.stack_name)
+        log.info("Updating stack (%s)\ttags=%s", self.stack_name, tags)
         stack_tags = self._convert_tags(tags)
         stack_args = {
               'StackName': self.stack_name
