@@ -105,7 +105,7 @@ class Cloudformation(AmazonMixin):
     def outputs(self):
         self.wait()
         description = self.description()
-        if 'Outputs' in description.outputs:
+        if 'Outputs' in description:
             return dict((out['OutputKey'], out['OutputValue']) for out in description['Outputs'])
         else:
             return {}
