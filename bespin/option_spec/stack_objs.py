@@ -229,7 +229,9 @@ class Stack(dictobj):
 
     @property
     def params_json_obj(self):
-        if self.params_json is not NotSpecified:
+        if self.params_json is NotSpecified and self.params_yaml is NotSpecified:
+            return []
+        elif self.params_json is not NotSpecified:
             params = json.dumps(self.params_json)
         else:
             params = json.dumps([{"ParameterKey": key, "ParameterValue": value} for key, value in self.params_yaml.items()])
@@ -299,8 +301,6 @@ class Stack(dictobj):
 
     def sanity_check(self):
         self.find_missing_env()
-        if all(item is NotSpecified for item in (self.params_json, self.params_yaml)):
-            raise BadStack("Need either params_json or params_yaml", looking_in=[self.params_json, self.params_yaml])
         if all(item is not NotSpecified for item in (self.params_json, self.params_yaml)):
             raise BadStack("Please don't have both params_json and params_yaml")
 
