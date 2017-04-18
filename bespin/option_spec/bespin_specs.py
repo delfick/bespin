@@ -29,25 +29,6 @@ import yaml
 import six
 import os
 
-class has_params_specified(Validator):
-    """Takes in a stack object and makes sure we have parameters"""
-    def setup(self, spec):
-        self.spec = spec
-
-    def validate(self, meta, val):
-        val = self.spec.normalise(meta, val)
-        is_obj = lambda item: item and isinstance(item, list) or (isinstance(item, dict) or getattr(item, "is_dict", False))
-        is_file = lambda item: item and (isinstance(item, six.string_types) and os.path.exists(item))
-
-        params_json = val.params_json
-        params_yaml = val.params_yaml
-
-        if      (not is_obj(params_json) and not is_file(params_json)) \
-            and (not is_obj(params_yaml) and not is_file(params_yaml)):
-          raise BadSpecValue("Please specify either params_json or params_yaml for each stack", meta=meta)
-
-        return val
-
 class valid_params(Spec):
     filetype = NotImplemented
     params_spec = NotImplemented
@@ -274,7 +255,7 @@ class BespinSpec(object):
     @memoized_property
     def stack_spec(self):
         """Spec for each stack"""
-        return has_params_specified(create_spec(stack_objs.Stack
+        return create_spec(stack_objs.Stack
             , validators.deprecated_key("url_checker", "Use ``confirm_deployment.url_checker1``")
             , validators.deprecated_key("deploys_s3_path", "Use ``confirm_deployment.deploys_s3_path``")
             , validators.deprecated_key("sns_confirmation", "Use ``confirm_deployment.sns_confirmation``")
@@ -398,7 +379,7 @@ class BespinSpec(object):
                 ))
 
             , confirm_deployment = optional_spec(self.confirm_deployment_spec)
-            ))
+            )
 
     @memoized_property
     def bespin_spec(self):
