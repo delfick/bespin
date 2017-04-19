@@ -15,6 +15,8 @@ import mock
 import yaml
 import uuid
 import json
+import nose
+import sys
 import os
 
 describe BespinCase, "Collecting configuration":
@@ -120,6 +122,9 @@ describe BespinCase, "Collecting configuration":
             self.assertEqual(environment["staging"].vars.as_dict(), {"one": "ONE"})
 
     it "allows the special this_config_root formatter option to produce the config file where the option is defined":
+        if sys.version.startswith("2.6."):
+            raise nose.SkipTest("Can't have a zero length format field in python2.6")
+
         config1 = """
         ---
         bespin:
