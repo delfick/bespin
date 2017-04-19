@@ -1,7 +1,7 @@
 # coding: spec
 
 from bespin.option_spec.bespin_specs import Bespin, Environment
-from bespin.option_spec.stack_objs import Stack
+from bespin.option_spec.stack_objs import Stack, StaticVariable
 from bespin.option_spec.task_objs import Task
 from bespin.collector import Collector
 
@@ -10,6 +10,7 @@ from tests.helpers import BespinCase
 from noseOfYeti.tokeniser.support import noy_sup_setUp
 from input_algorithms.spec_base import NotSpecified
 from contextlib import contextmanager
+from textwrap import dedent
 import mock
 import yaml
 import uuid
@@ -118,3 +119,82 @@ describe BespinCase, "Collecting configuration":
             self.assertEqual(type(environment["staging"].account_id), int)
             self.assertEqual(environment["staging"].vars.as_dict(), {"one": "ONE"})
 
+    it "allows the special this_config_root formatter option to produce the config file where the option is defined":
+        config1 = """
+        ---
+        bespin:
+            environment: dev
+
+            # extra_files is special and is already joined with the directory this config is in
+            extra_files:
+                - "one/two/stack.yml"
+
+
+        vars:
+            b_pointer: "{:this_config_dir}/b"
+
+        stacks:
+            one:
+                vars:
+                    watevs: 1
+        """
+
+        config2 = """
+        ---
+
+        environments:
+            dev:
+                account_id: "123"
+                vars:
+                    a_pointer: "{:this_config_dir}/a"
+        """
+
+        config3 = """
+        ---
+
+        bespin:
+            # extra_files is special and is already joined with the directory this config is in
+            extra_files:
+                - "../envs.yml"
+
+        stacks:
+            one:
+                stack_yaml: "{:this_config_dir}/c"
+
+                vars:
+                    d_pointer: "{:this_config_dir}/d"
+        """
+
+        stack_yaml = """
+        ---
+
+        options: here
+        """
+
+        root, record = self.setup_directory(
+              { "bespin.yml": dedent(config1)
+              , "b": ""
+              , "one":
+                { "a": ""
+                , "envs.yml": dedent(config2)
+                , "two":
+                  { "stack.yml": dedent(config3)
+                  , "c": dedent(stack_yaml)
+                  , "d": ""
+                  }
+                }
+              }
+            )
+
+        with self.make_collector(record["bespin.yml"]["/file/"], activate_converters=True) as collector:
+            stack = collector.configuration[["stacks", "one"]]
+
+        expected = {
+              "watevs": StaticVariable('1')
+            , "a_pointer": StaticVariable(record["one"]["a"]["/file/"])
+            , "b_pointer": StaticVariable(record["b"]["/file/"])
+            , "d_pointer": StaticVariable(record["one"]["two"]["d"]["/file/"])
+            }
+
+        self.assertEqual(stack["vars"](), expected)
+        self.assertEqual(stack["stack_yaml"], dedent(stack_yaml))

@@ -19,6 +19,7 @@ from bespin.errors import BadOptionFormat
 from input_algorithms.meta import Meta
 
 from datetime import datetime
+import os
 
 class MergedOptionStringFormatter(StringFormatter):
     """
@@ -61,7 +62,7 @@ class MergedOptionStringFormatter(StringFormatter):
 
     def special_get_field(self, value, args, kwargs, format_spec=None):
         """Also take the spec into account"""
-        if format_spec in ("env", "underscored", "date"):
+        if format_spec in ("env", "underscored", "date", "this_config_dir"):
             return value, ()
 
         if value in self.chain:
@@ -78,3 +79,8 @@ class MergedOptionStringFormatter(StringFormatter):
         elif format_spec == "date":
             return datetime.now().strftime(obj)
 
+        elif format_spec == "this_config_dir":
+            sources = self.all_options.source_for(self.option_path)
+            if not sources:
+                raise BadOptionFormat("Couldn't find this_config_dir for the option", option_path=self.option_path)
+            return os.path.normpath(os.path.dirname(sources[0]))
