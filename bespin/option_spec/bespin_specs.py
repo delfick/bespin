@@ -36,7 +36,7 @@ class valid_params(Spec):
     def setup(self, default):
         self.dflt = default
 
-    def normalise_either(self, meta, val):
+    def normalise(self, meta, val):
         if isinstance(val, six.string_types) or val is NotSpecified:
             val = formatted(defaulted(string_spec(), self.dflt), formatter=MergedOptionStringFormatter).normalise(meta, val)
             if os.path.exists(val):

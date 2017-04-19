@@ -116,7 +116,8 @@ class Collector(Collector):
         """Used to add a file to the configuration, result here is the yaml.load of the src"""
         if "bespin" in result:
             if "extra_files" in result.get("bespin", {}):
-                for extra in sb.listof(sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter)).normalise(Meta(configuration, [("bespin", ""), ("extra_files", "")]), result["bespin"]["extra_files"]):
+                spec = sb.listof(sb.formatted(sb.string_spec(), formatter=MergedOptionStringFormatter))
+                for extra in spec.normalise(Meta(configuration, []).at("bespin").at("extra_files"), result["bespin"]["extra_files"]):
                     extra = os.path.join(result['config_root'], extra)
                     if os.path.abspath(extra) not in done:
                         if not os.path.exists(extra):
@@ -161,24 +162,24 @@ class Collector(Collector):
             else:
                 environment_as_dict = configuration[["environments", environment]].as_dict()
 
+            stack_environment = {}
             stack_environment_as_dict = {}
             if ["stacks", stack, environment] in configuration:
-                stack_environment_as_dict = configuration["stacks", stack, environment].as_dict()
+                stack_environment = configuration["stacks", stack, environment]
+                stack_environment_as_dict = stack_environment.as_dict()
 
+            # `base` is used for the majority of the values
             base = path.configuration.root().wrapped()
-            everything = path.configuration.root().wrapped()
-
             base.update(config_as_dict)
-            everything[path].update(config_as_dict)
-
             base.update(val_as_dict)
-            everything[path] = val_as_dict
-
             base.update(environment_as_dict)
-            everything.update(environment_as_dict)
-
             base.update(stack_environment_as_dict)
-            everything[path].update(stack_environment_as_dict)
+
+            # `everything` is used for formatting options
+            # Ideally it matches base
+            # The difference here is that we want to maintain source information
+            everything = path.configuration.root().wrapped()
+            everything[path] = MergedOptions.using(configuration, val, env, stack_environment)
 
             for thing in (base, everything):
                 thing["bespin"] = configuration["bespin"]
