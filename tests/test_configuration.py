@@ -121,7 +121,7 @@ describe BespinCase, "Collecting configuration":
             self.assertEqual(type(environment["staging"].account_id), int)
             self.assertEqual(environment["staging"].vars.as_dict(), {"one": "ONE"})
 
-    it "allows the special this_config_root formatter option to produce the config file where the option is defined":
+    it "allows the special config_dir formatter option to produce the config file where the option is defined":
         if sys.version.startswith("2.6."):
             raise nose.SkipTest("Can't have a zero length format field in python2.6")
 
@@ -136,7 +136,7 @@ describe BespinCase, "Collecting configuration":
 
 
         vars:
-            b_pointer: "{:this_config_dir}/b"
+            b_pointer: "{:config_dir}/b"
 
         stacks:
             one:
@@ -151,7 +151,7 @@ describe BespinCase, "Collecting configuration":
             dev:
                 account_id: "123"
                 vars:
-                    a_pointer: "{:this_config_dir}/a"
+                    a_pointer: "{:config_dir}/a"
         """
 
         config3 = """
@@ -164,10 +164,11 @@ describe BespinCase, "Collecting configuration":
 
         stacks:
             one:
-                stack_yaml: "{:this_config_dir}/c"
+                stack_yaml: "{:config_dir}/c"
 
                 vars:
-                    d_pointer: "{:this_config_dir}/d"
+                    d_pointer: "{:config_dir}/d"
+                    e_pointer: "{stacks.one.vars.a_pointer:config_dir}/e"
         """
 
         stack_yaml = """
@@ -181,6 +182,7 @@ describe BespinCase, "Collecting configuration":
               , "b": ""
               , "one":
                 { "a": ""
+                , "e": ""
                 , "envs.yml": dedent(config2)
                 , "two":
                   { "stack.yml": dedent(config3)
@@ -199,6 +201,7 @@ describe BespinCase, "Collecting configuration":
             , "a_pointer": StaticVariable(record["one"]["a"]["/file/"])
             , "b_pointer": StaticVariable(record["b"]["/file/"])
             , "d_pointer": StaticVariable(record["one"]["two"]["d"]["/file/"])
+            , "e_pointer": StaticVariable(record["one"]["e"]["/file/"])
             }
 
         self.assertEqual(stack["vars"](), expected)
