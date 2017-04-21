@@ -2,14 +2,14 @@
 
 from bespin.amazon.credentials import Credentials
 from bespin.errors import BespinError
+
 from tests.helpers import BespinCase
+
 from input_algorithms.spec_base import NotSpecified
-
-# NOTE: moto uses account_id 123456789012
 from moto import mock_sts
-
 import os
 
+# NOTE: moto uses account_id 123456789012
 describe BespinCase, "Credentials":
     @mock_sts
     it "verifies credentials":
@@ -33,7 +33,8 @@ describe BespinCase, "Credentials":
     @mock_sts
     it "verify_creds ensures account_id matches aws":
         credentials = Credentials('us-west-1', 987654321, NotSpecified)
-        self.assertRaises(BespinError, credentials.verify_creds) # 987654321 != 123456789012
+        with self.fuzzyAssertRaisesError(BespinError, "Please use credentials for the right account", expect=987654321, got='123456789012'):
+            credentials.verify_creds()
 
     @mock_sts
     it "assumes provided role":
