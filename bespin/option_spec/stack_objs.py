@@ -299,6 +299,12 @@ class Stack(dictobj):
         # Otherwise return False
         return False
 
+    def validate_template(self):
+        with hp.a_temp_file() as fle:
+            with open(fle.name, "w") as fle:
+                fle.write(self.dumped_stack_obj)
+            self.cloudformation.validate_template(fle.name)
+
     def sanity_check(self):
         self.find_missing_env()
         if all(item is not NotSpecified for item in (self.params_json, self.params_yaml)):
@@ -322,10 +328,7 @@ class Stack(dictobj):
         if self.cloudformation.status.failed:
             raise BadStack("Stack is in a failed state, this means it probably has to be deleted first....", stack=self.stack_name)
 
-        with hp.a_temp_file() as fle:
-            with open(fle.name, "w") as fle:
-                fle.write(self.dumped_stack_obj)
-            self.cloudformation.validate_template(fle.name)
+        self.validate_template()
 
 class Stackdriver(dictobj):
     fields = {
