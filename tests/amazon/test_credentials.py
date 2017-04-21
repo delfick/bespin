@@ -21,7 +21,7 @@ describe BespinCase, "Credentials":
         self.assertEquals(credentials.account_id, 123456789012)
         self.assertEquals(credentials.region, 'us-west-1')
         self.assertTrue(credentials._verified)
-        self.assertIsNotNone(credentials.session)
+        self.assertNotEqual(credentials.session, None)
         self.assertEquals(credentials.session.region_name, 'us-west-1')
 
         aws_creds = credentials.session.get_credentials()
@@ -33,8 +33,7 @@ describe BespinCase, "Credentials":
     @mock_sts
     it "verify_creds ensures account_id matches aws":
         credentials = Credentials('us-west-1', 987654321, NotSpecified)
-        with self.assertRaises(BespinError):
-            credentials.verify_creds() # 987654321 != 123456789012
+        self.assertRaises(BespinError, credentials.verify_creds) # 987654321 != 123456789012
 
     @mock_sts
     it "assumes provided role":
@@ -45,7 +44,7 @@ describe BespinCase, "Credentials":
             self.fail("verify_creds() raised Exception unexpectedly!")
         self.assertTrue(credentials._verified)
 
-        self.assertIsNotNone(credentials.session)
+        self.assertNotEqual(credentials.session, None)
         self.assertTrue('AWS_ACCESS_KEY_ID' in os.environ)
         self.assertTrue('AWS_SECRET_ACCESS_KEY' in os.environ)
         self.assertTrue('AWS_SECURITY_TOKEN' in os.environ)
