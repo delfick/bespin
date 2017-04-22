@@ -14,10 +14,8 @@ describe BespinCase, "Credentials":
     @mock_sts
     it "verifies credentials":
         credentials = Credentials('us-west-1', 123456789012, NotSpecified)
-        try:
-            credentials.verify_creds() # does not raise
-        except Exception:
-            self.fail("verify_creds() raised Exception unexpectedly!")
+        credentials.verify_creds()
+
         self.assertEquals(credentials.account_id, 123456789012)
         self.assertEquals(credentials.region, 'us-west-1')
         self.assertTrue(credentials._verified)
@@ -39,10 +37,8 @@ describe BespinCase, "Credentials":
     @mock_sts
     it "assumes provided role":
         credentials = Credentials('us-west-1', 123456789012, 'example_role')
-        try:
-            credentials.verify_creds() # does not raise
-        except Exception:
-            self.fail("verify_creds() raised Exception unexpectedly!")
+        credentials.verify_creds() # does not raise
+
         self.assertTrue(credentials._verified)
 
         self.assertNotEqual(credentials.session, None)
