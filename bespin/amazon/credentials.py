@@ -66,7 +66,7 @@ class Credentials(object):
 
         try:
             conn = boto3.client('sts', region_name=self.region)
-            session_name = "{1}@bespin{0}".format(VERSION, os.environ.get("USER", "<unknown_user>"))
+            session_name = "{1}@bespin{0}".format(VERSION, os.environ.get("USER", "UnknownUser>"))
             response = conn.assume_role(RoleArn=assumed_role, RoleSessionName=session_name)
 
             role = response['AssumedRoleUser']
