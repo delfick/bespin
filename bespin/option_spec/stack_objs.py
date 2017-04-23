@@ -228,14 +228,17 @@ class Stack(dictobj):
             return json.dumps(self.stack_policy)
 
     @property
-    def params_json_obj(self):
+    def params_json_raw(self):
         if self.params_json is NotSpecified and self.params_yaml is NotSpecified:
-            return []
+            return '[]'
         elif self.params_json is not NotSpecified:
-            params = json.dumps(self.params_json)
+            return json.dumps(self.params_json)
         else:
-            params = json.dumps([{"ParameterKey": key, "ParameterValue": value} for key, value in self.params_yaml.items()])
+            return json.dumps([{"ParameterKey": key, "ParameterValue": value} for key, value in self.params_yaml.items()])
 
+    @property
+    def params_json_obj(self):
+        params = self.params_json_raw
         environment = dict([env.pair for env in self.env])
 
         for var in self.nested_vars():
@@ -300,10 +303,24 @@ class Stack(dictobj):
         return False
 
     def validate_template(self):
+        """ Validate stack template against CloudFormation """
         with hp.a_temp_file() as fle:
             with open(fle.name, "w") as fle:
                 fle.write(self.dumped_stack_obj)
-            self.cloudformation.validate_template(fle.name)
+            return self.cloudformation.validate_template(fle.name)
+
+    def validate_template_params(self):
+        """ Validate stack template and stack params against CloudFormation """
+        validation = self.validate_template()
+
+        _defined_params = lambda obj: set([x['ParameterKey'] for x in obj])
+        req_params = _defined_params(validation.get('Parameters', []))
+        stack_params = _defined_params(json.loads(self.params_json_raw))
+        if stack_params > req_params:
+            raise BadStack("Parameters not defined in template provided", stack=self.name, requires=list(req_params), additional=list(stack_params - req_params))
+        if req_params > stack_params:
+            raise BadStack("Parameters defined in template missing", stack=self.name, defined=list(req_params), missing=list(req_params - stack_params))
+        return validation
 
     def sanity_check(self):
         self.find_missing_env()
@@ -328,7 +345,7 @@ class Stack(dictobj):
         if self.cloudformation.status.failed:
             raise BadStack("Stack is in a failed state, this means it probably has to be deleted first....", stack=self.stack_name)
 
-        self.validate_template()
+        self.validate_template_params()
 
 class Stackdriver(dictobj):
     fields = {

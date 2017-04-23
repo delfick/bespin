@@ -178,7 +178,7 @@ class Cloudformation(AmazonMixin):
 
     def validate_template(self, filename):
         with self.catch_boto_400(BadStack, "Amazon says no", stack_name=self.stack_name, filename=filename):
-            self.conn.validate_template(TemplateBody=open(filename).read())
+            return self.conn.validate_template(TemplateBody=open(filename).read())
 
     ##BOTO3 TODO: can this be refactored with client.get_waiter?
     ##BOTO3 TODO: also consider client.get_paginator('describe_stack_events')
