@@ -12,6 +12,7 @@ import logging
 import botocore
 import boto3
 import os
+import re
 
 log = logging.getLogger("bespin.amazon.credentials")
 
@@ -66,7 +67,11 @@ class Credentials(object):
 
         try:
             conn = boto3.client('sts', region_name=self.region)
-            session_name = "{1}@bespin{0}".format(VERSION, os.environ.get("USER", "UnknownUser>"))
+            session_user = re.sub('[^\w+=,.@-]+', '', os.environ.get("USER", ""))
+            if session_user:
+                session_name = "{0}@bespin{1}".format(session_user, VERSION)
+            else:
+                session_name = "bespin{0}".format(VERSION)
             response = conn.assume_role(RoleArn=assumed_role, RoleSessionName=session_name)
 
             role = response['AssumedRoleUser']
