@@ -314,12 +314,14 @@ class Stack(dictobj):
         validation = self.validate_template()
 
         _defined_params = lambda obj: set([x['ParameterKey'] for x in obj])
-        req_params = _defined_params(validation.get('Parameters', []))
+        template_params = _defined_params(validation.get('Parameters', []))
+        defaulted_params = _defined_params(x for x in validation.get('Parameters', []) if not x.has_key('DefaultValue'))
+        required_params = template_params - defaulted_params
         stack_params = _defined_params(json.loads(self.params_json_raw))
-        if stack_params > req_params:
-            raise BadStack("Parameters not defined in template provided", stack=self.name, requires=list(req_params), additional=list(stack_params - req_params))
-        if req_params > stack_params:
-            raise BadStack("Parameters defined in template missing", stack=self.name, defined=list(req_params), missing=list(req_params - stack_params))
+        if stack_params > template_params:
+            raise BadStack("Parameters not defined in template provided", stack=self.name, requires=list(template_params), additional=list(stack_params - template_params))
+        if required_params > stack_params:
+            raise BadStack("Parameters required by template missing", stack=self.name, defined=list(required_params), missing=list(required_params - stack_params))
         return validation
 
     def sanity_check(self):
