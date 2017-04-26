@@ -14,7 +14,7 @@ import os
 describe BespinCase, "Credentials":
     before_each:
         # Make sure the environ doesn't already have credentials
-        for key in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "AWS_SECURITY_TOKEN"):
+        for key in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "AWS_SECURITY_TOKEN", "AWS_DEFAULT_PROFILE", "AWS_PROFILE", "AWS_CREDENTIAL_FILE"):
             if key in os.environ:
                 del os.environ[key]
 
