@@ -315,7 +315,7 @@ class Stack(dictobj):
 
         _defined_params = lambda obj: set([x['ParameterKey'] for x in obj])
         template_params = _defined_params(validation.get('Parameters', []))
-        defaulted_params = _defined_params(x for x in validation.get('Parameters', []) if not x.has_key('DefaultValue'))
+        defaulted_params = _defined_params(x for x in validation.get('Parameters', []) if not 'DefaultValue' in x)
         required_params = template_params - defaulted_params
         stack_params = _defined_params(json.loads(self.params_json_raw))
         if stack_params > template_params:
