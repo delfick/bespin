@@ -141,6 +141,14 @@ def sanity_check(collector, stack, **kwargs):
     Builder().sanity_check(stack, collector.configuration["stacks"])
     log.info("All the stacks are sane!")
 
+@an_action(needs_credentials=True)
+def validate_templates(collector, **kwargs):
+    """Validates all stack templates and parameters against CloudFormation"""
+    stacks = collector.configuration["stacks"]
+    for index, layer in enumerate(Builder().layered(stacks)):
+        for _, stack in layer:
+            stack.validate_template_params()
+
 @an_action(needs_stack=True, needs_credentials=True)
 def instances(collector, stack, artifact, **kwargs):
     """Find and ssh into instances"""
