@@ -18,7 +18,7 @@ class Plan(object):
                 missing.append(stack)
 
         if missing:
-            raise BadOption("Some stacks in the plan don't exist", missing=missing, available=stacks.keys())
+            raise BadOption("Some stacks in the plan don't exist", missing=missing, available=list(stacks.keys()))
 
         for stack in configuration["plans"][plan]:
             yield stack
