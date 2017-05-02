@@ -328,6 +328,8 @@ class Stack(dictobj):
         self.find_missing_env()
         if all(item is not NotSpecified for item in (self.params_json, self.params_yaml)):
             raise BadStack("Please don't have both params_json and params_yaml")
+        if all(item is NotSpecified for item in (self.stack_json, self.stack_yaml)):
+            raise BadStack("Could not find either stack_json or stack_yaml")
 
         # Hack for sanity check
         for var in self.nested_vars():
