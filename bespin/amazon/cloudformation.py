@@ -136,12 +136,12 @@ class Cloudformation(AmazonMixin):
         """ helper to convert python dictionary into list of AWS Tag dicts """
         return [{'Key': k, 'Value': v} for k,v in tags.items()] if tags else None
 
-    def create(self, stack, params, tags=None, policy=None, role_arn=None):
+    def create(self, template_body, params, tags=None, policy=None, role_arn=None):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
         stack_tags = self._convert_tags(tags)
         stack_args = {
               'StackName': self.stack_name
-            , 'TemplateBody': stack
+            , 'TemplateBody': template_body
             , 'Parameters': params
             , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
             , 'DisableRollback': os.environ.get("DISABLE_ROLLBACK", 0) == "1"
@@ -152,12 +152,12 @@ class Cloudformation(AmazonMixin):
         self.conn.create_stack(**stack_args)
         return True
 
-    def update(self, stack, params, tags=None, policy=None, role_arn=None):
+    def update(self, template_body, params, tags=None, policy=None, role_arn=None):
         log.info("Updating stack (%s)\ttags=%s", self.stack_name, tags)
         stack_tags = self._convert_tags(tags)
         stack_args = {
               'StackName': self.stack_name
-            , 'TemplateBody': stack
+            , 'TemplateBody': template_body
             , 'Parameters': params
             , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
             # NOTE: DisableRollback is not supported by UpdateStack. It is a property of the stack that can only be set during stack creation
