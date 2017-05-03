@@ -132,13 +132,17 @@ class Cloudformation(AmazonMixin):
         response = self.conn.describe_stack_resource(StackName=self.stack_name, LogicalResourceId=logical_id)
         return response['StackResourceDetail']["PhysicalResourceId"]
 
-    def _convert_tags(self, tags):
+    def tags_from_dict(self, tags):
         """ helper to convert python dictionary into list of AWS Tag dicts """
-        return [{'Key': k, 'Value': v} for k,v in tags.items()] if tags else None
+        return [{'Key': k, 'Value': v} for k,v in tags.items()] if tags else []
+
+    def params_from_dict(self, params):
+        """ helper to convert python dictionary into list of CloudFormation Parameter dicts """
+        return [{'ParameterKey': key, 'ParameterValue': value} for key, value in params.items()] if params else []
 
     def create(self, template_body, params, tags=None, policy=None, role_arn=None):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
-        stack_tags = self._convert_tags(tags)
+        stack_tags = self.tags_from_dict(tags)
         stack_args = {
               'StackName': self.stack_name
             , 'TemplateBody': template_body
@@ -154,7 +158,7 @@ class Cloudformation(AmazonMixin):
 
     def update(self, template_body, params, tags=None, policy=None, role_arn=None):
         log.info("Updating stack (%s)\ttags=%s", self.stack_name, tags)
-        stack_tags = self._convert_tags(tags)
+        stack_tags = self.tags_from_dict(tags)
         stack_args = {
               'StackName': self.stack_name
             , 'TemplateBody': template_body
