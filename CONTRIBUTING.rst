@@ -24,6 +24,11 @@ Then running the tests is::
 .. note:: ``from nose.tools import set_trace; set_trace()`` is your friend and
   will throw you into an interactive debugger.
 
+After tests, a detailed `Coverage.py <http://coverage.readthedocs.io>`_ report can be produced by::
+
+  $ coverage html
+  $ open htmlcov/index.hml
+
 This project heavily uses a couple libraries in particular that are also good
 to ``pip install -e .`` into your virtualenv.
 

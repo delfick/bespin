@@ -36,6 +36,7 @@ setup(
         , "nose"
         , "mock"
         , "moto"
+        , "coverage"
 
         # Need to ensure httpretty is not 0.8.7
         # To prevent an infinite loop in python3 tests
