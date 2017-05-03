@@ -42,8 +42,8 @@ describe BespinCase, 'Cloudformation':
     it 'has appropriate properties':
         cf = Cloudformation('example_stack')
         self.assertEqual(cf.stack_name, 'example_stack')
-        self.assertIsInstance(cf.session, boto3.session.Session)
-        self.assertIsInstance(cf.conn, botocore.client.BaseClient)
+        self.assertTrue(isinstance(cf.session, boto3.session.Session))
+        self.assertTrue(isinstance(cf.conn, botocore.client.BaseClient))
 
     @mock_sts
     @mock_cloudformation
@@ -165,7 +165,7 @@ describe BespinCase, 'Cloudformation':
         self.assertEqual(cf.outputs['Test'], '10.0.0.0/16')
 
         resource = cf.map_logical_to_physical_resource_id('Test')
-        self.assertIsInstance(resource, str)
+        self.assertTrue(isinstance(resource, str))
         self.assertTrue(resource.startswith('igw-'))
 
         cf.reset()

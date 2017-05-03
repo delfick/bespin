@@ -2,6 +2,7 @@ from bespin.errors import BespinError
 
 from contextlib import contextmanager
 import json
+import sys
 
 class NotSpecified(object):
     """Tell the difference between empty and None"""
@@ -21,6 +22,15 @@ class AssertionsAssertionsMixin:
             print("Expected --------------->")
             print(json.dumps(two, indent=2, sort_keys=True))
             raise
+
+    def assertItemsEqual(self, a, b):
+        """wraps assertCountEqual, assertItemsEqual or poorly emulates it"""
+        if sys.version_info[0] == 3 and sys.version_info[1] >= 2:
+            return self.assertCountEqual(a, b)
+        elif sys.version_info[0] == 2 and sys.version_info[1] >= 7:
+            return self.assertItemsEqual(a, b)
+        else:
+            return self.assertEqual(sorted(a), sorted(b))
 
     @contextmanager
     def fuzzyAssertRaisesError(self, expected_kls, expected_msg_regex=NotSpecified, **values):
