@@ -234,7 +234,7 @@ class Stack(dictobj):
         elif self.params_json is not NotSpecified:
             return json.dumps(self.params_json)
         else:
-            return json.dumps([{"ParameterKey": key, "ParameterValue": value} for key, value in self.params_yaml.items()])
+            return json.dumps(self.cloudformation.params_from_dict(self.params_yaml))
 
     @property
     def params_json_obj(self):

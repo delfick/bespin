@@ -132,16 +132,20 @@ class Cloudformation(AmazonMixin):
         response = self.conn.describe_stack_resource(StackName=self.stack_name, LogicalResourceId=logical_id)
         return response['StackResourceDetail']["PhysicalResourceId"]
 
-    def _convert_tags(self, tags):
+    def tags_from_dict(self, tags):
         """ helper to convert python dictionary into list of AWS Tag dicts """
-        return [{'Key': k, 'Value': v} for k,v in tags.items()] if tags else None
+        return [{'Key': k, 'Value': v} for k,v in tags.items()] if tags else []
 
-    def create(self, stack, params, tags=None, policy=None, role_arn=None):
+    def params_from_dict(self, params):
+        """ helper to convert python dictionary into list of CloudFormation Parameter dicts """
+        return [{'ParameterKey': key, 'ParameterValue': value} for key, value in params.items()] if params else []
+
+    def create(self, template_body, params, tags=None, policy=None, role_arn=None):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
-        stack_tags = self._convert_tags(tags)
+        stack_tags = self.tags_from_dict(tags)
         stack_args = {
               'StackName': self.stack_name
-            , 'TemplateBody': stack
+            , 'TemplateBody': template_body
             , 'Parameters': params
             , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
             , 'DisableRollback': os.environ.get("DISABLE_ROLLBACK", 0) == "1"
@@ -152,12 +156,12 @@ class Cloudformation(AmazonMixin):
         self.conn.create_stack(**stack_args)
         return True
 
-    def update(self, stack, params, tags=None, policy=None, role_arn=None):
+    def update(self, template_body, params, tags=None, policy=None, role_arn=None):
         log.info("Updating stack (%s)\ttags=%s", self.stack_name, tags)
-        stack_tags = self._convert_tags(tags)
+        stack_tags = self.tags_from_dict(tags)
         stack_args = {
               'StackName': self.stack_name
-            , 'TemplateBody': stack
+            , 'TemplateBody': template_body
             , 'Parameters': params
             , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
             # NOTE: DisableRollback is not supported by UpdateStack. It is a property of the stack that can only be set during stack creation
