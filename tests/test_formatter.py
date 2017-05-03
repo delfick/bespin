@@ -41,12 +41,22 @@ describe BespinCase, "MergedOptionStringFormatter":
     it "formats formatted values":
         self.check_formatting({"one": "{two}", "two": 2}, [], value="{one}", expected="2")
 
+    it "complains about missing references":
+        with self.fuzzyAssertRaisesError(BadOptionFormat, "Can't find key in options", chain=["one", "two"]):
+            self.check_formatting({"one": "{two}", "three": "{four}"}, [], value="{one}", expected="undefined")
+
+    it "can nested dereference values":
+        self.check_formatting({"one": "{two}", "two": "{three}", "three": "3"}, [], value="{one}", expected="3")
+
     it "complains about circular references":
         with self.fuzzyAssertRaisesError(BadOptionFormat, "Recursive option", chain=["two", "one", "two"]):
             self.check_formatting({"one": "{two}", "two": "{one}"}, [], value="{two}", expected="circular reference")
 
     it "can format into nested dictionaries because MergedOptions is awesome":
         self.check_formatting({"one": {"two": {"three": 4, "five": 5}, "six": 6}}, [], value="{one.two.three}", expected="4")
+
+    it "can dereference nested dictionaries":
+        self.check_formatting({"one": {"two": {"three": "6{one.two.four}", "four": "6{five.six}"}}, "five": {"six": 6}}, [], value="{one.two.three}", expected="666")
 
     it "can format the current date":
         expected = datetime.now().strftime("%Y")
