@@ -16,6 +16,8 @@ class Bespin(dictobj):
       , "assume_role": """
             An iam role to assume into before doing any amazon requests.
 
+            The iam role can also be set via the ``ASSUME_ROLE`` environment variable.
+
             This behaviour can be disabled by setting the ``NO_ASSUME_ROLE``
             environment variable to any value.
         """
