@@ -17,7 +17,7 @@ class App(App):
 
     cli_categories = ['bespin']
     cli_description = "Opinionated layer around boto"
-    cli_environment_defaults = {"BESPIN_CONFIG": ("--bespin-config", './bespin.yml'), "NO_ASSUME_ROLE": "--no-assume-role"}
+    cli_environment_defaults = {"BESPIN_CONFIG": ("--bespin-config", './bespin.yml'), "ASSUME_ROLE": "--assume-role", "NO_ASSUME_ROLE": "--no-assume-role"}
     cli_positional_replacements = [('--task', 'list_tasks'), ('--environment', NotSpecified), ('--stack', NotSpecified), ('--artifact', NotSpecified)]
 
     def execute(self, args_obj, args_dict, extra_args, logging_handler):
@@ -84,11 +84,20 @@ class App(App):
             , **defaults['--artifact']
             )
 
+        extra = defaults["--assume-role"]
+        if "default" not in extra:
+            extra["default"] = NotSpecified
+        parser.add_argument("--assume-role"
+            , help = "IAM role to assume"
+            , dest = "bespin_assume_role"
+            , **extra
+            )
+
         extra = defaults["--no-assume-role"]
         if "default" in extra and extra.get('default') in ("1", "true", "yes"):
             extra["default"] = True
         parser.add_argument("--no-assume-role"
-            , help = "Don't assume role"
+            , help = "Don't assume role (overrides assume_role)"
             , dest = "bespin_no_assume_role"
             , action = "store_true"
             , **extra
