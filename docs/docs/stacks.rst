@@ -295,3 +295,5 @@ Environment variables can also be defined with defaults or overrides.
   environment variable has been specified or not, it will be populated with the
   value of "123"
 
+.. note:: To use environment variables in ``stack_name`` refer to Stack's
+   ``stack_name`` and ``stack_name_env`` :doc:`configuration` documentation.
