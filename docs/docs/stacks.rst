@@ -8,7 +8,7 @@ one of the required options in the :ref:`configuration`.
 
 A cloudformation stack has two parts to it:
 
-The tempalte file
+The template file
   Cloudformation is defined by a template file - see `Cloudformation template
   basics`_
 
@@ -63,7 +63,7 @@ Where ``params.json`` looks like:
       }
     ]
 
-An equivilent ``params.yaml`` file would look like:
+An equivalent ``params.yaml`` file would look like:
 
 .. code-block:: yaml
 
@@ -96,6 +96,8 @@ Alternatively you can have inline the parameters like so:
    This means if your stack json is the same name as the stack and next to your
    configuration, then you don't need to specify ``stack_json``.
 
+.. _stack_vars:
+
 Defining variables
 ------------------
 
@@ -103,6 +105,13 @@ You can refer to variables defined in your configuration inside params_yaml usin
 a ``XXX_<VARIABLE>_XXX`` syntax. So if you have defined a variable called
 ``my_ami`` then ``XXX_MY_AMI_XXX`` inside your params_yaml values will be
 replaced with the value of that variable.
+
+.. note:: This syntax is available in addition to the :ref:`Configuration
+   Formatter <configuration-formatter>`.  Formatter ``{}`` syntax will only
+   reference config values, and gets interpreted when loading the configuration.
+   Whereas the ``XXX_<VARIABLE>_XXX`` variable may be sourced from elsewhere
+   (see below: :ref:`dynamic variables <stack_dyn_vars>`, :ref:`environment
+   variables <stack_env>`) and can be replaced at runtime.
 
 So let's say I have the following configuration:
 
@@ -224,6 +233,8 @@ This allows you to have:
 
   and reference more than one variable and intermingle with other characters.
 
+.. _stack_dyn_vars:
+
 Dynamic Variables
 -----------------
 
@@ -237,14 +248,17 @@ When you define a variable, you may also specify a list of two items:
     vpcid: [vpc-base, VpcId]
 
 This is a special syntax and stands for ``[<stack_name>, <output_name>]`` and
-will dynamically find the specified output for that stack.
+will dynamically find the specified `Cloudformation output`_ for that stack.
 
 For those unfamiliar with cloudformation, it allows you to define Outputs for
-your stacks. These outputs are essentially a Key-Value store of arbitrary values.
+your stacks. These outputs are essentially a Key-Value store of template defined
+strings.
 
 So in the example above, the ``vpcid`` variable would resolve to the ``VpcId``
 Output from the ``vpc-base`` cloudformation stack in the environment being
 deployed to.
+
+.. _`Cloudformation output`: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
 
 .. _stack_env:
 
@@ -292,3 +306,5 @@ Environment variables can also be defined with defaults or overrides.
   environment variable has been specified or not, it will be populated with the
   value of "123"
 
+.. note:: To use environment variables in ``stack_name`` refer to Stack's
+   ``stack_name`` and ``stack_name_env`` :doc:`configuration` documentation.

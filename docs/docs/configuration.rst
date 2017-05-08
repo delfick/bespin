@@ -62,6 +62,7 @@ Where ``<options>`` are the options for that stack.
 
 .. show_specs::
 
+.. _configuration-formatter:
 
 Formatter
 ---------
