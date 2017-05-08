@@ -98,6 +98,9 @@ tags.*
 vars.*
   Vars mapping
 
+
+Within a stack, bespin also defines the following aliases:
+
 __stack_name__
   Current stack name as a string.
 
