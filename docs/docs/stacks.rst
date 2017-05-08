@@ -8,7 +8,7 @@ one of the required options in the :ref:`configuration`.
 
 A cloudformation stack has two parts to it:
 
-The tempalte file
+The template file
   Cloudformation is defined by a template file - see `Cloudformation template
   basics`_
 
@@ -63,7 +63,7 @@ Where ``params.json`` looks like:
       }
     ]
 
-An equivilent ``params.yaml`` file would look like:
+An equivalent ``params.yaml`` file would look like:
 
 .. code-block:: yaml
 
