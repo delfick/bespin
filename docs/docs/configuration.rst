@@ -14,15 +14,15 @@ The layout of your directory is configured by default to look something like::
     root/
       bespin.yml
       <stack>.json
-      <stack2>.json
+      <stack2>.yaml
 
       <environment1>/
         <stack>-params.json
-        <stack2>-params.json
+        <stack2>-params.yaml
 
       <environment2>/
         <stack>-params.json
-        <stack2>-params.json
+        <stack2>-params.yaml
 
 So say you have two stacks, one called ``app`` and one called ``dns``, along with
 only one environment called ``dev``::
@@ -55,8 +55,10 @@ and your bespin.yml would look something like::
 
 Where ``<options>`` are the options for that stack.
 
-.. note:: The location of the stack and params json files are configured by the
- ``stack_json`` and ``params_json`` options.
+.. note:: The location of the stack template file is configured by the
+   ``stack_json`` or ``stack_yaml`` option. The location of the params file is
+   configured by the ``params_json`` or ``params_yaml`` option. Alternatively
+   parameters can be specified inline (inside bespin.yml) using ``params_yaml``.
 
 .. show_specs::
 
