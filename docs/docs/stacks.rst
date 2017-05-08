@@ -96,6 +96,8 @@ Alternatively you can have inline the parameters like so:
    This means if your stack json is the same name as the stack and next to your
    configuration, then you don't need to specify ``stack_json``.
 
+.. _stack_vars:
+
 Defining variables
 ------------------
 
@@ -103,6 +105,13 @@ You can refer to variables defined in your configuration inside params_yaml usin
 a ``XXX_<VARIABLE>_XXX`` syntax. So if you have defined a variable called
 ``my_ami`` then ``XXX_MY_AMI_XXX`` inside your params_yaml values will be
 replaced with the value of that variable.
+
+.. note:: This syntax is available in addition to the :ref:`Configuration
+   Formatter <configuration-formatter>`.  Formatter ``{}`` syntax will only
+   reference config values, and gets interpreted when loading the configuration.
+   Whereas the ``XXX_<VARIABLE>_XXX`` variable may be sourced from elsewhere
+   (see below: :ref:`dynamic variables <stack_dyn_vars>`, :ref:`environment
+   variables <stack_env>`) and can be replaced at runtime.
 
 So let's say I have the following configuration:
 
@@ -223,6 +232,8 @@ This allows you to have:
           subnets: XXX_SUBNET_A_XXX,XXX_SUBNET_B_XXX
 
   and reference more than one variable and intermingle with other characters.
+
+.. _stack_dyn_vars:
 
 Dynamic Variables
 -----------------
