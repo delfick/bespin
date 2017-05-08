@@ -237,14 +237,17 @@ When you define a variable, you may also specify a list of two items:
     vpcid: [vpc-base, VpcId]
 
 This is a special syntax and stands for ``[<stack_name>, <output_name>]`` and
-will dynamically find the specified output for that stack.
+will dynamically find the specified `Cloudformation output`_ for that stack.
 
 For those unfamiliar with cloudformation, it allows you to define Outputs for
-your stacks. These outputs are essentially a Key-Value store of arbitrary values.
+your stacks. These outputs are essentially a Key-Value store of template defined
+strings.
 
 So in the example above, the ``vpcid`` variable would resolve to the ``VpcId``
 Output from the ``vpc-base`` cloudformation stack in the environment being
 deployed to.
+
+.. _`Cloudformation output`: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
 
 .. _stack_env:
 
