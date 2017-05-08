@@ -8,19 +8,22 @@ one of the required options in the :ref:`configuration`.
 
 A cloudformation stack has two parts to it:
 
-The json
-  Cloudformation is defined by a json file - http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/gettingstarted.templatebasics.html
+The tempalte file
+  Cloudformation is defined by a template file - see `Cloudformation template
+  basics`_
 
-  Currently bespin does nothing special with the json file, but future versions
-  may generate this file.
+  Currently bespin supports the JSON and YAML `Cloudformation formats`_.
 
 The parameters
   Cloudformation has the idea of parameters, where you define variables in your
   stack and then provide values for those variables at creation time.
 
-  Bespin provides the option of either specifying a json file containing these
-  values or, more conveniently, you may specify them inline with the
-  configuration as a yaml dictionary.
+  Bespin provides the option of either specifying a file containing these values
+  or, more conveniently, you may specify them inline with the configuration as a
+  yaml dictionary.
+
+.. _`Cloudformation template basics`: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/gettingstarted.templatebasics.html
+.. _`Cloudformation formats`: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-formats.html
 
 So if you have the following directory structure::
 
@@ -60,6 +63,15 @@ Where ``params.json`` looks like:
       }
     ]
 
+An equivilent ``params.yaml`` file would look like:
+
+.. code-block:: yaml
+
+  ---
+
+  Key1: Value1
+  Key2: Value2
+
 Alternatively you can have inline the parameters like so:
 
 .. code-block:: yaml
@@ -79,9 +91,10 @@ Alternatively you can have inline the parameters like so:
           Key1: Value1
           Key2: Value2
 
-.. note:: The stack_json will default to "{config_root}/{_key_name_1}.json" which
-  means if your stack json is the same name as the stack and next to your
-  configuration, then you don't need to specify ``stack_json``.
+.. note:: The stack_json and stack_yaml will default to
+   "{config_root}/{_key_name_1}.json" and "{config_root}/{_key_name_1}.yaml".
+   This means if your stack json is the same name as the stack and next to your
+   configuration, then you don't need to specify ``stack_json``.
 
 Defining variables
 ------------------
