@@ -27,10 +27,9 @@ log = logging.getLogger("bespin.option_spec.stack_objs")
 class Stack(dictobj):
     fields = {
           "tags": """
-              A dictionary specifying the tags to apply to the stack on creation"
+              A dictionary specifying the tags to apply to the stack
 
-              Note that a limitation of cloudformation is such that tags can only be
-              applied to the template or changed at creation time.
+              Cloudformation will apply these tags to all created resources
           """
         , "name": "The name of this stack"
         , "key_name": "The original key of this stack in the configuration['stacks']"
