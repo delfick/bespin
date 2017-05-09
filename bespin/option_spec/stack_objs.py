@@ -339,7 +339,7 @@ class Stack(dictobj):
                 elif var.stack.output_yet_to_be_deployed(var):
                     var._resolved = "YYY_RESOLVED_BY_MISSING_OUTPUT_YYY"
 
-        matches = re.findall("XXX_[A-Z_]+_XXX", json.dumps(self.params_json_obj))
+        matches = re.findall("XXX_[A-Z0-9_]+_XXX", json.dumps(self.params_json_obj))
         for var in self.nested_vars():
             if hasattr(var, "_resolved"):
                 var._resolved = None
