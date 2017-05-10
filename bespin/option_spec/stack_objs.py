@@ -351,7 +351,16 @@ class Stack(dictobj):
         self.validate_template_params()
 
 class Environment(dictobj):
-    fields = ["account_id", "vars", "region"]
+    fields = {
+          "account_id": "AWS account id for this environment"
+        , "vars": "A dictionary of variable definitions that may be referred to in other parts of the configuration"
+        , "region": "AWS region name for this environment"
+        , "tags": """
+              A dictionary specifying the tags to apply to the stack
+
+              Cloudformation will apply these tags to all created resources
+          """
+    }
 
 class Stackdriver(dictobj):
     fields = {
