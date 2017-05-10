@@ -6,7 +6,7 @@ options.
 """
 
 from bespin.option_spec.stack_objs import (
-      StaticVariable, DynamicVariable, Environment, Skipper, S3Address
+      StaticVariable, DynamicVariable, EnvironmentVariable, Skipper, S3Address
     , UltraDNSSite, UltraDNSProvider
     )
 from bespin.option_spec.artifact_objs import ArtifactCommand
@@ -52,7 +52,7 @@ class env_spec(many_item_formatted_spec):
     seperators = [':', '=']
 
     specs = [sb.string_spec()]
-    creates = Environment
+    creates = EnvironmentVariable
     optional_specs = [sb.string_or_int_as_string_spec()]
     formatter = MergedOptionStringFormatter
 
@@ -67,7 +67,7 @@ class env_spec(many_item_formatted_spec):
             args.extend([other_val, None])
         elif dividers[0] == '=':
             args.extend([None, other_val])
-        return Environment(*args)
+        return EnvironmentVariable(*args)
 
 class skipper_spec(many_item_formatted_spec):
     value_name = "Skip specification"

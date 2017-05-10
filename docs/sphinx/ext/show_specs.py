@@ -11,11 +11,16 @@ import six
 class ShowSpecsDirective(Directive):
     """Directive for outputting all the specs found in bespin.option_spec.bespin_spec"""
     has_content = True
+    specs = [
+          ("Bespin", BespinSpec().bespin_spec)
+        , ("Stack", BespinSpec().stack_spec)
+        , ("Environment", BespinSpec().environment_spec)
+    ]
 
     def run(self):
         """For each file in noseOfYeti/specs, output nodes to represent each spec file"""
         tokens = []
-        for name, spec in (("Bespin", BespinSpec().bespin_spec), ("Stack", BespinSpec().stack_spec)):
+        for name, spec in self.specs:
             section = nodes.section()
             section['names'].append(name)
             section['ids'].append(name)

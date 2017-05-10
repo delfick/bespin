@@ -350,6 +350,18 @@ class Stack(dictobj):
 
         self.validate_template_params()
 
+class Environment(dictobj):
+    fields = {
+          "account_id": "AWS account id for this environment"
+        , "vars": "A dictionary of variable definitions that may be referred to in other parts of the configuration"
+        , "region": "AWS region name for this environment"
+        , "tags": """
+              A dictionary specifying the tags to apply to the stack
+
+              Cloudformation will apply these tags to all created resources
+          """
+    }
+
 class Stackdriver(dictobj):
     fields = {
           "api_key": "The api key used to gain access to stackdriver"
@@ -425,7 +437,7 @@ class DynamicVariable(dictobj):
 
         return outputs[self.output]
 
-class Environment(dictobj):
+class EnvironmentVariable(dictobj):
     """A single environment variable, and it's default or set value"""
     fields = ["env_name", ("default_val", None), ("set_val", None)]
 

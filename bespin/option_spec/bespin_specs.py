@@ -109,9 +109,6 @@ class copy_environment_spec(Spec):
 
         return BespinSpec().environment_spec.normalise(meta, meta.everything["environments"].as_dict()[val])
 
-class Environment(dictobj):
-    fields = ["account_id", "vars", "region"]
-
 class other_options(dictobj):
     fields = ["run", "create", "build"]
 
@@ -160,10 +157,11 @@ class BespinSpec(object):
     @memoized_property
     def environment_spec(self):
         """Spec for each environment"""
-        return create_spec(Environment
+        return create_spec(stack_objs.Environment
             , account_id = required(or_spec(and_spec(string_spec(), valid_string_spec(validators.regexed("\d+"))), integer_spec()))
             , region = defaulted(string_spec(), "ap-southeast-2")
             , vars = dictionary_spec()
+            , tags = self.tags_spec
             )
 
     @memoized_property
@@ -253,6 +251,15 @@ class BespinSpec(object):
             )
 
     @memoized_property
+    def tags_spec(self):
+        # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions
+        # Keys = 127 UTF-8 '^aws:' reserved. Values = 255 UTF-8
+        return dictof(
+              valid_string_spec(validators.regexed("^.{0,127}$"))
+            , formatted(valid_string_spec(validators.regexed("^(?!aws:).{0,255}$")), formatter=MergedOptionStringFormatter)
+        )
+
+    @memoized_property
     def stack_spec(self):
         """Spec for each stack"""
         return create_spec(stack_objs.Stack
@@ -269,16 +276,11 @@ class BespinSpec(object):
             , stack_name = formatted(defaulted(string_spec(), "{_key_name_1}"), formatter=MergedOptionStringFormatter)
             , environment = formatted(overridden("{environment}"), formatter=MergedOptionStringFormatter)
 
-            , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
-            , build_env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
-            , stack_name_env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
+            , env = listof(stack_specs.env_spec(), expect=stack_objs.EnvironmentVariable)
+            , build_env = listof(stack_specs.env_spec(), expect=stack_objs.EnvironmentVariable)
+            , stack_name_env = listof(stack_specs.env_spec(), expect=stack_objs.EnvironmentVariable)
 
-            # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions
-            # Keys = 127 UTF-8 '^aws:' reserved. Values = 255 UTF-8
-            , tags = dictof(
-                  valid_string_spec(validators.regexed("^.{0,127}$"))
-                , formatted(valid_string_spec(validators.regexed("^(?!aws:).{0,255}$")), formatter=MergedOptionStringFormatter)
-                )
+            , tags = self.tags_spec
 
             , stack_json = valid_stack_json(default="{config_root}/{_key_name_1}.json")
             , stack_yaml = valid_stack_yaml(default="{config_root}/{_key_name_1}.yaml")
@@ -346,7 +348,7 @@ class BespinSpec(object):
                 , account_id = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 , application_id = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
-                , env = listof(stack_specs.env_spec(), expect=stack_objs.Environment)
+                , env = listof(stack_specs.env_spec(), expect=stack_objs.EnvironmentVariable)
                 , deployed_version = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
                 ))
 

@@ -28,13 +28,13 @@ describe BespinCase, "Dynamic Variable":
             var = objs.DynamicVariable(stack, output)
             self.assertIs(var.resolve(), resolved)
 
-describe BespinCase, "Environment":
+describe BespinCase, "EnvironmentVariable":
     before_each:
         self.env_name = self.unique_val()
         self.fallback_val = self.unique_val()
 
     it "defaults default_val and set_val to None":
-        env = objs.Environment(self.env_name)
+        env = objs.EnvironmentVariable(self.env_name)
         self.assertIs(env.default_val, None)
         self.assertIs(env.set_val, None)
 
@@ -46,17 +46,17 @@ describe BespinCase, "Environment":
 
             it "returns env_name and default_val if we have a default_val":
                 for val in (self.fallback_val, ""):
-                    env = objs.Environment(self.env_name, val, None)
+                    env = objs.EnvironmentVariable(self.env_name, val, None)
                     self.assertEqual(env.pair, (self.env_name, val))
 
             it "returns env_name and set_val if we have a set_val":
                 for val in (self.fallback_val, ""):
-                    env = objs.Environment(self.env_name, None, val)
+                    env = objs.EnvironmentVariable(self.env_name, None, val)
                     self.assertEqual(env.pair, (self.env_name, val))
 
             it "complains if we have no default_val":
                 with self.fuzzyAssertRaisesError(KeyError, self.env_name):
-                    env = objs.Environment(self.env_name)
+                    env = objs.EnvironmentVariable(self.env_name)
                     env.pair
 
         describe "Env name is in environment":
@@ -68,14 +68,14 @@ describe BespinCase, "Environment":
                 del os.environ[self.env_name]
 
             it "returns the value from the environment if default_val is set":
-                env = objs.Environment(self.env_name, self.fallback_val, None)
+                env = objs.EnvironmentVariable(self.env_name, self.fallback_val, None)
                 self.assertEqual(env.pair, (self.env_name, self.env_val))
 
             it "returns the set_val if set_val is set":
-                env = objs.Environment(self.env_name, None, self.fallback_val)
+                env = objs.EnvironmentVariable(self.env_name, None, self.fallback_val)
                 self.assertEqual(env.pair, (self.env_name, self.fallback_val))
 
             it "returns the value from the environment if no default or set val":
-                env = objs.Environment(self.env_name)
+                env = objs.EnvironmentVariable(self.env_name)
                 self.assertEqual(env.pair, (self.env_name, self.env_val))
 
