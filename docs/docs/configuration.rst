@@ -78,6 +78,9 @@ Available fields:
 environment
   Current environment name as a string
 
+region
+  Current environment's region
+
 environments.<env_name>.*
   Environment mappings.
 
