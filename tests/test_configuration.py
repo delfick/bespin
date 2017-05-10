@@ -1,7 +1,7 @@
 # coding: spec
 
-from bespin.option_spec.bespin_specs import Bespin, Environment
-from bespin.option_spec.stack_objs import Stack, StaticVariable
+from bespin.option_spec.bespin_specs import Bespin
+from bespin.option_spec.stack_objs import Stack, StaticVariable, Environment
 from bespin.option_spec.task_objs import Task
 from bespin.collector import Collector
 

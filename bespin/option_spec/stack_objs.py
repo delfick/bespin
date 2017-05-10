@@ -350,6 +350,9 @@ class Stack(dictobj):
 
         self.validate_template_params()
 
+class Environment(dictobj):
+    fields = ["account_id", "vars", "region"]
+
 class Stackdriver(dictobj):
     fields = {
           "api_key": "The api key used to gain access to stackdriver"
@@ -425,7 +428,7 @@ class DynamicVariable(dictobj):
 
         return outputs[self.output]
 
-class Environment(dictobj):
+class EnvironmentVariable(dictobj):
     """A single environment variable, and it's default or set value"""
     fields = ["env_name", ("default_val", None), ("set_val", None)]
 
