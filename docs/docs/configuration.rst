@@ -158,6 +158,23 @@ Available formatters include:
 :underscored
   Converts '-' to '_'.
 
+:count
+  Returns the total number of string elements in a CommaDelimitedList variable
+  as a string. The total number of strings should be one more than the total
+  number of commas. This implementation marries `Cloudformation Parameters`_
+  CommaDelimitedList's implementation.
+  Examples::
+
+      vars:
+        one: "1"        # {one:count} == "1"
+        two: "1,2"      # {two:count} == "2"
+        three: "1,2,3"  # {three:count} == "3"
+        empty: ""       # {empty:count} == "1"
+        space: " "      # {space:count} == "1"
+        comma: ","      # {comma:count} == "2"
+
+.. _Cloudformation Parameters: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
+
 .. note:: The formatter does not support nested values (eg: {a.{foo}.c}). See
    :doc:`stacks` for details on using variable formatting (ie: XXX_MYVAR_XXX)
    instead.

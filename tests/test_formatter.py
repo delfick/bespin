@@ -65,3 +65,26 @@ describe BespinCase, "MergedOptionStringFormatter":
         expected = datetime.now().strftime("%Y%b")
         self.check_formatting({}, [], value="{%Y%b:date}", expected=expected)
 
+    it "can count CommaDelimitedList":
+        conf = {
+              "one": "1"        # ['1']
+            , "two": "a,b"      # ['a','b']
+            , "three": "1,2,3"  # ['1','2','3']
+            , "empty": ""       # ['']
+            , "space": " "      # ['']
+            , "comma": ","      # ['','']
+            , "comspc": "  , "  # ['','']
+            , "long": " spaces  ,are  ,    trimed " # ['spaces','are','trimed']
+        }
+        self.check_formatting(conf, [], value="{one:count}", expected="1")
+        self.check_formatting(conf, [], value="{two:count}", expected="2")
+        self.check_formatting(conf, [], value="{three:count}", expected="3")
+
+        self.check_formatting(conf, [], value="{empty:count}", expected="1")
+        self.check_formatting(conf, [], value="{space:count}", expected="1")
+
+        self.check_formatting(conf, [], value="{comma:count}", expected="2")
+        self.check_formatting(conf, [], value="{comspc:count}", expected="2")
+
+        self.check_formatting(conf, [], value="{long:count}", expected="3")
+

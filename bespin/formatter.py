@@ -79,6 +79,10 @@ class MergedOptionStringFormatter(StringFormatter):
         elif format_spec == "date":
             return datetime.now().strftime(obj)
 
+        elif format_spec == "count":
+            cdl = map(str.strip, obj.split(","))
+            return str(len(cdl))
+
         elif format_spec == "config_dir":
             path = self.option_path
             if obj:
