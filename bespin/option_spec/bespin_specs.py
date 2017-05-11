@@ -7,7 +7,7 @@ The specifications are responsible for sanitation, validation and normalisation.
 
 from input_algorithms.spec_base import (
       formatted, defaulted, any_spec, dictionary_spec, dictof, listof, required, delayed
-    , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec, or_spec, and_spec, container_spec
+    , string_spec, overridden, boolean, file_spec, optional_spec, integer_spec, or_spec, container_spec
     , valid_string_spec, create_spec, string_choice_spec, Spec, always_same_spec, match_spec
     )
 
@@ -158,7 +158,7 @@ class BespinSpec(object):
     def environment_spec(self):
         """Spec for each environment"""
         return create_spec(stack_objs.Environment
-            , account_id = required(or_spec(and_spec(string_spec(), valid_string_spec(validators.regexed("\d+"))), integer_spec()))
+            , account_id = required(or_spec(valid_string_spec(validators.regexed("\d+")), integer_spec()))
             , region = defaulted(string_spec(), "ap-southeast-2")
             , vars = dictionary_spec()
             , tags = self.tags_spec

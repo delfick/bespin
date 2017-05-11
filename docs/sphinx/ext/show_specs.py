@@ -1,7 +1,7 @@
 from input_algorithms.many_item_spec import many_item_formatted_spec
 from bespin.option_spec.bespin_specs import BespinSpec
 
-from input_algorithms import spec_base as sb
+from input_algorithms import spec_base as sb, validators
 from docutils.statemachine import ViewList
 from sphinx.util.compat import Directive
 from textwrap import dedent
@@ -91,6 +91,28 @@ class ShowSpecsDirective(Directive):
             self.nodes_for_signature(spec.spec, para)
         elif isinstance(spec, sb.overridden):
             para += nodes.Text('"{0}"'.format(spec.value))
+        elif isinstance(spec, sb.valid_string_spec):
+            para += nodes.Text(' valid_string(')
+            for v in spec.validators:
+                if isinstance(v, validators.regexed):
+                    para += nodes.Text("regex(" + "), regex(".join([p for p,_ in v.regexes]) + ")")
+                else:
+                    para += nodes.Text(v.__class__.__name__)
+            para += nodes.Text(') ')
+        elif isinstance(spec, sb.or_spec):
+            para += nodes.Text(' (')
+            for i, s in enumerate(spec.specs):
+                self.nodes_for_signature(s, para)
+                if i < len(spec.specs)-1:
+                    para += nodes.Text(' or ')
+            para += nodes.Text(') ')
+        elif isinstance(spec, sb.and_spec):
+            para += nodes.Text(' (')
+            for i, s in enumerate(spec.specs):
+                self.nodes_for_signature(s, para)
+                if i < len(spec.specs)-1:
+                    para += nodes.Text(' and ')
+            para += nodes.Text(') ')
         else:
             spec_name = spec.__class__.__name__
             if spec_name.endswith("_spec"):
