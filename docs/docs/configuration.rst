@@ -159,11 +159,12 @@ Available formatters include:
   Converts '-' to '_'.
 
 :count
-  Returns the total number of string elements in a CommaDelimitedList variable
-  as a string. The total number of strings should be one more than the total
-  number of commas. This implementation marries `Cloudformation Parameters`_
-  CommaDelimitedList's implementation.
-  Examples::
+  Returns the total number of elements in a list or CommaDelimitedList variable
+  as a string.
+
+  The total number of elements in a CommaDelimitedList should be one more than
+  the total number of commas. This implementation marries `Cloudformation
+  Parameters`_ CommaDelimitedList's implementation.  Examples::
 
       vars:
         one: "1"        # {one:count} == "1"

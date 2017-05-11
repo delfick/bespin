@@ -19,6 +19,7 @@ from bespin.errors import BadOptionFormat
 from input_algorithms.meta import Meta
 
 from datetime import datetime
+import six
 import os
 
 class MergedOptionStringFormatter(StringFormatter):
@@ -80,8 +81,13 @@ class MergedOptionStringFormatter(StringFormatter):
             return datetime.now().strftime(obj)
 
         elif format_spec == "count":
-            cdl = map(str.strip, obj.split(","))
-            return str(len(cdl))
+            if isinstance(obj, six.string_types):
+                obj = obj.split(",")
+
+            if isinstance(obj, list):
+                return str(len(obj))
+            else:
+                raise BadOptionFormat("Can only :count 'list' or comma delimited 'str' type", option_path=self.option_path, got=obj)
 
         elif format_spec == "config_dir":
             path = self.option_path
