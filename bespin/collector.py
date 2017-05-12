@@ -159,6 +159,7 @@ class Collector(Collector):
             env = configuration[["environments", environment]]
             if isinstance(env, six.string_types):
                 environment_as_dict = configuration[["environments", env]].as_dict()
+                env = configuration["environments", env]
             else:
                 environment_as_dict = configuration[["environments", environment]].as_dict()
 
