@@ -131,7 +131,7 @@ class ShowSpecsDirective(Directive):
         if isinstance(spec, sb.create_spec):
             container = nodes.container(classes=["option_spec_option shortline blue-back"])
             creates = spec.kls
-            for name, option in sorted(spec.kwargs.items(), key=lambda x: len(x[0])):
+            for name, option in sorted(spec.kwargs.items(), key=lambda x: x[0].lower()):
                 para = nodes.paragraph(classes=["option monospaced"])
                 para += nodes.Text("{0} = ".format(name))
                 self.nodes_for_signature(option, para)
