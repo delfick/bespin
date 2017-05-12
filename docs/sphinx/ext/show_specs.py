@@ -15,6 +15,7 @@ class ShowSpecsDirective(Directive):
           ("Bespin", BespinSpec().bespin_spec)
         , ("Stack", BespinSpec().stack_spec)
         , ("Environment", BespinSpec().environment_spec)
+        , ("Password", BespinSpec().password_spec)
     ]
 
     def run(self):

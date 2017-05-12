@@ -308,3 +308,61 @@ Environment variables can also be defined with defaults or overrides.
 
 .. note:: To use environment variables in ``stack_name`` refer to Stack's
    ``stack_name`` and ``stack_name_env`` :doc:`configuration` documentation.
+
+Passwords
+---------
+
+Bespin configuration can store `KMS`_ encrypted passwords. Environments can
+have different passwords, and optionally a different encryption key. If an
+environment ``KMSMasterKey`` override is provided a new ``crypto_text`` must
+obviously also be provided.
+
+Example config:
+
+.. code-block:: yaml
+
+  ---
+
+  environments:
+    dev:
+      account_id: 123456789
+    prod:
+      account_id: 987654321
+
+  passwords:
+    my_secure_password:
+      KMSMasterKey: "arn:aws:kms:ap-southeast-2:111111111:alias/developer_key"
+      crypto_text: "EXAMPLEZdnUptmwQqlCnQIBEIAewbM7Amw786ZMGBzvqtpnWmK/Ou0jc3RygppQypuB"
+
+      # environment 'prod' override
+      prod:
+        KMSMasterKey: "arn:aws:kms:ap-southeast-2:111111111:key/f65a25e4-1234-4195-8398-a4fcd2ba9c3f"
+        crypto_text: "EXAMPLExCDgTs6i+kaQIBEIAef3P/39KEDRafROn0x+PkKZDH9JLPPBnTaVXz+KPj"
+
+Passwords can be referenced via ``{passwords.name.crypto_text}`` and the
+correct value for the environment will be used.
+
+Passwords can be encrypted using ``bespin encrypt_password [environment]
+[name]``. The user will be prompted to enter the plaintext password via `Python
+getpass`_ and then bespin will encrypt using the ``passwords.name``
+configuration for ``environment`` and output the ``crypto_text`` to stdout.
+
+Password decryption
+~~~~~~~~~~~~~~~~~~~
+
+.. warning:: Care should be taken when passing around decrypted passwords as
+   bespin makes **no effort** to ensure the password is not logged.
+
+Bespin has support for decrypting passwords, though extreme caution should be
+taken when doing so. Under best practice, **decrypted passwords should NOT be
+referenced in bespin configuration**.
+
+Cloudformation parameters should always be passed in their encrypted form and
+decrypted inside Cloudformation using `Custom Resources`_ (if needed).
+
+Users implementing :ref:`custom task <tasks>` code can reference the plaintext
+decryption via ``passwords.name.decrypted``.
+
+.. _Python getpass: https://docs.python.org/2/library/getpass.html
+.. _KMS: http://docs.aws.amazon.com/kms/latest/developerguide/overview.html
+.. _Custom Resources: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-custom-resources.html
