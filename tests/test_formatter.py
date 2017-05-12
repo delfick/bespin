@@ -65,3 +65,47 @@ describe BespinCase, "MergedOptionStringFormatter":
         expected = datetime.now().strftime("%Y%b")
         self.check_formatting({}, [], value="{%Y%b:date}", expected=expected)
 
+    it "can count CommaDelimitedList":
+        conf = {
+              "one": "1"        # ['1']
+            , "two": "a,b"      # ['a','b']
+            , "three": "1,2,3"  # ['1','2','3']
+            , "empty": ""       # ['']
+            , "space": " "      # ['']
+            , "comma": ","      # ['','']
+            , "comspc": "  , "  # ['','']
+            , "long": " spaces  ,are  ,    trimed " # ['spaces','are','trimed']
+        }
+        self.check_formatting(conf, [], value="{one:count}", expected="1")
+        self.check_formatting(conf, [], value="{two:count}", expected="2")
+        self.check_formatting(conf, [], value="{three:count}", expected="3")
+
+        self.check_formatting(conf, [], value="{empty:count}", expected="1")
+        self.check_formatting(conf, [], value="{space:count}", expected="1")
+
+        self.check_formatting(conf, [], value="{comma:count}", expected="2")
+        self.check_formatting(conf, [], value="{comspc:count}", expected="2")
+
+        self.check_formatting(conf, [], value="{long:count}", expected="3")
+
+    it "can count lists":
+        conf = {
+              "one": [1]
+            , "two": [1,2]
+            , "three": [1,2,3]
+            , "empty": []
+            , "nestedone": [[]]
+            , "nestedtwo": [[1],2]
+            , "nestedthree": [[1],2,[3,4]]
+            , "bad": {}
+        }
+        self.check_formatting(conf, [], value="{one:count}", expected="1")
+        self.check_formatting(conf, [], value="{two:count}", expected="2")
+        self.check_formatting(conf, [], value="{three:count}", expected="3")
+        self.check_formatting(conf, [], value="{empty:count}", expected="0")
+        self.check_formatting(conf, [], value="{nestedone:count}", expected="1")
+        self.check_formatting(conf, [], value="{nestedtwo:count}", expected="2")
+        self.check_formatting(conf, [], value="{nestedthree:count}", expected="3")
+
+        with self.fuzzyAssertRaisesError(BadOptionFormat, "Can only :count 'list' or comma delimited 'str' type", got=conf['bad']):
+            self.check_formatting(conf, [], value="{bad:count}", expected="error")
