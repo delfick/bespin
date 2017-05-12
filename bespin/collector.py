@@ -159,14 +159,14 @@ class Collector(Collector):
             env = configuration[["environments", environment]]
             if isinstance(env, six.string_types):
                 environment_as_dict = configuration[["environments", env]].as_dict()
-                env = configuration["environments", env]
+                env = configuration[["environments", env]]
             else:
                 environment_as_dict = configuration[["environments", environment]].as_dict()
 
             stack_environment = {}
             stack_environment_as_dict = {}
             if ["stacks", stack, environment] in configuration:
-                stack_environment = configuration["stacks", stack, environment]
+                stack_environment = configuration[["stacks", stack, environment]]
                 stack_environment_as_dict = stack_environment.as_dict()
 
             # `base` is used for the majority of the values
@@ -208,7 +208,7 @@ class Collector(Collector):
 
             password_environment_as_dict = {}
             if ["passwords", password, environment] in configuration:
-                password_environment_as_dict = configuration["passwords", password, environment].as_dict()
+                password_environment_as_dict = configuration[["passwords", password, environment]].as_dict()
 
             base = MergedOptions(dont_prefix=path.configuration.dont_prefix, converters=path.configuration.converters)
             everything = path.configuration.root().wrapped()
