@@ -256,8 +256,8 @@ class BespinSpec(object):
         # Keys = 127 UTF-8 '^aws:' reserved. Values = 255 UTF-8
         return dictof(
               valid_string_spec(validators.regexed("^.{0,127}$"))
-            , formatted(valid_string_spec(validators.regexed("^(?!aws:).{0,255}$")), formatter=MergedOptionStringFormatter)
-        )
+            , formatted(string_spec(), after_format=valid_string_spec(validators.regexed("^(?!aws:).{0,255}$")), formatter=MergedOptionStringFormatter)
+            )
 
     @memoized_property
     def stack_spec(self):
