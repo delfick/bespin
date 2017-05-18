@@ -13,12 +13,12 @@ import sys
 
 if sys.version_info[0] == 2 and sys.version_info[1] == 6:
     # This can be removed when we can use latest Httpretty again
-    def mock_sqs(func):
+    def mock_sqs_deprecated(func):
         def wrapped(*args):
             raise nose.SkipTest("No moto support for python2.6 atm")
         return wrapped
 else:
-    from moto import mock_sqs
+    from moto import mock_sqs_deprecated
 
 describe BespinCase, "Decode Message":
     it "successfully decode a valid message":
@@ -91,7 +91,7 @@ describe BespinCase, "SQS":
             self.assertEqual(sleeps, [2, 2, 2])
             self.assertEqual(queue.delete_message.mock_calls, [mock.call(message1), mock.call(message2), mock.call(message3)])
 
-        @mock_sqs
+        @mock_sqs_deprecated
         it "works with the sqs api":
             conn = boto.connect_sqs()
             sqs = SQS()

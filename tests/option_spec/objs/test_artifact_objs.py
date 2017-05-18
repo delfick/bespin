@@ -20,12 +20,12 @@ import os
 
 if sys.version_info[0] == 2 and sys.version_info[1] == 6:
     # This can be removed when we can use latest Httpretty again
-    def mock_s3(func):
+    def mock_s3_deprecated(func):
         def wrapped(*args):
             raise nose.SkipTest("No moto support for python2.6 atm")
         return wrapped
 else:
-    from moto import mock_s3
+    from moto import mock_s3_deprecated
 
 optional_any = lambda: sb.optional_spec(sb.any_spec())
 artifact_spec = sb.create_spec(Artifact
@@ -39,7 +39,7 @@ artifact_spec = sb.create_spec(Artifact
 
 describe BespinCase, "ArtifactCollection":
     describe "clean_old_artifacts":
-        @mock_s3
+        @mock_s3_deprecated
         it "does nothing if dry_run is True":
             s3 = S3()
             conn = s3.conn = boto.connect_s3()
@@ -60,7 +60,7 @@ describe BespinCase, "ArtifactCollection":
                 , sorted(["stuff/one.tar.gz", "stuff/two.tar.gz", "stuff/three.tar.gz", "stuff/four.tar.gz"])
                 )
 
-        @mock_s3
+        @mock_s3_deprecated
         it "Deletes the oldest such that only history_length is left":
             s3 = S3()
             conn = s3.conn = boto.connect_s3()
