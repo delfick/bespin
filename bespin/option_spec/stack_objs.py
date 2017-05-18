@@ -235,24 +235,40 @@ class Stack(dictobj):
         else:
             return json.dumps(self.cloudformation.params_from_dict(self.params_yaml))
 
-    @property
-    def params_json_obj(self):
+    def params_json_raw_vars_replaced(self):
         params = self.params_json_raw
         environment = dict([env.pair for env in self.env])
 
+        def replace_vars(s):
+            for thing in (self.nested_var_items(), [env.pair for env in self.env]):
+                for var, value in thing:
+                    key = "XXX_{0}_XXX".format(var.upper())
+                    if key in s:
+                        if not isinstance(value, six.string_types):
+                            value = value.resolve()
+                        if callable(value):
+                            value = value()
+                        s = s.replace(key, value.format(**environment))
+            return s
+
+        varsre = re.compile("XXX_([A-Z0-9_]+)_XXX")
+        matches = lambda p: varsre.findall(p)
+        while varsre.search(params):
+            matches_before = matches(params)
+            params = replace_vars(params)
+
+            if matches_before == matches(params):
+                break
+
+        return params
+
+    @property
+    def params_json_obj(self):
         for var in self.nested_vars():
             if hasattr(var, "needs_credentials") and var.needs_credentials:
                 self.bespin.set_credentials()
 
-        for thing in (self.nested_var_items(), [env.pair for env in self.env]):
-            for var, value in thing:
-                key = "XXX_{0}_XXX".format(var.upper())
-                if key in params:
-                    if not isinstance(value, six.string_types):
-                        value = value.resolve()
-                    if callable(value):
-                        value = value()
-                    params = params.replace(key, value.format(**environment))
+        params = self.params_json_raw_vars_replaced()
 
         try:
             return json.loads(params)
