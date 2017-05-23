@@ -8,9 +8,9 @@ import subprocess
 import logging
 import signal
 import shlex
-import fcntl
 import time
 import six
+import sys
 import os
 
 log = logging.getLogger("bespin.processes")
@@ -30,6 +30,15 @@ def read_non_blocking(stream):
             else:
                 break
 
+def set_non_blocking_io(fh):
+    if sys.platform in ('win32'):
+        # TODO: windows magic
+        raise NotImplementedError("Non-blocking process I/O not implemented on {}".format(sys.platform))
+    else:
+        import fcntl
+        fl = fcntl.fcntl(fh, fcntl.F_GETFL)
+        fcntl.fcntl(fh, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
 def command_output(command, *command_extras, **kwargs):
     """Get the output from a command"""
     output = []
@@ -45,8 +54,7 @@ def command_output(command, *command_extras, **kwargs):
     log_level("Running command\targs=%s", args)
     process = subprocess.Popen(args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, cwd=cwd)
 
-    fl = fcntl.fcntl(process.stdout, fcntl.F_GETFL)
-    fcntl.fcntl(process.stdout, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+    set_non_blocking_io(process.stdout)
 
     start = time.time()
     while True:
