@@ -18,7 +18,7 @@ setup(
       , "humanize"
       , "argparse"
       , "requests"
-      , "paramiko==1.16.0"
+      , "paramiko"
 
       , "radssh==1.0.5"
       , "pyrelic==0.8.0"
