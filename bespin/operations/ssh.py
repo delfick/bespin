@@ -45,7 +45,6 @@ class SSH(object):
     def run(self):
         jb = None
         defaults = config.load_default_settings()
-        defaults['hostkey.verify'] = 'ignore'
 
         original_paramiko_agent = paramiko.Agent
         with hp.a_temp_file() as fle:

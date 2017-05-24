@@ -5,6 +5,11 @@ SSH'ing into instances
 
 It's useful to be able to ssh into instances that your bring up in your stack.
 
+.. note:: bespin uses RadSSH which honours ``ssh_config(5)`` (ie: ~/.ssh/config).
+   Users may want to set ``StrictHostKeyChecking no`` to ignore hostkeys and/or
+   ``UserKnownHostsFile /dev/null`` to prevent host key additions for
+   dynamic/cloud instances.
+
 Bespin provides the ``instances`` command for finding the instances, getting the
 ssh key, and ssh'ing into one of the instances.
 
