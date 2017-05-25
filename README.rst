@@ -82,4 +82,3 @@ Install testing deps and run the helpful script::
   pip install -e .
   pip install -e ".[tests]"
   ./test.sh
-
