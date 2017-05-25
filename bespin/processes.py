@@ -31,7 +31,7 @@ def read_non_blocking(stream):
                 break
 
 def set_non_blocking_io(fh):
-    if sys.platform in ('win32'):
+    if sys.platform in ['win32']:
         # TODO: windows magic
         raise NotImplementedError("Non-blocking process I/O not implemented on {}".format(sys.platform))
     else:
