@@ -290,7 +290,7 @@ class Stack(dictobj):
             log.info("No existing stack, making one now")
             if self.bespin.dry_run:
                 log.info("DRYRUN: Would create stack")
-                log.info("Would use following stack from {0}".format(self.stack_json))
+                log.info("Would use following stack:")
                 print(self.dumped_stack_obj)
             else:
                 return self.cloudformation.create(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj, role)
@@ -298,8 +298,8 @@ class Stack(dictobj):
             log.info("Found existing stack, doing an update")
             if self.bespin.dry_run:
                 log.info("DRYRUN: Would update stack")
-                log.info("Would use following stack from {0}".format(self.stack_json))
-                print(json.dumps(self.dumped_stack_obj))
+                log.info("Would use following stack:")
+                print(self.dumped_stack_obj)
             else:
                 return self.cloudformation.update(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj, role)
         else:
