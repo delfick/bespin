@@ -1,4 +1,5 @@
 from bespin.errors import MissingOutput, BadOption, BadStack, BadJson, BespinError, BadDnsSwitch
+from bespin.amazon.cloudformation_yaml import CloudformationYamlLoader
 from bespin.errors import StackDoesntExist, MissingSSHKey
 from bespin.operations.ssh import RatticSSHKeys
 from bespin.helpers import memoized_property
@@ -18,6 +19,7 @@ import shlex
 import json
 import time
 import stat
+import yaml
 import six
 import os
 import re
@@ -288,7 +290,7 @@ class Stack(dictobj):
             log.info("No existing stack, making one now")
             if self.bespin.dry_run:
                 log.info("DRYRUN: Would create stack")
-                log.info("Would use following stack from {0}".format(self.stack_json))
+                log.info("Would use following stack:")
                 print(self.dumped_stack_obj)
             else:
                 return self.cloudformation.create(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj, role)
@@ -296,8 +298,8 @@ class Stack(dictobj):
             log.info("Found existing stack, doing an update")
             if self.bespin.dry_run:
                 log.info("DRYRUN: Would update stack")
-                log.info("Would use following stack from {0}".format(self.stack_json))
-                print(json.dumps(self.dumped_stack_obj))
+                log.info("Would use following stack:")
+                print(self.dumped_stack_obj)
             else:
                 return self.cloudformation.update(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj, role)
         else:
@@ -310,9 +312,7 @@ class Stack(dictobj):
         try:
             resolved = var.resolve()
         except MissingOutput:
-            if "Outputs" in self.stack_json:
-                if var.output in self.stack_json["Outputs"].keys():
-                    return True
+            return var.output in self.template_outputs
 
         # Otherwise return False
         return False
@@ -323,6 +323,14 @@ class Stack(dictobj):
             with open(fle.name, "w") as fle:
                 fle.write(self.dumped_stack_obj)
             return self.cloudformation.validate_template(fle.name)
+
+    @memoized_property
+    def template_outputs(self):
+        if self.stack_json is not NotSpecified:
+            template = self.stack_json
+        else:
+            template = yaml.load(self.stack_yaml, Loader=CloudformationYamlLoader)
+        return template.get('Outputs', {})
 
     def validate_template_params(self):
         """ Validate stack template and stack params against CloudFormation """
@@ -442,7 +450,7 @@ class DynamicVariable(dictobj):
             outputs = cloudformation.outputs
         else:
             outputs = self.stack.cloudformation.outputs
-            after_deployment = list(self.stack.stack_json.get("Outputs").keys())
+            after_deployment = self.stack.template_outputs.keys()
 
         if self.output not in outputs:
             output_keys = list(outputs.keys())
