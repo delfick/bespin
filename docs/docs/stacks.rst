@@ -246,9 +246,16 @@ When you define a variable, you may also specify a list of two items:
 
   vars:
     vpcid: [vpc-base, VpcId]
+    zoneid: ["{stacks.dns-public}", ZoneId]
 
 This is a special syntax and stands for ``[<stack_name>, <output_name>]`` and
 will dynamically find the specified `Cloudformation output`_ for that stack.
+
+If the stack is in bespin's config it can be referenced directly using the
+:ref:`Configuration Formatter <configuration-formatter>`, ie:
+``["{stacks.my_stack}", <output_name>]``. This will use the ``stack_name`` from
+``my_stack`` and also add ``my_stack`` to this stack's ``build_first``
+dependencies.
 
 For those unfamiliar with cloudformation, it allows you to define Outputs for
 your stacks. These outputs are essentially a Key-Value store of template defined
