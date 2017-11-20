@@ -149,6 +149,7 @@ class Cloudformation(AmazonMixin):
             , 'Parameters': params
             , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
             , 'DisableRollback': os.environ.get("DISABLE_ROLLBACK", 0) == "1"
+            , 'EnableTerminationProtection': True
         }
         if stack_tags: stack_args['Tags'] = stack_tags
         if policy: stack_args['StackPolicyBody'] = policy
