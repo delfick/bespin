@@ -185,12 +185,14 @@ class Cloudformation(AmazonMixin):
 
         with self.catch_boto_400(BadStack, "Couldn't update termination protection", stack_name=self.stack_name):
             info = self.conn.describe_stacks(StackName=self.stack_name)
-            if info["Stacks"]:
+            if info["Stacks"] and "EnableTerminationProtection" in info["Stacks"][0]:
                 current = info["Stacks"][0]["EnableTerminationProtection"]
                 if current != termination_protection:
                     log.info("Changing termination protection (%s)\ttermination_protection=%s", self.stack_name, termination_protection)
                     self.conn.update_termination_protection(StackName=self.stack_name, EnableTerminationProtection=termination_protection)
                     changed = True
+            else:
+                log.error("Failed to figure out if the stack currently has termination protection (%s)", self.stack_name)
 
         return changed
 

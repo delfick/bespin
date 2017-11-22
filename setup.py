@@ -35,7 +35,7 @@ setup(
         [ "noseOfYeti>=1.5.0"
         , "nose"
         , "mock"
-        , "moto"
+        , "moto==1.1.25"
         , "coverage"
 
         # Need to ensure httpretty is not 0.8.7
