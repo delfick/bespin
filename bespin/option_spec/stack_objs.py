@@ -52,6 +52,8 @@ class Stack(dictobj):
         , "build_env": "A list of environment variables that are necessary when building artifacts"
         , "stack_name_env": "A list of environment variables that are necessary for creating the stack name"
 
+        , "termination_protection": "Whether to enable termination protection for the stack"
+
         , "build_first": "A list of stacks that should be built before this one is built"
         , "build_timeout": "A timeout for waiting for a build to happen"
         , "build_after": "A list of stacks that should be built after this one is buildt"
@@ -293,7 +295,7 @@ class Stack(dictobj):
                 log.info("Would use following stack:")
                 print(self.dumped_stack_obj)
             else:
-                return self.cloudformation.create(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj, role)
+                return self.cloudformation.create(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj, role, self.termination_protection)
         elif status.complete:
             log.info("Found existing stack, doing an update")
             if self.bespin.dry_run:
@@ -301,7 +303,7 @@ class Stack(dictobj):
                 log.info("Would use following stack:")
                 print(self.dumped_stack_obj)
             else:
-                return self.cloudformation.update(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj, role)
+                return self.cloudformation.update(self.dumped_stack_obj, self.params_json_obj, tags, self.dumped_policy_obj, role, self.termination_protection)
         else:
             raise BadStack("Stack could not be updated", name=self.stack_name, status=status.name)
 

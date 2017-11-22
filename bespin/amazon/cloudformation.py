@@ -140,7 +140,7 @@ class Cloudformation(AmazonMixin):
         """ helper to convert python dictionary into list of CloudFormation Parameter dicts """
         return [{'ParameterKey': key, 'ParameterValue': value} for key, value in params.items()] if params else []
 
-    def create(self, template_body, params, tags=None, policy=None, role_arn=None):
+    def create(self, template_body, params, tags=None, policy=None, role_arn=None, termination_protection=False):
         log.info("Creating stack (%s)\ttags=%s", self.stack_name, tags)
         stack_tags = self.tags_from_dict(tags)
         stack_args = {
@@ -149,14 +149,15 @@ class Cloudformation(AmazonMixin):
             , 'Parameters': params
             , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
             , 'DisableRollback': os.environ.get("DISABLE_ROLLBACK", 0) == "1"
-        }
+            , "EnableTerminationProtection": termination_protection
+            }
         if stack_tags: stack_args['Tags'] = stack_tags
         if policy: stack_args['StackPolicyBody'] = policy
         if role_arn: stack_args['RoleARN'] = role_arn
         self.conn.create_stack(**stack_args)
         return True
 
-    def update(self, template_body, params, tags=None, policy=None, role_arn=None):
+    def update(self, template_body, params, tags=None, policy=None, role_arn=None, termination_protection=False):
         log.info("Updating stack (%s)\ttags=%s", self.stack_name, tags)
         stack_tags = self.tags_from_dict(tags)
         stack_args = {
@@ -165,20 +166,33 @@ class Cloudformation(AmazonMixin):
             , 'Parameters': params
             , 'Capabilities': ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
             # NOTE: DisableRollback is not supported by UpdateStack. It is a property of the stack that can only be set during stack creation
-        }
+            }
         if stack_tags: stack_args['Tags'] = stack_tags
         if policy: stack_args['StackPolicyBody'] = policy
         if role_arn: stack_args['RoleARN'] = role_arn
+
+        changed = False
+
         with self.catch_boto_400(BadStack, "Couldn't update the stack", stack_name=self.stack_name):
             try:
                 self.conn.update_stack(**stack_args)
+                changed = True
             except botocore.exceptions.ClientError as error:
                 if error.response['Error']['Message'] == "No updates are to be performed.":
                     log.info("No updates were necessary!")
-                    return False
                 else:
                     raise
-        return True
+
+        with self.catch_boto_400(BadStack, "Couldn't update termination protection", stack_name=self.stack_name):
+            info = self.conn.describe_stacks(StackName=self.stack_name)
+            if info["Stacks"]:
+                current = info["Stacks"][0]["EnableTerminationProtection"]
+                if current != termination_protection:
+                    log.info("Changing termination protection (%s)\ttermination_protection=%s", self.stack_name, termination_protection)
+                    self.conn.update_termination_protection(StackName=self.stack_name, EnableTerminationProtection=termination_protection)
+                    changed = True
+
+        return changed
 
     def validate_template(self, filename):
         with self.catch_boto_400(BadStack, "Amazon says no", stack_name=self.stack_name, filename=filename):

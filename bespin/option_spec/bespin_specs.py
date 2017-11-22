@@ -282,6 +282,8 @@ class BespinSpec(object):
 
             , tags = self.tags_spec
 
+            , termination_protection = defaulted(boolean(), False)
+
             , stack_json = valid_stack_json(default="{config_root}/{_key_name_1}.json")
             , stack_yaml = valid_stack_yaml(default="{config_root}/{_key_name_1}.yaml")
 

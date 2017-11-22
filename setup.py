@@ -23,7 +23,7 @@ setup(
       , "radssh==1.1.1"
       , "pyrelic==0.8.0"
       , "boto==2.40.0"
-      , "boto3"
+      , "boto3==1.4.7"
       , "pyYaml==3.10"
       , "ultra_rest_client==0.1.4"
       , "FileChunkIO==1.6"
