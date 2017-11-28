@@ -241,6 +241,7 @@ class BespinSpec(object):
             , username = required(formatted(string_spec(), formatter=MergedOptionStringFormatter))
             , configuration_username = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
+            , password_noecho = to_boolean(formatted(overridden("{bespin.password_noecho}"), formatter=MergedOptionStringFormatter))
             , password = delayed(required(formatted(string_spec(), formatter=MergedOptionStringFormatter)))
             , configuration_password = optional_spec(formatted(string_spec(), formatter=MergedOptionStringFormatter))
 
@@ -401,6 +402,7 @@ class BespinSpec(object):
 
             , extra = defaulted(string_spec(), "")
             , dry_run = defaulted(boolean(), False)
+            , password_noecho = defaulted(boolean(), False)
             , flat = defaulted(boolean(), False)
             , environment = optional_spec(string_spec())
 
@@ -412,4 +414,3 @@ class BespinSpec(object):
 
             , extra_imports = listof(imports.import_spec())
             )
-
