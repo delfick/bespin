@@ -78,4 +78,3 @@ class Bespin(dictobj):
             return val
         except KeyError:
             raise MissingVariable(wanted=artifact)
-
