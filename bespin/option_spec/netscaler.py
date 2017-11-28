@@ -128,7 +128,7 @@ class NetScaler(dictobj):
     fields = {
           "host": "The address of the netscaler"
         , "dry_run": "Whether this is a dry run or not"
-
+        , "password_noecho": "Used to hide/show password during build"
         , "username": "The username"
         , "password": "The password"
 
@@ -421,4 +421,3 @@ class NetScaler(dictobj):
             raise BadNetScaler("Netscaler says no", msg=content["message"], errorcode=content["errorcode"])
 
         return content
-
