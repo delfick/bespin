@@ -13,6 +13,7 @@ class Bespin(dictobj):
       , "config": "Holds a file object to the specified Bespin configuration file"
       , "extra": "Holds extra arguments after a -- when executed from the command line"
       , "dry_run": "Don't run any destructive or modification amazon requests"
+      , "password_noecho": "Used to hide/show password during build"
       , "assume_role": """
             An iam role to assume into before doing any amazon requests.
 
@@ -77,4 +78,3 @@ class Bespin(dictobj):
             return val
         except KeyError:
             raise MissingVariable(wanted=artifact)
-

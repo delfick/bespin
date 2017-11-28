@@ -49,6 +49,12 @@ class App(App):
             , action = "store_true"
             )
 
+        parser.add_argument("--password-noecho"
+            , help = "Used to hide/show password during build"
+            , dest = "bespin_password_noecho"
+            , action = "store_true"
+            )
+
         parser.add_argument("--dry-run"
             , help = "Should Bespin take any real action or print out what is intends to do"
             , dest = "bespin_dry_run"
