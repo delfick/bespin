@@ -9,7 +9,6 @@ import time
 import json
 import sys
 import os
-import re
 
 log = logging.getLogger("bespin.operations.deployer")
 
