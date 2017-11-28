@@ -9,6 +9,7 @@ import time
 import json
 import sys
 import os
+import re
 
 log = logging.getLogger("bespin.operations.deployer")
 
@@ -61,7 +62,13 @@ class Deployer(object):
             self.suspend_cloudformation_actions(stack)
 
         sys.stdout.write("Building - {0}\n".format(stack.stack_name))
-        sys.stdout.write(json.dumps(stack.params_json_obj, indent=4))
+    
+        if stack.bespin.password_noecho:
+            passwordnoecho = [self.maskpassword(c) for c in stack.params_json_obj]
+            sys.stdout.write(json.dumps(passwordnoecho , indent=4))
+        else:
+            sys.stdout.write(json.dumps(stack.params_json_obj , indent=4))
+        
         sys.stdout.write("\n")
         sys.stdout.flush()
 
@@ -92,6 +99,13 @@ class Deployer(object):
         if stack.suspend_actions:
             self.resume_cloudformation_actions(stack)
 
+    def maskpassword(self, params_json):
+        maskpassword=json.loads(json.dumps(params_json))
+        if maskpassword['ParameterKey'] == 'Password':
+           maskpassword['ParameterValue'] = 'XXXXXXXXXXXX'
+           return maskpassword
+        return params_json
+
     def confirm_deployment(self, stack, start=None):
         """Confirm our deployment"""
         stack.confirm_the_deployment(start=start)
@@ -107,4 +121,3 @@ class Deployer(object):
         asg_physical_id = stack.physical_id_for(stack.auto_scaling_group_name)
         stack.ec2.resume_processes(asg_physical_id)
         log.info("Resumed Processes on AutoScaling Group %s", asg_physical_id)
-
