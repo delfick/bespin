@@ -383,6 +383,7 @@ class BespinSpec(object):
                 ))
 
             , confirm_deployment = optional_spec(self.confirm_deployment_spec)
+            , sensitive_params = optional_spec(listof(string_spec()))
             )
 
     @memoized_property
@@ -412,4 +413,3 @@ class BespinSpec(object):
 
             , extra_imports = listof(imports.import_spec())
             )
-
