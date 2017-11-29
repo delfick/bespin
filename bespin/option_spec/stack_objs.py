@@ -92,6 +92,8 @@ class Stack(dictobj):
         , "netscaler": "Netscaler declaration"
         , "stackdriver": "Stackdriver options used for giving events to stackdriver"
         , "notify_stackdriver": "Whether to notify stackdriver about deploying the cloudformation"
+
+        , "sensitive_params": "Used to hide sensitive values during build"
         }
 
     def __repr__(self):
