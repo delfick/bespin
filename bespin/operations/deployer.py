@@ -61,8 +61,7 @@ class Deployer(object):
             self.suspend_cloudformation_actions(stack)
 
         sys.stdout.write("Building - {0}\n".format(stack.stack_name))
-        params_no_echo = [self.mask_params(c,stack.sensitive_params) for c in stack.params_json_obj]
-        sys.stdout.write(json.dumps(params_no_echo , indent=4))
+        sys.stdout.write(json.dumps(stack.redacted_params_obj, indent=4))
         sys.stdout.write("\n")
         sys.stdout.flush()
 
@@ -92,13 +91,6 @@ class Deployer(object):
 
         if stack.suspend_actions:
             self.resume_cloudformation_actions(stack)
-
-    def mask_params(self, params_json, sensitive_params):
-        maskparams=json.loads(json.dumps(params_json))
-        for sensitive_param in sensitive_params:   
-            if maskparams['ParameterKey'] == sensitive_param:
-               maskparams['ParameterValue'] = 'XXXXXXXXXXXX'
-        return maskparams
 
     def confirm_deployment(self, stack, start=None):
         """Confirm our deployment"""

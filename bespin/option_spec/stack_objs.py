@@ -281,6 +281,17 @@ class Stack(dictobj):
         except ValueError as error:
             raise BadJson("Couldn't parse the parameters", filename=self.params_json, stack=self.key_name, error=error)
 
+    @property
+    def redacted_params_obj(self):
+        params = []
+        for p in self.params_json_obj:
+            key = p["ParameterKey"]
+            val = p["ParameterValue"]
+            if key in self.sensitive_params:
+                val = "<<redacted>>"
+            params.append({"ParameterKey": key, "ParameterValue": val})
+        return params
+
     def create_or_update(self):
         """Create or update the stack, return True if the stack actually changed"""
         log.info("Creating or updating the stack (%s)", self.stack_name)
