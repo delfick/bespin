@@ -66,6 +66,7 @@ class Artifact(dictobj):
                 to true or if the ``clean_old_artifacts`` task is run
           """
         , "compression_type": "The compression to use on the artifact"
+        , "archive_format": "The archive file format to use on the artifact (tar, zip)"
         }
 
 class ArtifactPath(dictobj):

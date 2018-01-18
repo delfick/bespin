@@ -59,9 +59,10 @@ class Builder(object):
             # Create a temporary file to tar to
             with hp.a_temp_file() as temp_tar_file:
                 # Make the artifact
-                hp.generate_tar_file(temp_tar_file, artifact.commands + artifact.paths + artifact.files
+                hp.generate_archive_file(temp_tar_file, artifact.commands + artifact.paths + artifact.files
                     , environment=environment
                     , compression=artifact.compression_type
+                    , archive_format=artifact.archive_format
                     )
                 log.info("Finished generating artifact: {0}".format(key))
 

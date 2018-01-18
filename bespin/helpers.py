@@ -3,6 +3,7 @@ import tempfile
 import logging
 import shutil
 import tarfile
+import zipfile
 import time
 import os
 
@@ -31,24 +32,30 @@ def a_temp_directory(base=None):
         if directory and os.path.exists(directory):
             shutil.rmtree(directory)
 
-def generate_tar_file(location, paths, environment=None, compression=None):
-    """
-    Generate a tar file at the specified location given the paths and files
-    """
-    # Create a blank tar file
-    write_type = "w"
-    if compression:
-        write_type = "w|{0}".format(compression)
-    tar = tarfile.open(location.name, write_type)
+class ZipTarWrapper(zipfile.ZipFile):
+    def add(self, filename, arcname):
+        self.write(filename, arcname)
 
-    # Add all the things to the tar
+def generate_archive_file(location, paths, environment=None, compression=None, archive_format=None):
+    """
+    Generate an archive file at the specified location given the paths and files
+    """
+    if archive_format == 'zip':
+        archive = ZipTarWrapper(location.name, 'w', zipfile.ZIP_DEFLATED)
+    else:
+        write_type = "w"
+        if compression:
+            write_type = "w|{0}".format(compression)
+        archive = tarfile.open(location.name, write_type)
+
+    # Add all the things to the archive
     for path_spec in paths:
-        path_spec.add_to_tar(tar, environment)
+        path_spec.add_to_tar(archive, environment)
 
-    # Finish the tar
-    tar.close()
+    # Finish the zip
+    archive.close()
 
-    return tar
+    return archive
 
 def until(timeout=10, step=0.5, action=None, silent=False):
     """Yield until timeout"""
