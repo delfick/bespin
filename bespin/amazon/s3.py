@@ -5,6 +5,8 @@ from six.moves.urllib.parse import urlparse
 from collections import namedtuple
 
 from datetime import datetime
+
+import botocore
 import humanize
 import logging
 import boto3
@@ -52,15 +54,18 @@ class S3(object):
 
         log.info("Looking for key with last_modified greater than %s", start)
 
-        if key == '/':
-            self.get_bucket(bucket).wait_until_exists()
-            log.info("The bucket exists! and that is all we are looking for")
-            return
-        else:
-            k = self.get_object(bucket, key)
-            k.wait_until_exists(IfModifiedSince=start)
-            log.info("Found key in the bucket\tbucket=%s\tkey=%s\tlast_modified=%s", bucket, key, k.last_modified)
-            return
+        try:
+            if key == '/':
+                self.get_bucket(bucket).wait_until_exists()
+                log.info("The bucket exists! and that is all we are looking for")
+                return
+            else:
+                k = self.get_object(bucket, key)
+                k.wait_until_exists(IfModifiedSince=start)
+                log.info("Found key in the bucket\tbucket=%s\tkey=%s\tlast_modified=%s", bucket, key, k.last_modified)
+                return
+        except botocore.exceptions.BotoCoreError as error:
+            raise BespinError("Couldn't find the s3 key", error=error.message)
 
         raise BespinError("Couldn't find the s3 key with a newer last modified")
 
