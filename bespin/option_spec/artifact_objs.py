@@ -37,7 +37,7 @@ class ArtifactCollection(dictobj):
 
             # Iterate through all the artifacts deleting any ones flagged for deletion
             for artifact_key in keys_to_del:
-                log.info("Deleting artifact %s ", artifact_key.name)
+                log.info("Deleting artifact %s ", artifact_key.key)
                 if dry_run:
                     log.info("DRYRUN: Would delete key")
                 else:
