@@ -1,6 +1,6 @@
 # coding: spec
 
-from bespin.helpers import a_temp_file, generate_tar_file, until, memoized_property, a_temp_directory
+from bespin.helpers import a_temp_file, generate_archive_file, until, memoized_property, a_temp_directory
 from bespin.option_spec.artifact_objs import ArtifactPath, ArtifactFile
 
 from tests.helpers import BespinCase
@@ -148,7 +148,7 @@ describe BespinCase, "generate_tar_file":
         if six.PY2 and sys.version_info[1] == 6:
             raise nose.SkipTest()
         with a_temp_file() as temp_tar_file:
-            generate_tar_file(temp_tar_file, [])
+            generate_archive_file(temp_tar_file, [])
             tar = tarfile.open(temp_tar_file.name)
 
             self.assertEqual(len(tar.getnames()), 0)
@@ -157,7 +157,7 @@ describe BespinCase, "generate_tar_file":
         with a_temp_file() as temp_tar_file:
             root, folders = self.setup_directory({"one": {"two": "blah", "three": {"four": ""}}})
             path1 = ArtifactPath(root, "/app")
-            generate_tar_file(temp_tar_file, [path1])
+            generate_archive_file(temp_tar_file, [path1])
             tar = tarfile.open(temp_tar_file.name, "r")
 
             self.assertEqual(len(tar.getnames()), 2)
@@ -168,7 +168,7 @@ describe BespinCase, "generate_tar_file":
             file1 = ArtifactFile("watermelon", "/app/file1", "task", mock.Mock(name="task_runner"))
             file2 = ArtifactFile("banana", "/app/file2", "task", mock.Mock(name="task_runner"))
 
-            generate_tar_file(temp_tar_file, [file1, file2])
+            generate_archive_file(temp_tar_file, [file1, file2])
 
             self.assertTarFileContent(temp_tar_file.name, {"app/file1": "watermelon", "app/file2": "banana"})
 
@@ -177,7 +177,7 @@ describe BespinCase, "generate_tar_file":
             file1 = ArtifactFile("watermelon {ONE}", "/app/file1", "task", mock.Mock(name="task_runner"))
             file2 = ArtifactFile("ban{TWO}ana", "/app/file2", "task", mock.Mock(name="task_runner"))
 
-            generate_tar_file(temp_tar_file, [file1, file2], {"ONE": "one", "TWO": "two"})
+            generate_archive_file(temp_tar_file, [file1, file2], {"ONE": "one", "TWO": "two"})
 
             self.assertTarFileContent(temp_tar_file.name, {"app/file1": "watermelon one", "app/file2": "bantwoana"})
 
@@ -186,7 +186,7 @@ describe BespinCase, "generate_tar_file":
             file1 = ArtifactFile("watermelon {ONE}", "/app/file1", "task", mock.Mock(name="task_runner"))
             file2 = ArtifactFile("ban{TWO}ana", "/app/file2", "task", mock.Mock(name="task_runner"))
 
-            generate_tar_file(temp_tar_file, [file1, file2], {"ONE": "one", "TWO": "two"}, compression="gz")
+            generate_archive_file(temp_tar_file, [file1, file2], {"ONE": "one", "TWO": "two"}, compression="gz")
             self.assertTarFileContent(temp_tar_file.name, {"app/file1": "watermelon one", "app/file2": "bantwoana"}, "gz")
 
     it "works with xz compression":
@@ -195,7 +195,7 @@ describe BespinCase, "generate_tar_file":
             file1 = ArtifactFile("watermelon {ONE}", "/app/file1", "task", mock.Mock(name="task_runner"))
             file2 = ArtifactFile("ban{TWO}ana", "/app/file2", "task", mock.Mock(name="task_runner"))
 
-            generate_tar_file(temp_tar_file, [file1, file2], {"ONE": "one", "TWO": "two"}, compression="xz")
+            generate_archive_file(temp_tar_file, [file1, file2], {"ONE": "one", "TWO": "two"}, compression="xz")
             self.assertTarFileContent(temp_tar_file.name, {"app/file1": "watermelon one", "app/file2": "bantwoana"}, "xz")
 
 describe BespinCase, "Memoized_property":
