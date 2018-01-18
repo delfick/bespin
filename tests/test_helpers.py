@@ -7,6 +7,7 @@ from tests.helpers import BespinCase
 
 from contextlib import contextmanager
 import tarfile
+import zipfile
 import nose
 import mock
 import six
@@ -197,6 +198,43 @@ describe BespinCase, "generate_tar_file":
 
             generate_archive_file(temp_tar_file, [file1, file2], {"ONE": "one", "TWO": "two"}, compression="xz")
             self.assertTarFileContent(temp_tar_file.name, {"app/file1": "watermelon one", "app/file2": "bantwoana"}, "xz")
+
+describe BespinCase, "generate_zip_file":
+    it "Creates an empty file when paths and files is empty":
+        if six.PY2 and sys.version_info[1] == 6:
+            raise nose.SkipTest()
+        with a_temp_file() as temp_zip_file:
+            generate_archive_file(temp_zip_file, [], archive_format="zip")
+            zfile = zipfile.ZipFile(temp_zip_file.name)
+
+            self.assertEqual(len(zfile.namelist()), 0)
+
+    it "Creates a file with the files and directories given a path to process":
+        with a_temp_file() as temp_zip_file:
+            root, folders = self.setup_directory({"one": {"two": "blah", "three": {"four": ""}}})
+            path1 = ArtifactPath(root, "/app")
+            generate_archive_file(temp_zip_file, [path1], archive_format="zip")
+            zfile = zipfile.ZipFile(temp_zip_file.name)
+
+            self.assertEqual(len(zfile.namelist()), 2)
+            self.assertZipFileContent(temp_zip_file.name, {"app/one/two": "blah", "app/one/three/four": ""})
+
+    it "Creates a file with the files given a file list to add":
+        with a_temp_file() as temp_zip_file:
+            file1 = ArtifactFile("watermelon", "/app/file1", "task", mock.Mock(name="task_runner"))
+            file2 = ArtifactFile("banana", "/app/file2", "task", mock.Mock(name="task_runner"))
+
+            generate_archive_file(temp_zip_file, [file1, file2], archive_format="zip")
+            self.assertZipFileContent(temp_zip_file.name, {"app/file1": "watermelon", "app/file2": "banana"})
+
+    it "formats environment into the files":
+        with a_temp_file() as temp_zip_file:
+            file1 = ArtifactFile("watermelon {ONE}", "/app/file1", "task", mock.Mock(name="task_runner"))
+            file2 = ArtifactFile("ban{TWO}ana", "/app/file2", "task", mock.Mock(name="task_runner"))
+
+            generate_archive_file(temp_zip_file, [file1, file2], {"ONE": "one", "TWO": "two"}, archive_format="zip")
+            self.assertZipFileContent(temp_zip_file.name, {"app/file1": "watermelon one", "app/file2": "bantwoana"})
+
 
 describe BespinCase, "Memoized_property":
     it "takes in a function and sets name and cache_name":

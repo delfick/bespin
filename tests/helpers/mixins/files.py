@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import tempfile
 import tarfile
+import zipfile
 import shutil
 import uuid
 import six
@@ -218,3 +219,34 @@ class FilesAssertionsMixin:
             if trf:
                 trf.close()
 
+    ########################
+    ###   ZIP FILES
+    ########################
+
+    def assertZipFileContent(self, location, expected):
+        """Make sure content of a tarfile matches what we expect"""
+        found = set()
+        for identity, data, info in self.extract_zip(location):
+            found.add(identity)
+
+            if identity not in expected:
+                print(expected)
+            expected_contents = expected[identity]
+            self.assertEqual(data, expected_contents.encode('utf-8'))
+        self.assertEqual(found, set(expected.keys()))
+
+    def extract_zip(self, location):
+        """Yield (identity, data, ZipInfo) for everything in archive at provided location"""
+        assert os.path.exists(location)
+        zfile = None
+        try:
+            zfile = zipfile.ZipFile(location, 'r')
+            for info in zfile.infolist():
+                data = None
+                if info.filename[-1] != '/': # .is_dir() from py3.6:
+                    data = zfile.open(info.filename).read()
+
+                yield info.filename, data, info
+        finally:
+            if zfile:
+                zfile.close()
