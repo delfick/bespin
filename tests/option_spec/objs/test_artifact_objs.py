@@ -10,10 +10,9 @@ from tests.helpers import BespinCase
 from noseOfYeti.tokeniser.support import noy_sup_setUp
 from input_algorithms import spec_base as sb
 from input_algorithms.meta import Meta
-from boto.s3.key import Key
+import boto3
 import time
 import nose
-import boto
 import mock
 import sys
 import os
@@ -25,7 +24,7 @@ if sys.version_info[0] == 2 and sys.version_info[1] == 6:
             raise nose.SkipTest("No moto support for python2.6 atm")
         return wrapped
 else:
-    from moto import mock_s3_deprecated
+    from moto import mock_s3
 
 optional_any = lambda: sb.optional_spec(sb.any_spec())
 artifact_spec = sb.create_spec(Artifact
@@ -39,38 +38,36 @@ artifact_spec = sb.create_spec(Artifact
 
 describe BespinCase, "ArtifactCollection":
     describe "clean_old_artifacts":
-        @mock_s3_deprecated
+        @mock_s3
         it "does nothing if dry_run is True":
             s3 = S3()
-            conn = s3.conn = boto.connect_s3()
             environment = {}
 
-            bucket = conn.create_bucket("blah")
+            bucket = s3.get_bucket('blah')
+            bucket.create()
             for k in ('one.tar.gz', 'two.tar.gz', 'three.tar.gz', 'four.tar.gz'):
-                key = Key(bucket)
-                key.key = "stuff/{0}".format(k)
-                key.set_contents_from_string(k)
+                key = bucket.Object("stuff/{0}".format(k))
+                key.put(Body=k)
 
             artifact = mock.Mock(name="artifact", upload_to="s3://blah/stuff/five.tar.gz", history_length=2, cleanup_prefix="")
             collection = ArtifactCollection({"main": artifact})
             collection.clean_old_artifacts(s3, environment, dry_run=True)
 
             self.assertEqual(
-                  sorted([k.key for k in conn.get_bucket("blah").list()])
+                  sorted([k.key for k in s3.get_bucket("blah").objects.all()])
                 , sorted(["stuff/one.tar.gz", "stuff/two.tar.gz", "stuff/three.tar.gz", "stuff/four.tar.gz"])
                 )
 
-        @mock_s3_deprecated
+        @mock_s3
         it "Deletes the oldest such that only history_length is left":
             s3 = S3()
-            conn = s3.conn = boto.connect_s3()
             environment = {}
 
-            bucket = conn.create_bucket("blah")
+            bucket = s3.get_bucket("blah")
+            bucket.create()
             for k in ('one.tar.gz', 'two.tar.gz', 'three.tar.gz', 'four.tar.gz'):
-                key = Key(bucket)
-                key.key = "stuff/{0}".format(k)
-                key.set_contents_from_string(k)
+                key = bucket.Object("stuff/{0}".format(k))
+                key.put(Body=k)
                 time.sleep(0.01)
 
             artifact = mock.Mock(name="artifact", upload_to="s3://blah/stuff/five.tar.gz", history_length=2, cleanup_prefix="")
@@ -78,7 +75,7 @@ describe BespinCase, "ArtifactCollection":
             collection.clean_old_artifacts(s3, environment, dry_run=False)
 
             self.assertEqual(
-                  sorted([k.key for k in conn.get_bucket("blah").list()])
+                  sorted([k.key for k in s3.get_bucket("blah").objects.all()])
                 , sorted(["stuff/three.tar.gz", "stuff/four.tar.gz"])
                 )
 
@@ -86,7 +83,7 @@ describe BespinCase, "ArtifactCollection":
             collection.clean_old_artifacts(s3, environment, dry_run=False)
 
             self.assertEqual(
-                  sorted([k.key for k in conn.get_bucket("blah").list()])
+                  sorted([k.key for k in s3.get_bucket("blah").objects.all()])
                 , sorted(["stuff/three.tar.gz", "stuff/four.tar.gz"])
                 )
 
@@ -95,7 +92,7 @@ describe BespinCase, "ArtifactCollection":
             collection.clean_old_artifacts(s3, environment, dry_run=False)
 
             self.assertEqual(
-                  sorted([k.key for k in conn.get_bucket("blah").list()])
+                  sorted([k.key for k in s3.get_bucket("blah").objects.all()])
                 , sorted(["stuff/four.tar.gz"])
                 )
 
