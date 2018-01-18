@@ -48,6 +48,20 @@ class S3(object):
         key = info.path
         return S3Location(bucket, key, value)
 
+    def copy_key(self, frm, to):
+        """Copy a key from <frm> to <to>"""
+        frm_location = self.s3_location(frm)
+        copy_source = {
+            'Bucket': frm_location.bucket,
+            'Key': frm_location.key[1:]
+        }
+
+        to_location = self.s3_location(to)
+        bucket = self.get_bucket(to_location.bucket)
+
+        log.info("Copying %s to %s", frm, to)
+        bucket.copy(copy_source, to_location[1:])
+
     def wait_for(self, bucket, key, timeout, start=None):
         if start is None:
             start = datetime.utcnow()
