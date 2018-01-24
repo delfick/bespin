@@ -26,7 +26,6 @@ setup(
       , "boto3==1.5.20"
       , "pyYaml==3.12"
       , "ultra_rest_client==0.1.4"
-      , "FileChunkIO==1.6"
       , "dnslib==0.9.4"
       ]
 
