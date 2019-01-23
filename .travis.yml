@@ -3,13 +3,13 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
-cache:
-  directories:
-    - $HOME/.pip-cache/
+
+env:
+  BOTO_CONFIG: "/dev/null"
+
 install:
   - pip install -e .
   - pip install -e '.[tests]'
 
 script:
   - ./test.sh
-
