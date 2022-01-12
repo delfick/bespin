@@ -26,7 +26,7 @@ setup(
       , "boto3==1.5.20"
       , "ruamel.yaml==0.15.87"
       , "ultra_rest_client==0.1.4"
-      , "dnslib==0.9.4"
+      , "dnslib==0.9.17"
       ]
 
     , extras_require =
